@@ -104,7 +104,7 @@ class HtmltobbcodeParser(HTMLParser.HTMLParser):
 			if attrs.has_key("style"):
 				size = re.search('font-size: (\d*)px',attrs["style"])
 				if size != None:
-					self.bbcode += "[size=" + str(int(int(size.group(1))*100/12)) + ":<UID>]"
+					self.bbcode += "[size=" + str(int(size.group(1))*100/12) + ":<UID>]"
 					self.span.append("[/size:<UID>]")
 				else:
 					self.span.append("")
