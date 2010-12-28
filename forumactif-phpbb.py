@@ -363,6 +363,9 @@ except:
 	savefile.close()
 	print "\n"
 	traceback.print_exc(file=sys.stdout)
+	
+	print "Une erreur s'est produite. Essayez de relancer le script."
+	raw_input("Appuyez sur Entrée pour quitter...")
 	sys.exit()
 
 savefile = open("save.py", "w+")
@@ -385,6 +388,8 @@ savefile.write("users = " + str(save.users) + "\n\n")
 savefile.write("smileys = " + str(save.smileys) + "\n\n")
 
 savefile.close()
+
+print "Le téléchargement des données est terminé.\n"
 
 # Génération du fichier SQL
 print "Génération du fichier SQL..."
@@ -565,3 +570,8 @@ for post in save.posts:
 	sqlfile.write('(' + ', '.join(data) + ');\n')
 
 sqlfile.write("\n")
+
+sqlfile.close()
+
+print "L'exportation a été effectuée avec succés. Vous pouvez à présent importer le fichier phpbb.sql dans votre base de donnée (après avoir installé phpbb3)."
+raw_input("Appuyez sur Entrée pour quitter...")
