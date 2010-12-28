@@ -47,6 +47,6 @@ Il est très probable que vous ayez des erreurs de connection pendant l'exécuti
 
  * Connectez vous au panneau d'administration en utilisant les identifiants de l'administrateur de votre ancien forum (seul le mot de passe indiqué dans le fichier config.py est conservé, les autres sont générés aléatoirement) et resynchronisez les statistiques, les compteurs de messages et les sujets pointés (Onglet Général).
  * Resynchronisez tous les forums/sous-forums (Onglet Forums, Bouton "Resynchroniser" à droite de chaque forum).
- * Créez les index de recherche (Onglet Maintenance -> Base de donnée -> Index de recherche, cliquez sur les deux boutons "Supprimer l'index de recherche" (s'il sont présent) puis sur les boutons "Créer l'index de recherche").
- * Copiez le script présent sur cette page: http://www.startrekguide.com/community/viewtopic.php?p=47648#p47648 et enregistrez le à la racine de votre forum sous le nom "resync_bbcode.php". Ouvrez l'adresse correspondante dans votre navigateur.
+ * Créez les index de recherche (Onglet Maintenance -> Base de donnée -> Index de recherche, cliquez sur les deux boutons "Supprimer l'index de recherche" (s'ils sont présent) puis sur les boutons "Créer l'index de recherche").
+ * Téléchargez le Support Toolkit (et éventuellement la traduction française) sur http://www.phpbb.com/support/stk/ et extrayez le dossier stk/stk à la racine de votre forum. Ouvrez ce dossier dans votre navigateur (http://<lien vers phpbb>/stk) et réanalysez les BBCodes (onglet Outils pour les administrateurs).
  * Modifiez les permissions de vos forums (par défaut, ils sont visibles par tous les utilisateurs et les invités), ajoutez les modérateurs, co-administrateurs manuellement.
