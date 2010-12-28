@@ -50,3 +50,12 @@ Il est très probable que vous ayez des erreurs de connection pendant l'exécuti
  * Créez les index de recherche (Onglet Maintenance -> Base de donnée -> Index de recherche, cliquez sur les deux boutons "Supprimer l'index de recherche" (s'ils sont présent) puis sur les boutons "Créer l'index de recherche").
  * Téléchargez le Support Toolkit (et éventuellement la traduction française) sur http://www.phpbb.com/support/stk/ et extrayez le dossier stk/stk à la racine de votre forum. Ouvrez ce dossier dans votre navigateur (http://<lien vers phpbb>/stk) et réanalysez les BBCodes (onglet Outils pour les administrateurs).
  * Modifiez les permissions de vos forums (par défaut, ils sont visibles par tous les utilisateurs et les invités), ajoutez les modérateurs, co-administrateurs manuellement.
+
+CRÉDITS
+_______
+
+Programmé en python en utilisant:
+ * PyQuery <https://bitbucket.org/olauzanne/pyquery/>
+ * python-progressbar <http://code.google.com/p/python-progressbar/>
+
+En s'inspirant des Crawler Converters de nneonneo <http://www.phpbb.com/community/viewtopic.php?f=65&t=1761395>
