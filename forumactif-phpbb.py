@@ -24,8 +24,6 @@ import sys, datetime, time, re, cookielib, urllib, urllib2, traceback, string, r
 import progressbar, htmltobbcode, phpbb
 from pyquery import PyQuery
 
-version = '0.1 alpha'
-
 try:
 	import save
 except:
@@ -74,9 +72,11 @@ month = {u'Jan' : 1,
 def topic_type(topic_type):
 	if topic_type == None:
 		return "0"
-	elif u'Annonce:' in topic_type:
+	elif u'globale' in topic_type.lower():
+		return "3"
+	elif u'annonce' in topic_type.lower():
 		return "2"
-	elif u'Post-it:' in topic_type:
+	elif u'post-it' in topic_type.lower():
 		return "1"
 	else:
 		return "0"
@@ -158,8 +158,8 @@ def get_topics():
 			for i in d.find('div.topictitle'):
 				e = PyQuery(i)
 				
-				if e("strong").text() != "Annonce:" or page == 0:
-					id = int(re.search("/t(\d+)-.*", e("a").attr("href")).group(1))
+				id = int(re.search("/t(\d+)-.*", e("a").attr("href")).group(1))
+				if id not in [i["id"] for i in save.topics]:
 					f = e.parents().eq(-2)
 					locked = u"verrouillé" in f("td img").eq(0).attr("alt")
 					views = int(f("td").eq(5).text())
