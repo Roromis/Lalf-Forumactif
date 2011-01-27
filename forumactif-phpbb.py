@@ -20,7 +20,7 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
-import sys, datetime, time, re, cookielib, urllib, urllib2, traceback, string, random, hashlib, codecs
+import os, sys, datetime, time, re, cookielib, urllib, urllib2, traceback, string, random, hashlib, codecs
 import progressbar, htmltobbcode, phpbb
 from pyquery import PyQuery
 
@@ -81,9 +81,15 @@ def topic_type(topic_type):
 	else:
 		return "0"
 
-def fa_opener(url):
-	global urlopener
-	return urlopener.open(url).read()
+if os.name == 'nt':
+	def fa_opener(url):
+		global urlopener, encoding
+		return unicode(urlopener.open(url).read(), encoding)
+else:
+	def fa_opener(url):
+		global urlopener
+		return urlopener.open(url).read()
+
 
 def get_stats():
 	d = PyQuery(url=config.rooturl + '/stats.htm', opener=fa_opener)
@@ -326,7 +332,9 @@ etapes = [get_stats, get_forums, get_topics, get_users, get_smileys, get_posts]
 print "Connection au forum..."
 data = urllib.urlencode({'username': config.admin_name, 'password': config.admin_password, 'autologin': 1, 'redirect': '', 'login': 'Connexion'})
 request = urllib2.Request(config.rooturl + '/login.forum', data)
-urlopener.open(request)
+resp = urlopener.open(request)
+if os.name == 'nt':
+	encoding = resp.headers['content-type'].split('charset=')[-1]
 
 sid = None
 for cookie in cookiejar:
