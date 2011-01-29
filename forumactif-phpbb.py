@@ -517,9 +517,16 @@ sqlfile.write('DELETE FROM ' + config.table_prefix + 'posts;\n\n')
 for topic in save.topics:
 	subposts = [i for i in save.posts if i["topic"] == topic["id"]]
 	first_post = subposts[0]
-	first_poster = [i for i in save.users if i["name"] == first_post["author"]][0]["newid"]
+	try:
+		first_poster = [i for i in save.users if i["name"] == first_post["author"]][0]["newid"]
+	except:
+		first_poster = 1
 	last_post = subposts[-1]
-	last_poster = [i for i in save.users if i["name"] == last_post["author"]][0]["newid"]
+	try:
+		last_poster = [i for i in save.users if i["name"] == last_post["author"]][0]["newid"]
+	except:
+		last_poster = 1
+	
 	data = [str(topic["id"]),							#topic_id
 	topic_type(topic["type"]),							#topic_type
 	str(topic["parent"]),								#forum_id
@@ -545,17 +552,25 @@ sqlfile.write("\n")
 for topic in save.topics:
 	l = []
 	for poster in [i["author"] for i in save.posts if i["topic"] == topic["id"]]:
-		id = [i for i in save.users if i["name"] == poster][0]["newid"]
-		if not id in l:
-			sqlfile.write("INSERT INTO " + config.table_prefix + "topics_posted (user_id, topic_id, topic_posted) VALUES ")
-			sqlfile.write("(" + str(id) + ", " + str(topic["id"]) + ", 1);\n")
-			l.append(id)
+		try:
+			id = [i for i in save.users if i["name"] == poster][0]["newid"]
+		except:
+			pass
+		else:
+			if not id in l:
+				sqlfile.write("INSERT INTO " + config.table_prefix + "topics_posted (user_id, topic_id, topic_posted) VALUES ")
+				sqlfile.write("(" + str(id) + ", " + str(topic["id"]) + ", 1);\n")
+				l.append(id)
+		
 
 sqlfile.write("\n")
 
 for post in save.posts:
 	topic = [i for i in save.topics if i["id"] == post["topic"]][0]
-	poster = [i for i in save.users if i["name"] == post["author"]][0]
+	try:
+		poster = [i for i in save.users if i["name"] == post["author"]][0]["newid"]
+	except:
+		poster = 1
 	
 	bbcode_uid = ''.join([random.choice('abcdefghijklmnopqrstuvwxyz0123456789') for i in xrange(8)])
 	bbcode_bitfield = phpbb.makebitfield(post["post"]).strip()
@@ -565,7 +580,7 @@ for post in save.posts:
 	data = [str(post["id"]),						#post_id
 	str(post["topic"]),								#topic_id
 	str(topic["parent"]),							#forum_id
-	str(poster["newid"]),							#poster_id
+	str(poster),									#poster_id
 	str(post["timestamp"]),							#post_time
 	"'127.0.0.1'",									#poster_ip
 	"'" + phpbb.escape_var(post["author"]) + "'",	#post_username
