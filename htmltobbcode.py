@@ -20,11 +20,11 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
-import re, HTMLParser
+import re
+from lxml import etree
 
-class HtmltobbcodeParser(HTMLParser.HTMLParser):
+class HtmltobbcodeTarget():
 	def __init__(self, smileys):
-		HTMLParser.HTMLParser.__init__(self)
 		self.smileys = smileys
 		self.bbcode = ""
 		self.quote = False
@@ -38,7 +38,7 @@ class HtmltobbcodeParser(HTMLParser.HTMLParser):
 		self.a = []
 		self.marquee = []
 	
-	def handle_data(self, data):
+	def data(self, data):
 		if self.quote:
 			if data[-9:] == u" a écrit:":
 				self.author = data[:-9]
@@ -60,7 +60,7 @@ class HtmltobbcodeParser(HTMLParser.HTMLParser):
 			self.bbcode += "[hr:<UID>][/hr:<UID>]"
 				
 	
-	def handle_starttag(self, tag, attrs):
+	def start(self, tag, attrs):
 		attrs = dict(attrs)
 		if tag=='strong':
 			self.bbcode += "[b:<UID>]"
@@ -187,7 +187,7 @@ class HtmltobbcodeParser(HTMLParser.HTMLParser):
 		elif tag=="sup":
 			self.bbcode += "[sup:<UID>]"
 
-	def handle_endtag(self, tag):
+	def end(self, tag):
 		if tag=='strong':
 			self.bbcode += "[/b:<UID>]"
 		elif tag=='i':
@@ -222,10 +222,14 @@ class HtmltobbcodeParser(HTMLParser.HTMLParser):
 			self.bbcode += "[/sub:<UID>]"
 		elif tag=="sup":
 			self.bbcode += "[/sup:<UID>]"
-
+	
+	def comment(self, text):
+		return None
+	
+	def close(self):
+		return self.bbcode
 
 def htmltobbcode(string, smileys):
-	p = HtmltobbcodeParser(smileys)
-	p.feed(string)
+	parser = etree.XMLParser(target = HtmltobbcodeTarget(smileys))
 	
-	return p.bbcode
+	return etree.XML(string, parser)
