@@ -288,11 +288,11 @@ def get_posts():
 				if result[-3] == "Aujourd'hui":
 					title = " ".join(e("table td span.postdetails").text().split(" ")[1:-3])
 					date = e("table td span.postdetails").text().split(" ")[-3:]
-					timestamp = time.mktime(datetime.combine(datetime.date.today(), datetime.time(int(date[2].split(":")[0]),int(date[2].split(":")[1]))).timetuple())
+					timestamp = time.mktime(datetime.datetime.combine(datetime.date.today(), datetime.time(int(date[2].split(":")[0]),int(date[2].split(":")[1]))).timetuple())
 				elif result[-3] == "Hier":
 					title = " ".join(e("table td span.postdetails").text().split(" ")[1:-3])
 					date = e("table td span.postdetails").text().split(" ")[-3:]
-					timestamp = time.mktime(datetime.combine(datetime.date.today()-datetime.timedelta(1), datetime.time(int(date[2].split(":")[0]),int(date[2].split(":")[1]))).timetuple())
+					timestamp = time.mktime(datetime.datetime.combine(datetime.date.today()-datetime.timedelta(1), datetime.time(int(date[2].split(":")[0]),int(date[2].split(":")[1]))).timetuple())
 				else:
 					title = " ".join(e("table td span.postdetails").text().split(" ")[1:-6])
 					date = e("table td span.postdetails").text().split(" ")[-6:]
