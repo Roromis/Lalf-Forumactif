@@ -22,6 +22,7 @@
 
 import os, sys, datetime, time, re, cookielib, urllib, urllib2, traceback, string, random, hashlib, codecs
 import progressbar, htmltobbcode, phpbb
+from urlparse import urlparse
 from pyquery import PyQuery
 
 try:
@@ -90,7 +91,6 @@ else:
 		global urlopener
 		return urlopener.open(url).read()
 
-
 def get_stats():
 	d = PyQuery(url=config.rooturl + '/stats.htm', opener=fa_opener)
 
@@ -129,7 +129,7 @@ def get_forums():
 		
 		levels[level] = n
 		
-		d = PyQuery(url=config.rooturl+'/admin/index.forum?part=general&sub=general&mode=edit&fid=' + id + '&extended_admin=1&sid=' + sid, opener=fa_opener)
+		d = PyQuery(url=config.rooturl+'/admin/index.forum?part=general&sub=general&mode=edit&fid=' + id + '&extended_admin=1&tid=' + tid, opener=fa_opener)
 		try:
 			description = d("textarea").text()
 		except:
@@ -186,9 +186,9 @@ def get_users():
 	save.users = []
 	n = 2
 
-	d = PyQuery(url=config.rooturl+'/admin/index.forum?part=users_groups&sub=users&extended_admin=1&sid=' + sid, opener=fa_opener)
+	d = PyQuery(url=config.rooturl+'/admin/index.forum?part=users_groups&sub=users&extended_admin=1&tid=' + tid, opener=fa_opener)
 	result = re.search('function do_pagination_start\(\)[^\}]*start = \(start > \d+\) \? (\d+) : start;[^\}]*start = \(start - 1\) \* (\d+);[^\}]*\}', d.text())
-
+	
 	try:
 		pages = int(result.group(1))
 		usersperpages = int(result.group(2))
@@ -198,8 +198,8 @@ def get_users():
 		
 	for page in range(0,pages):
 		if page >= 1:
-			d = PyQuery(url=config.rooturl + '/admin/index.forum?part=users_groups&sub=users&extended_admin=1&start=' + str(page*usersperpages) + '&sid=' + sid, opener=fa_opener)
-		
+			d = PyQuery(url=config.rooturl + '/admin/index.forum?part=users_groups&sub=users&extended_admin=1&start=' + str(page*usersperpages) + '&tid=' + tid, opener=fa_opener)
+	
 		for i in d('tbody tr'):
 			e = PyQuery(i)
 			id = int(re.search("&u=(\d+)&", e("td a").eq(0).attr("href")).group(1))
@@ -228,7 +228,7 @@ def get_smileys():
 
 	n = 0
 
-	d = PyQuery(url=config.rooturl+'/admin/index.forum?part=themes&sub=avatars&mode=smilies&extended_admin=1&sid=' + sid, opener=fa_opener)
+	d = PyQuery(url=config.rooturl+'/admin/index.forum?part=themes&sub=avatars&mode=smilies&extended_admin=1&tid=' + tid, opener=fa_opener)
 	result = re.search('function do_pagination_start\(\)[^\}]*start = \(start > \d+\) \? (\d+) : start;[^\}]*start = \(start - 1\) \* (\d+);[^\}]*\}', d.text())
 
 	try:
@@ -243,7 +243,7 @@ def get_smileys():
 
 	for page in range(0,pages):
 		if page >= 1:
-			d = PyQuery(url=config.rooturl + '/admin/index.forum?part=themes&sub=avatars&mode=smilies&extended_admin=1&start=' + str(page*usersperpages) + '&sid=' + sid, opener=fa_opener)
+			d = PyQuery(url=config.rooturl + '/admin/index.forum?part=themes&sub=avatars&mode=smilies&extended_admin=1&start=' + str(page*usersperpages) + '&tid=' + tid, opener=fa_opener)
 		
 		for i in d('table tr'):
 			e = PyQuery(i)
@@ -343,6 +343,19 @@ for cookie in cookiejar:
 
 if sid == None:
 	raise ValueError('Impossible de se connecter')
+
+d = PyQuery(url=config.rooturl+'/forum', opener=fa_opener)
+
+tid = None
+for i in d('#page-footer a'):
+	e = PyQuery(i)
+	params = dict([part.split('=') for part in urlparse(e.attr("href"))[4].split('&')])
+	if params.has_key('tid'):
+		tid = params['tid']
+		break
+
+if tid == None:
+	raise ValueError('Impossible de se récupérer le tid')
 
 try:
 	for i in range(save.state,len(etapes)):
@@ -526,7 +539,7 @@ for topic in save.topics:
 		last_poster = [i for i in save.users if i["name"] == last_post["author"]][0]["newid"]
 	except:
 		last_poster = 1
-	
+
 	data = [str(topic["id"]),							#topic_id
 	topic_type(topic["type"]),							#topic_type
 	str(topic["parent"]),								#forum_id
@@ -561,7 +574,6 @@ for topic in save.topics:
 				sqlfile.write("INSERT INTO " + config.table_prefix + "topics_posted (user_id, topic_id, topic_posted) VALUES ")
 				sqlfile.write("(" + str(id) + ", " + str(topic["id"]) + ", 1);\n")
 				l.append(id)
-		
 
 sqlfile.write("\n")
 

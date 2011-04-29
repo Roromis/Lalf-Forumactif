@@ -33,17 +33,13 @@ Dans un premier temps, installez, si ce n'est pas déjà fait, Python 2.* (le sc
  * Sous Windows, téléchargez Python 2.* sur cette page: http://www.python.org/download/
  * Sous Mac, Python devrait être installé par défaut.
 
-Installez ensuite la bibliothèque lxml.
-
- * Sous Linux, installez le paquet correspondant.
- * Sous Windows, téléchargez et installez la dernière version stable sur cette page: http://pypi.python.org/pypi/lxml/
-
 Modifiez ensuite la configuration dans le fichier config.py.
 
 3) UTILISATION
 
- * Lancez le script (en double cliquant sur forumactif-phpbb.py ou depuis un terminal).
+ * Lancez le script (en double cliquant sur forumactif.py ou depuis un terminal).
    Il est très probable que vous ayez des erreurs de connection pendant l'exécution du script (HTTP Error 502: Bad Gateway, SocketError...). Ces erreurs sont normales (à mon avis, elles viennent des serveurs de forumactif et non de mon script), essayez de relancez le script.
+
  * Installez un forum PhpBB3 en suivant la procédure habituelle.
  * Importez ensuite le fichier phpbb.sql généré par le script dans votre base de donnée.
 
