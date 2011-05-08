@@ -33,6 +33,11 @@ Dans un premier temps, installez, si ce n'est pas déjà fait, Python 2.* (le sc
  * Sous Windows, téléchargez Python 2.* sur cette page: http://www.python.org/download/
  * Sous Mac, Python devrait être installé par défaut.
 
+Installez ensuite la bibliothèque lxml.
+
+ * Sous Linux, installez le paquet correspondant.
+ * Sous Windows, téléchargez et installez la dernière version stable sur cette page: http://pypi.python.org/pypi/lxml/
+
 Modifiez ensuite la configuration dans le fichier config.py.
 
 3) UTILISATION
