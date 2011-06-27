@@ -106,6 +106,8 @@ class ETA(ProgressBarWidget):
             return 'ETA:  --:--:--'
         elif pbar.finished:
             return 'Time: %s' % self.format_time(pbar.seconds_elapsed)
+        elif pabar.currval > pbar.maxval:
+            return 'ETA:  00:00:00'
         else:
             elapsed = pbar.seconds_elapsed
             eta = elapsed * pbar.maxval / pbar.currval - elapsed
@@ -286,7 +288,7 @@ class ProgressBar(object):
 
     def percentage(self):
         "Returns the percentage of the progress."
-        return self.currval * 100.0 / self.maxval
+        return min(100, self.currval * 100.0 / self.maxval)
 
     def _format_widgets(self):
         r = []
@@ -340,7 +342,7 @@ class ProgressBar(object):
 
     def update(self, value):
         "Updates the progress bar to a new value."
-        assert 0 <= value <= self.maxval, '0 <= %d <= %d' % (value, self.maxval)
+        assert 0 <= value, '0 <= %d' % (value)
         self.currval = value
         if not self._need_update():
             return
