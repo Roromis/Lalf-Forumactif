@@ -345,8 +345,8 @@ if sid == None:
 
 d = PyQuery(url=config.rooturl+'/forum', opener=fa_opener)
 
-f = urlopener.open('http://mageetdemon.actifforum.com/admin/index.forum')
-tid = urlparse(f.url)[4]
+f = urlopener.open(config.rooturl+'/admin/index.forum')
+tid = urlparse(f.url).query
 
 if tid == '':
 	raise ValueError('Impossible de se récupérer le tid')
