@@ -100,7 +100,7 @@ def get_stats():
 		try:
 			if e("td.row2 span").eq(0).text() == "Messages":
 				save.nbposts = int(e("td.row1 span").eq(0).text())
-			elif e("td.row2 span").eq(0).text() == "Nombre de sujets":
+			elif e("td.row2 span").eq(0).text() == "Nombre de sujets ouvert dans le forum":
 				save.nbtopics = int(e("td.row1 span").eq(0).text())
 			elif e("td.row2 span").eq(0).text() == "Nombre d'utilisateurs":
 				save.nbusers = int(e("td.row1 span").eq(0).text())
@@ -129,7 +129,7 @@ def get_forums():
 		
 		levels[level] = n
 		
-		d = PyQuery(url=config.rooturl+'/admin/index.forum?part=general&sub=general&mode=edit&fid=' + id + '&extended_admin=1&tid=' + tid, opener=fa_opener)
+		d = PyQuery(url=config.rooturl+'/admin/index.forum?part=general&sub=general&mode=edit&fid=' + id + '&extended_admin=1&' + tid, opener=fa_opener)
 		try:
 			description = d("textarea").text()
 		except:
@@ -186,7 +186,7 @@ def get_users():
 	save.users = []
 	n = 2
 
-	d = PyQuery(url=config.rooturl+'/admin/index.forum?part=users_groups&sub=users&extended_admin=1&tid=' + tid, opener=fa_opener)
+	d = PyQuery(url=config.rooturl+'/admin/index.forum?part=users_groups&sub=users&extended_admin=1&' + tid, opener=fa_opener)
 	result = re.search('function do_pagination_start\(\)[^\}]*start = \(start > \d+\) \? (\d+) : start;[^\}]*start = \(start - 1\) \* (\d+);[^\}]*\}', d.text())
 	
 	try:
@@ -198,7 +198,7 @@ def get_users():
 		
 	for page in range(0,pages):
 		if page >= 1:
-			d = PyQuery(url=config.rooturl + '/admin/index.forum?part=users_groups&sub=users&extended_admin=1&start=' + str(page*usersperpages) + '&tid=' + tid, opener=fa_opener)
+			d = PyQuery(url=config.rooturl + '/admin/index.forum?part=users_groups&sub=users&extended_admin=1&start=' + str(page*usersperpages) + '&' + tid, opener=fa_opener)
 	
 		for i in d('tbody tr'):
 			e = PyQuery(i)
@@ -228,7 +228,7 @@ def get_smileys():
 
 	n = 0
 
-	d = PyQuery(url=config.rooturl+'/admin/index.forum?part=themes&sub=avatars&mode=smilies&extended_admin=1&tid=' + tid, opener=fa_opener)
+	d = PyQuery(url=config.rooturl+'/admin/index.forum?part=themes&sub=avatars&mode=smilies&extended_admin=1&' + tid, opener=fa_opener)
 	result = re.search('function do_pagination_start\(\)[^\}]*start = \(start > \d+\) \? (\d+) : start;[^\}]*start = \(start - 1\) \* (\d+);[^\}]*\}', d.text())
 
 	try:
@@ -243,7 +243,7 @@ def get_smileys():
 
 	for page in range(0,pages):
 		if page >= 1:
-			d = PyQuery(url=config.rooturl + '/admin/index.forum?part=themes&sub=avatars&mode=smilies&extended_admin=1&start=' + str(page*usersperpages) + '&tid=' + tid, opener=fa_opener)
+			d = PyQuery(url=config.rooturl + '/admin/index.forum?part=themes&sub=avatars&mode=smilies&extended_admin=1&start=' + str(page*usersperpages) + '&' + tid, opener=fa_opener)
 		
 		for i in d('table tr'):
 			e = PyQuery(i)
@@ -323,8 +323,7 @@ def set_left_right_id(forum=None, left=0):
 	
 class BarVar(progressbar.ProgressBarWidget):
 	def update(self, pbar):
-		global n
-		return str(n)
+		return str(pbar.currval)
 
 etapes = [get_stats, get_forums, get_topics, get_users, get_smileys, get_posts]
 
@@ -346,15 +345,10 @@ if sid == None:
 
 d = PyQuery(url=config.rooturl+'/forum', opener=fa_opener)
 
-tid = None
-for i in d('#page-footer a'):
-	e = PyQuery(i)
-	params = dict([part.split('=') for part in urlparse(e.attr("href"))[4].split('&')])
-	if params.has_key('tid'):
-		tid = params['tid']
-		break
+f = urlopener.open('http://mageetdemon.actifforum.com/admin/index.forum')
+tid = urlparse(f.url)[4]
 
-if tid == None:
+if tid == '':
 	raise ValueError('Impossible de se récupérer le tid')
 
 try:
