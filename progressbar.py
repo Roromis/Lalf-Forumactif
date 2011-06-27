@@ -288,7 +288,10 @@ class ProgressBar(object):
 
     def percentage(self):
         "Returns the percentage of the progress."
-        return min(100, self.currval * 100.0 / self.maxval)
+        if self.currval <= self.maxval:
+            return self.currval * 100.0 / self.maxval
+        else:
+            return 100
 
     def _format_widgets(self):
         r = []
@@ -342,7 +345,7 @@ class ProgressBar(object):
 
     def update(self, value):
         "Updates the progress bar to a new value."
-        assert 0 <= value, '0 <= %d' % (value)
+        assert value >= 0
         self.currval = value
         if not self._need_update():
             return
@@ -391,3 +394,16 @@ class ProgressBar(object):
         self.fd.write('\n')
         if self.signal_set:
             signal.signal(signal.SIGWINCH, signal.SIG_DFL)
+
+class NoProgressBar():
+    def __call__(self, iterable):
+        return iterable
+    
+    def start():
+        return
+    
+    def update():
+        return
+    
+    def end():
+        return

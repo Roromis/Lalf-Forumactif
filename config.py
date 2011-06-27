@@ -31,3 +31,6 @@ admin_password = ''
 
 # Préfixe des tables de phpbb dans la base de donnée
 table_prefix = 'phpbb_'
+
+# Débugage (True pour l'activer, False pour le désactiver)
+debug = False

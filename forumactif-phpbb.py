@@ -20,14 +20,47 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
-import os, sys, datetime, time, re, cookielib, urllib, urllib2, traceback, string, random, hashlib, codecs
-import progressbar, htmltobbcode, phpbb
+import sys, logging
+
+try:
+	import config
+except:
+	print 'Pas de configuration disponible.'
+	raw_input("Appuyez sur Entrée pour quitter...")
+	sys.exit()
+
+logging.basicConfig(level=logging.DEBUG, filename='debug.log', filemode="w", format='%(asctime)s - %(levelname)-8s : %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
+
+console = logging.StreamHandler()
+
+if config.debug:
+	from StringIO import StringIO
+	console.setLevel(logging.DEBUG)
+	formatter = logging.Formatter('%(levelname)-8s : %(message)s')
+else:
+	console.setLevel(logging.INFO)
+	formatter = logging.Formatter('%(message)s')
+
+console.setFormatter(formatter)
+logging.getLogger('').addHandler(console)
+
+logging.debug('Importation des bibliothèques')
+import os, datetime, time, re, urllib2, string, random, codecs
+from cookielib import CookieJar
+from urllib import urlencode
 from urlparse import urlparse
+from string import letters, digits
+from hashlib import md5
+
+import progressbar, htmltobbcode, phpbb
 from pyquery import PyQuery
 
+
+logging.debug('Importation de la sauvegarde')
 try:
 	import save
 except:
+	logging.debug('Pas de sauvegarde disponible : création d\'une sauvegarde vide')
 	open("save.py", "w+").close()
 	import save
 	
@@ -43,18 +76,8 @@ except:
 	save.smileys = {}
 	save.posts = []
 
-try:
-	import config
-except:
-	open("config.py", "w+").close()
-	import config
-	
-	config.rooturl = ''
-	config.admin_name = ''
-	config.admin_password = ''
-	config.table_prefix = ''
-
-cookiejar = cookielib.CookieJar()
+logging.debug('Création de l\'urlopener')
+cookiejar = CookieJar()
 urlopener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookiejar))
 
 month = {u'Jan' : 1,
@@ -92,6 +115,7 @@ else:
 		return urlopener.open(url).read()
 
 def get_stats():
+	logging.info('Récupération des statistiques')
 	d = PyQuery(url=config.rooturl + '/stats.htm', opener=fa_opener)
 
 	for i in d.find("table.forumline tr"):
@@ -106,10 +130,17 @@ def get_stats():
 				save.nbusers = int(e("td.row1 span").eq(0).text())
 		except:
 			continue
+	
+	logging.debug('Messages : %d' % save.nbposts)
+	logging.debug('Sujets : %d' % save.nbtopics)
+	logging.debug('Membres : %d' % save.nbusers)
 
 def get_forums():
-	print "Récupération des forums..."
-	progress = progressbar.ProgressBar(widgets=[progressbar.SimpleProgress('/'), ' ', progressbar.Bar("#","[","]"), progressbar.Percentage()])
+	logging.info('Récupération des forums')
+	if config.debug:
+		progress = progressbar.NoProgressBar()
+	else:
+		progress = progressbar.ProgressBar(widgets=[progressbar.SimpleProgress('/'), ' ', progressbar.Bar("#","[","]"), progressbar.Percentage()])
 
 	d = PyQuery(url=config.rooturl + '/a-f1/', opener=fa_opener)
 	
@@ -119,6 +150,7 @@ def get_forums():
 
 	for i in progress([i for i in d.find("select option") if i.get("value", "-1") != "-1"]):
 		id = i.get("value", "-1")
+		logging.debug('Récupération: forum %s' % id)
 		title = re.search('(((\||\xa0)(\xa0\xa0\xa0))*)\|--([^<]+)', i.text).group(5)
 		level = len(re.findall('(\||\xa0)\xa0\xa0\xa0', i.text))
 		
@@ -139,13 +171,17 @@ def get_forums():
 		n += 1
 
 def get_topics():
-	print "Récupération des sujets..."
-	progress = progressbar.ProgressBar(widgets=[progressbar.SimpleProgress('/'), ' ', progressbar.Bar("#","[","]"), progressbar.Percentage()], maxval=save.nbtopics)
+	logging.info('Récupération des sujets')
+	if config.debug:
+		progress = progressbar.NoProgressBar()
+	else:
+		progress = progressbar.ProgressBar(widgets=[progressbar.SimpleProgress('/'), ' ', progressbar.Bar("#","[","]"), progressbar.Percentage()], maxval=save.nbtopics)
 	progress.start()
 
 	n = len(save.topics)
 
 	for forum in [i for i in save.forums if (i["type"] == "f" and i["parsed"] == False)]:
+		logging.debug('Récupération : sujets du forum %s' % i["id"])
 		subtopics = []
 		d = PyQuery(url=config.rooturl + '/a-' + forum['type'] + str(forum['id']) + '/', opener=fa_opener)
 		result = re.search('function do_pagination_start\(\)[^\}]*start = \(start > \d+\) \? (\d+) : start;[^\}]*start = \(start - 1\) \* (\d+);[^\}]*\}', d.text())
@@ -165,6 +201,7 @@ def get_topics():
 				e = PyQuery(i)
 				
 				id = int(re.search("/t(\d+)-.*", e("a").attr("href")).group(1))
+				logging.debug('Récupération : sujet %d' % id)
 				if id not in [i["id"] for i in save.topics] and id not in [i["id"] for i in subtopics]:
 					f = e.parents().eq(-2)
 					locked = u"verrouillé" in f("td img").eq(0).attr("alt")
@@ -179,8 +216,11 @@ def get_topics():
 
 def get_users():
 	global month
-	print "Récupération des membres..."
-	progress = progressbar.ProgressBar(widgets=[progressbar.SimpleProgress('/'), ' ', progressbar.Bar("#","[","]"), progressbar.Percentage()], maxval=save.nbusers)
+	logging.info('Récupération des membres')
+	if config.debug:
+		progress = progressbar.NoProgressBar()
+	else:
+		progress = progressbar.ProgressBar(widgets=[progressbar.SimpleProgress('/'), ' ', progressbar.Bar("#","[","]"), progressbar.Percentage()], maxval=save.nbusers)
 	progress.start()
 	
 	save.users = []
@@ -203,6 +243,7 @@ def get_users():
 		for i in d('tbody tr'):
 			e = PyQuery(i)
 			id = int(re.search("&u=(\d+)&", e("td a").eq(0).attr("href")).group(1))
+			logging.debug('Récupération : membre %d' % id)
 			
 			date = e("td").eq(3).text().split(" ")
 			date = time.mktime(time.struct_time((int(date[2]),month[date[1]],int(date[0]),0,0,0,0,0,0)))
@@ -224,7 +265,7 @@ def get_users():
 
 def get_smileys():
 	global n
-	print "Récupération des émoticones..."
+	logging.info('Récupération des émoticones')
 
 	n = 0
 
@@ -238,7 +279,10 @@ def get_smileys():
 		pages = 1
 		usersperpages = 0
 		
-	progress = progressbar.ProgressBar(widgets=[BarVar(), ' ', progressbar.Bar("#","[","]"), progressbar.Percentage()], maxval=pages-1)
+	if config.debug:
+		progress = progressbar.NoProgressBar()
+	else:
+		progress = progressbar.ProgressBar(widgets=[BarVar(), ' ', progressbar.Bar("#","[","]"), progressbar.Percentage()], maxval=pages-1)
 	progress.start()
 
 	for page in range(0,pages):
@@ -256,13 +300,17 @@ def get_smileys():
 
 def get_posts():
 	global month
-	print "Récupération des messages..."
-	progress = progressbar.ProgressBar(widgets=[progressbar.SimpleProgress('/'), ' ', progressbar.Bar("#","[","]"), progressbar.Percentage()], maxval=save.nbposts)
+	logging.info('Récupération des messages')
+	if config.debug:
+		progress = progressbar.NoProgressBar()
+	else:
+		progress = progressbar.ProgressBar(widgets=[progressbar.SimpleProgress('/'), ' ', progressbar.Bar("#","[","]"), progressbar.Percentage()], maxval=save.nbposts)
 	progress.start()
 
 	n = len(save.posts)
 
 	for topic in [i for i in save.topics if i["parsed"] == False]:
+		logging.debug('Récupération : messages du topic %d' % topic["id"])
 		subposts = []
 		d = PyQuery(url=config.rooturl + '/t' + str(topic['id']) + '-a', opener=fa_opener)
 		result = re.search('function do_pagination_start\(\)[^\}]*start = \(start > \d+\) \? (\d+) : start;[^\}]*start = \(start - 1\) \* (\d+);[^\}]*\}', d.text())
@@ -282,6 +330,7 @@ def get_posts():
 				e = PyQuery(i)
 				
 				id = int(e("td span.name a").attr("name"))
+				logging.debug('Récupération : message %d (topic %d)' % (id, topic["id"]))
 				author = e("td span.name").text()
 				post = htmltobbcode.htmltobbcode(e("td div.postbody div").eq(0).html(), save.smileys)
 				result = e("table td span.postdetails").text().split(" ")
@@ -323,39 +372,47 @@ def set_left_right_id(forum=None, left=0):
 	
 class BarVar(progressbar.ProgressBarWidget):
 	def update(self, pbar):
-		return str(pbar.currval)
+		global n
+		return str(n)
 
 etapes = [get_stats, get_forums, get_topics, get_users, get_smileys, get_posts]
 
 # Connection
-print "Connection au forum..."
-data = urllib.urlencode({'username': config.admin_name, 'password': config.admin_password, 'autologin': 1, 'redirect': '', 'login': 'Connexion'})
+logging.info('Connection au forum')
+data = urlencode({'username': config.admin_name, 'password': config.admin_password, 'autologin': 1, 'redirect': '', 'login': 'Connexion'})
 request = urllib2.Request(config.rooturl + '/login.forum', data)
 resp = urlopener.open(request)
 if os.name == 'nt':
 	encoding = resp.headers['content-type'].split('charset=')[-1]
 
+logging.debug('Récupération du sid')
 sid = None
 for cookie in cookiejar:
 	if cookie.name[-3:] == "sid":
 		sid = cookie.value
 
 if sid == None:
-	raise ValueError('Impossible de se connecter')
+	logging.critical('Échec de la connection.')
+	sys.exit()
 
+logging.debug('Récupération du tid')
 d = PyQuery(url=config.rooturl+'/forum', opener=fa_opener)
 
 f = urlopener.open(config.rooturl+'/admin/index.forum')
 tid = urlparse(f.url).query
 
 if tid == '':
-	raise ValueError('Impossible de se récupérer le tid')
+	logging.critical('Impossible de se récupérer le tid.')
+	sys.exit()
 
 try:
 	for i in range(save.state,len(etapes)):
 		etapes[i]()
 		save.state += 1
 except:
+	logging.exception('Une erreur s\'est produite. Essayez de relancer le script. Pour plus d\'informations, consultez le fichier debug.log.')
+	
+	logging.info('Sauvegarde de la progression')
 	savefile = open("save.py", "w+")
 	savefile.write("# -*- coding: utf-8 -*-\n\n")
 	
@@ -376,13 +433,11 @@ except:
 	savefile.write("smileys = " + str(save.smileys) + "\n\n")
 	
 	savefile.close()
-	print "\n"
-	traceback.print_exc(file=sys.stdout)
 	
-	print "Une erreur s'est produite. Essayez de relancer le script."
 	raw_input("Appuyez sur Entrée pour quitter...")
 	sys.exit()
 
+logging.debug('Sauvegarde de la progression')
 savefile = open("save.py", "w+")
 savefile.write("# -*- coding: utf-8 -*-\n\n")
 
@@ -404,10 +459,10 @@ savefile.write("smileys = " + str(save.smileys) + "\n\n")
 
 savefile.close()
 
-print "Le téléchargement des données est terminé.\n"
+logging.info('Fin de la récupération')
 
 # Génération du fichier SQL
-print "Génération du fichier SQL..."
+logging.info('Génération du fichier SQL')
 sqlfile = codecs.open('phpbb.sql', 'w+', 'utf-8')
 
 for bbcode in phpbb.bbcodes:
@@ -424,9 +479,9 @@ sqlfile.write("INSERT INTO " + config.table_prefix + "user_group (group_id, user
 
 for user in save.users:
 	if user["name"] == config.admin_name:
-		password = hashlib.md5(config.admin_password).hexdigest()
+		password = md5(config.admin_password).hexdigest()
 	else:
-		password = hashlib.md5(''.join(random.choice(string.letters + string.digits) for i in xrange(8))).hexdigest()
+		password = md5(''.join(random.choice(letters + digits) for i in xrange(8))).hexdigest()
 	
 	data = [str(user["newid"]),							#user_id
 	"3" if user["name"] == config.admin_name else "0",	#user_type
@@ -581,7 +636,7 @@ for post in save.posts:
 	bbcode_uid = ''.join([random.choice('abcdefghijklmnopqrstuvwxyz0123456789') for i in xrange(8)])
 	bbcode_bitfield = phpbb.makebitfield(post["post"]).strip()
 	post["post"] = post["post"].replace(":<UID>]",":" + bbcode_uid + "]")
-	checksum = hashlib.md5(post["post"].encode("utf-8")).hexdigest()
+	checksum = md5(post["post"].encode("utf-8")).hexdigest()
 	
 	data = [str(post["id"]),						#post_id
 	str(post["topic"]),								#topic_id
@@ -602,5 +657,5 @@ sqlfile.write("\n")
 
 sqlfile.close()
 
-print "L'exportation a été effectuée avec succés. Vous pouvez à présent importer le fichier phpbb.sql dans votre base de donnée (après avoir installé phpbb3)."
+logging.info("L'exportation a été effectuée avec succés. Vous pouvez à présent importer le fichier phpbb.sql dans votre base de donnée (après avoir installé phpbb3).")
 raw_input("Appuyez sur Entrée pour quitter...")
