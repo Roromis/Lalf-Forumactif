@@ -131,9 +131,9 @@ def get_stats():
 		except:
 			continue
 	
-	logging.debug('Messages : %d' % save.nbposts)
-	logging.debug('Sujets : %d' % save.nbtopics)
-	logging.debug('Membres : %d' % save.nbusers)
+	logging.debug('Messages : %d', save.nbposts)
+	logging.debug('Sujets : %d', save.nbtopics)
+	logging.debug('Membres : %d', save.nbusers)
 
 def get_forums():
 	logging.info('Récupération des forums')
@@ -150,7 +150,7 @@ def get_forums():
 
 	for i in progress([i for i in d.find("select option") if i.get("value", "-1") != "-1"]):
 		id = i.get("value", "-1")
-		logging.debug('Récupération: forum %s' % id)
+		logging.debug('Récupération: forum %s', id)
 		title = re.search('(((\||\xa0)(\xa0\xa0\xa0))*)\|--([^<]+)', i.text).group(5)
 		level = len(re.findall('(\||\xa0)\xa0\xa0\xa0', i.text))
 		
@@ -181,7 +181,7 @@ def get_topics():
 	n = len(save.topics)
 
 	for forum in [i for i in save.forums if (i["type"] == "f" and i["parsed"] == False)]:
-		logging.debug('Récupération : sujets du forum %s' % i["id"])
+		logging.debug('Récupération : sujets du forum %d', forum["id"])
 		subtopics = []
 		d = PyQuery(url=config.rooturl + '/a-' + forum['type'] + str(forum['id']) + '/', opener=fa_opener)
 		result = re.search('function do_pagination_start\(\)[^\}]*start = \(start > \d+\) \? (\d+) : start;[^\}]*start = \(start - 1\) \* (\d+);[^\}]*\}', d.text())
@@ -201,7 +201,7 @@ def get_topics():
 				e = PyQuery(i)
 				
 				id = int(re.search("/t(\d+)-.*", e("a").attr("href")).group(1))
-				logging.debug('Récupération : sujet %d' % id)
+				logging.debug('Récupération : sujet %d', id)
 				if id not in [i["id"] for i in save.topics] and id not in [i["id"] for i in subtopics]:
 					f = e.parents().eq(-2)
 					locked = u"verrouillé" in f("td img").eq(0).attr("alt")
@@ -243,7 +243,7 @@ def get_users():
 		for i in d('tbody tr'):
 			e = PyQuery(i)
 			id = int(re.search("&u=(\d+)&", e("td a").eq(0).attr("href")).group(1))
-			logging.debug('Récupération : membre %d' % id)
+			logging.debug('Récupération : membre %d', id)
 			
 			date = e("td").eq(3).text().split(" ")
 			date = time.mktime(time.struct_time((int(date[2]),month[date[1]],int(date[0]),0,0,0,0,0,0)))
@@ -310,7 +310,7 @@ def get_posts():
 	n = len(save.posts)
 
 	for topic in [i for i in save.topics if i["parsed"] == False]:
-		logging.debug('Récupération : messages du topic %d' % topic["id"])
+		logging.debug('Récupération : messages du topic %d', topic["id"])
 		subposts = []
 		d = PyQuery(url=config.rooturl + '/t' + str(topic['id']) + '-a', opener=fa_opener)
 		result = re.search('function do_pagination_start\(\)[^\}]*start = \(start > \d+\) \? (\d+) : start;[^\}]*start = \(start - 1\) \* (\d+);[^\}]*\}', d.text())
@@ -330,7 +330,7 @@ def get_posts():
 				e = PyQuery(i)
 				
 				id = int(e("td span.name a").attr("name"))
-				logging.debug('Récupération : message %d (topic %d)' % (id, topic["id"]))
+				logging.debug('Récupération : message %d (topic %d)', id, topic["id"])
 				author = e("td span.name").text()
 				post = htmltobbcode.htmltobbcode(e("td div.postbody div").eq(0).html(), save.smileys)
 				result = e("table td span.postdetails").text().split(" ")
@@ -410,6 +410,9 @@ try:
 		etapes[i]()
 		save.state += 1
 except:
+	"""if sys.exc_info()[0] == HTMLParser.HTMLParseError:
+		logging.warning('Le message n°%d n\'a pas pu être parsé, il est certainement invalide. Éditez le en ouvrant la page %s/post?p=%d&mode=editpost' % ())"""
+	
 	logging.exception('Une erreur s\'est produite. Essayez de relancer le script. Pour plus d\'informations, consultez le fichier debug.log.')
 	
 	logging.info('Sauvegarde de la progression')
