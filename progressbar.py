@@ -402,7 +402,7 @@ class NoProgressBar():
     def start(self):
         return
     
-    def update(self):
+    def update(self, value):
         return
     
     def end(self):
