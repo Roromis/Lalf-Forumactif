@@ -399,11 +399,11 @@ class NoProgressBar():
     def __call__(self, iterable):
         return iterable
     
-    def start():
+    def start(self):
         return
     
-    def update():
+    def update(self):
         return
     
-    def end():
+    def end(self):
         return
