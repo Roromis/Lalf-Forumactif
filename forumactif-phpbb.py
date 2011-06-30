@@ -29,7 +29,7 @@ except:
 	raw_input("Appuyez sur Entrée pour quitter...")
 	sys.exit()
 
-logging.basicConfig(level=logging.DEBUG, filename='debug.log', filemode="w", format='%(asctime)s - %(levelname)-8s : %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
+logging.basicConfig(level=logging.DEBUG, filename='debug.log', format='%(asctime)s - %(levelname)-8s : %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
 
 console = logging.StreamHandler()
 
@@ -43,6 +43,8 @@ else:
 
 console.setFormatter(formatter)
 logging.getLogger('').addHandler(console)
+
+logging.info('Migration Forumactif -> PhpBB : Lalf 0.2.1')
 
 logging.debug('Importation des bibliothèques')
 import os, datetime, time, re, urllib2, string, random, codecs
@@ -179,10 +181,13 @@ def get_topics():
 	progress.start()
 
 	n = len(save.topics)
-
+	
+	ids = [i["id"] for i in save.topics]
+	
 	for forum in [i for i in save.forums if (i["type"] == "f" and i["parsed"] == False)]:
 		logging.debug('Récupération : sujets du forum %d', forum["id"])
 		subtopics = []
+		subids = []
 		d = PyQuery(url=config.rooturl + '/a-' + forum['type'] + str(forum['id']) + '/', opener=fa_opener)
 		result = re.search('function do_pagination_start\(\)[^\}]*start = \(start > \d+\) \? (\d+) : start;[^\}]*start = \(start - 1\) \* (\d+);[^\}]*\}', d.text())
 
@@ -201,16 +206,20 @@ def get_topics():
 				e = PyQuery(i)
 				
 				id = int(re.search("/t(\d+)-.*", e("a").attr("href")).group(1))
-				logging.debug('Récupération : sujet %d', id)
-				if id not in [i["id"] for i in save.topics] and id not in [i["id"] for i in subtopics]:
+				if id not in ids and id not in subids:
+					logging.debug('Récupération : sujet %d', id)
 					f = e.parents().eq(-2)
 					locked = u"verrouillé" in f("td img").eq(0).attr("alt")
 					views = int(f("td").eq(5).text())
 					subtopics.append({'id': id, 'type': e("strong").text(), 'parent': forum['newid'], 'title': e("a").text(), 'locked': locked, 'views': views, 'parsed': False})
+					subids.append(id)
 					
 					n += 1
 					progress.update(n)
+				else:
+					logging.warning('Le sujet %d a déjà été récupéré.', id)
 		save.topics.extend(subtopics)
+		ids.extend(subids)
 		[i for i in save.forums if i == forum][0]["parsed"] = True
 	progress.end()
 
@@ -309,9 +318,12 @@ def get_posts():
 
 	n = len(save.posts)
 
+	ids = [i["id"] for i in save.posts]
+	
 	for topic in [i for i in save.topics if i["parsed"] == False]:
 		logging.debug('Récupération : messages du topic %d', topic["id"])
 		subposts = []
+		subids = []
 		d = PyQuery(url=config.rooturl + '/t' + str(topic['id']) + '-a', opener=fa_opener)
 		result = re.search('function do_pagination_start\(\)[^\}]*start = \(start > \d+\) \? (\d+) : start;[^\}]*start = \(start - 1\) \* (\d+);[^\}]*\}', d.text())
 
@@ -330,27 +342,32 @@ def get_posts():
 				e = PyQuery(i)
 				
 				id = int(e("td span.name a").attr("name"))
-				logging.debug('Récupération : message %d (topic %d)', id, topic["id"])
-				author = e("td span.name").text()
-				post = htmltobbcode.htmltobbcode(e("td div.postbody div").eq(0).html(), save.smileys)
-				result = e("table td span.postdetails").text().split(" ")
-				if result[-3] == "Aujourd'hui":
-					title = " ".join(e("table td span.postdetails").text().split(" ")[1:-3])
-					date = e("table td span.postdetails").text().split(" ")[-3:]
-					timestamp = time.mktime(datetime.datetime.combine(datetime.date.today(), datetime.time(int(date[2].split(":")[0]),int(date[2].split(":")[1]))).timetuple())
-				elif result[-3] == "Hier":
-					title = " ".join(e("table td span.postdetails").text().split(" ")[1:-3])
-					date = e("table td span.postdetails").text().split(" ")[-3:]
-					timestamp = time.mktime(datetime.datetime.combine(datetime.date.today()-datetime.timedelta(1), datetime.time(int(date[2].split(":")[0]),int(date[2].split(":")[1]))).timetuple())
+				if id not in ids and id not in subids:
+					logging.debug('Récupération : message %d (topic %d)', id, topic["id"])
+					author = e("td span.name").text()
+					post = htmltobbcode.htmltobbcode(e("td div.postbody div").eq(0).html(), save.smileys)
+					result = e("table td span.postdetails").text().split(" ")
+					if result[-3] == "Aujourd'hui":
+						title = " ".join(e("table td span.postdetails").text().split(" ")[1:-3])
+						date = e("table td span.postdetails").text().split(" ")[-3:]
+						timestamp = time.mktime(datetime.datetime.combine(datetime.date.today(), datetime.time(int(date[2].split(":")[0]),int(date[2].split(":")[1]))).timetuple())
+					elif result[-3] == "Hier":
+						title = " ".join(e("table td span.postdetails").text().split(" ")[1:-3])
+						date = e("table td span.postdetails").text().split(" ")[-3:]
+						timestamp = time.mktime(datetime.datetime.combine(datetime.date.today()-datetime.timedelta(1), datetime.time(int(date[2].split(":")[0]),int(date[2].split(":")[1]))).timetuple())
+					else:
+						title = " ".join(e("table td span.postdetails").text().split(" ")[1:-6])
+						date = e("table td span.postdetails").text().split(" ")[-6:]
+						timestamp = time.mktime(datetime.datetime(int(date[3]),month[date[2]],int(date[1]),int(date[5].split(":")[0]),int(date[5].split(":")[1])).timetuple())
+					
+					subposts.append({'id': id, 'post': post, 'title': title, 'topic': topic["id"], 'timestamp': int(timestamp), 'author': author})
+					subids.append(id)
+					n += 1
+					progress.update(n)
 				else:
-					title = " ".join(e("table td span.postdetails").text().split(" ")[1:-6])
-					date = e("table td span.postdetails").text().split(" ")[-6:]
-					timestamp = time.mktime(datetime.datetime(int(date[3]),month[date[2]],int(date[1]),int(date[5].split(":")[0]),int(date[5].split(":")[1])).timetuple())
-				
-				subposts.append({'id': id, 'post': post, 'title': title, 'topic': topic["id"], 'timestamp': int(timestamp), 'author': author})
-				n += 1
-				progress.update(n)
+					logging.warning('Le message %d a déjà été récupéré.', id)
 		save.posts.extend(subposts)
+		ids.extend(subids)
 		[i for i in save.topics if i == topic][0]["parsed"] = True
 	
 	progress.end()
