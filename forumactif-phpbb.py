@@ -26,8 +26,7 @@ try:
 	import config
 except:
 	print 'Pas de configuration disponible.'
-	raw_input("Appuyez sur Entrée pour quitter...")
-	sys.exit()
+	sys.exit(1)
 
 logging.basicConfig(level=logging.DEBUG, filename='debug.log', format='%(asctime)s - %(levelname)-8s : %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
 
@@ -414,7 +413,7 @@ for cookie in cookiejar:
 
 if sid == None:
 	logging.critical('Échec de la connection.')
-	sys.exit()
+	sys.exit(1)
 
 logging.debug('Récupération du tid')
 d = PyQuery(url=config.rooturl+'/forum', opener=fa_opener)
@@ -424,7 +423,7 @@ tid = urlparse(f.url).query
 
 if tid == '':
 	logging.critical('Impossible de se récupérer le tid.')
-	sys.exit()
+	sys.exit(1)
 
 try:
 	for i in range(save.state,len(etapes)):
@@ -458,8 +457,7 @@ except:
 	
 	savefile.close()
 	
-	raw_input("Appuyez sur Entrée pour quitter...")
-	sys.exit()
+	sys.exit(1)
 
 logging.debug('Sauvegarde de la progression')
 savefile = open("save.py", "w+")
@@ -682,4 +680,3 @@ sqlfile.write("\n")
 sqlfile.close()
 
 logging.info("L'exportation a été effectuée avec succés. Vous pouvez à présent importer le fichier phpbb.sql dans votre base de donnée (après avoir installé phpbb3).")
-raw_input("Appuyez sur Entrée pour quitter...")
