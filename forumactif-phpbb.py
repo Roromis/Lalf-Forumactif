@@ -110,11 +110,15 @@ def topic_type(topic_type):
 if os.name == 'nt':
 	def fa_opener(url):
 		global urlopener, encoding
-		return unicode(urlopener.open(url).read(), encoding)
+		request = urllib2.Request(url)
+		request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux i686; rv:6.0.1) Gecko/20100101 Firefox/6.0.1')
+		return unicode(urlopener.open(request).read(), encoding)
 else:
 	def fa_opener(url):
 		global urlopener
-		return urlopener.open(url).read()
+		request = urllib2.Request(url)
+		request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux i686; rv:6.0.1) Gecko/20100101 Firefox/6.0.1')
+		return urlopener.open(request).read()
 
 def get_stats():
 	logging.info('Récupération des statistiques')
