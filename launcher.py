@@ -10,7 +10,7 @@ cout = 0
 while cont:
 	time.sleep(10)
 	
-	p = subprocess.Popen([sys.executable, './forumactif-phpbb.py'])
+	p = subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), 'forumactif-phpbb.py')])
 	p.wait()
 	cont = p.returncode
 	
