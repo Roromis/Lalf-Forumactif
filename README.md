@@ -91,7 +91,7 @@ Modifiez ensuite la configuration dans le fichier config.py.
  * Téléchargez le Support Toolkit (et éventuellement la traduction 
    française) sur http://www.phpbb.com/support/stk/ et extrayez le 
    dossier stk/stk à la racine de votre forum. Ouvrez ce dossier dans 
-   votre navigateur (http://<lien vers phpbb>/stk) et réanalysez les 
+   votre navigateur (http://lien vers phpbb/stk) et réanalysez les 
    BBCodes (onglet Outils pour les administrateurs, cochez "Réanalyser 
    tous les BBCodes" et cliquez sur Envoyer).
    
