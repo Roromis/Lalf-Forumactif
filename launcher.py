@@ -1,7 +1,7 @@
 #!/usr/bin/python2
 # -*- coding: utf-8 -*-
 
-import sys, subprocess, time
+import os, sys, subprocess, time
 
 cont = 1
 out = ""
