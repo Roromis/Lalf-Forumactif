@@ -194,7 +194,7 @@ def get_topics():
         logging.debug('Récupération : sujets du forum %d', forum["id"])
         subtopics = []
         subids = []
-        d = PyQuery(url=config.rooturl + '/a-' + forum['type'] + str(forum['id']) + '/', opener=fa_opener)
+        d = PyQuery(url=config.rooturl + '/' + forum['type'] + str(forum['id']) + '-a', opener=fa_opener)
         result = re.search('function do_pagination_start\(\)[^\}]*start = \(start > \d+\) \? (\d+) : start;[^\}]*start = \(start - 1\) \* (\d+);[^\}]*\}', d.text())
 
         try:
@@ -206,8 +206,8 @@ def get_topics():
             
         for page in range(0,pages):
             if page >= 1:
-                d = PyQuery(url=config.rooturl + '/a-' + forum['type'] + str(forum['id']) + '-' + str(page*topicsperpages) + '.htm', opener=fa_opener)
-            
+                d = PyQuery(url=config.rooturl + '/' + forum['type'] + str(forum['id']) + 'p' + str(page*topicsperpages) + '-a', opener=fa_opener)
+
             for i in d.find('div.topictitle'):
                 e = PyQuery(i)
                 
