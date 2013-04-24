@@ -6,8 +6,9 @@
 
 try:
     import webob
+    import restkit
 except ImportError:
-    from pyquery import PyQuery
+    from .pyquery import PyQuery
 else:
-    from ajax import PyQuery
+    from .ajax import PyQuery
 
