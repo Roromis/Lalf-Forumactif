@@ -109,18 +109,16 @@ def topic_type(topic_type):
     else:
         return "0"
 
-if os.name == 'nt':
-    def fa_opener(url):
-        global urlopener, encoding
-        request = urllib2.Request(url)
-        request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux i686; rv:6.0.1) Gecko/20100101 Firefox/6.0.1')
-        return unicode(urlopener.open(request).read(), encoding)
-else:
-    def fa_opener(url):
-        global urlopener
-        request = urllib2.Request(url)
-        request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux i686; rv:6.0.1) Gecko/20100101 Firefox/6.0.1')
-        return urlopener.open(request).read()
+def fa_opener(url):
+    global urlopener
+    request = urllib2.Request(url)
+    request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux i686; rv:6.0.1) Gecko/20100101 Firefox/6.0.1')
+    resp = urlopener.open(request)
+    if "charset" in resp.headers['content-type']:
+        encoding = resp.headers['content-type'].split('charset=')[-1]
+    else:
+        encoding = "latin1"
+    return unicode(resp.read(), encoding)
 
 def get_stats():
     logging.info('Récupération des statistiques')
@@ -404,9 +402,8 @@ etapes = [get_stats, get_forums, get_topics, get_users, get_smileys, get_posts]
 logging.info('Connection au forum')
 data = urlencode({'username': config.admin_name, 'password': config.admin_password, 'autologin': 1, 'redirect': '', 'login': 'Connexion'})
 request = urllib2.Request(config.rooturl + '/login.forum', data)
-resp = urlopener.open(request)
-if os.name == 'nt':
-    encoding = resp.headers['content-type'].split('charset=')[-1]
+request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux i686; rv:6.0.1) Gecko/20100101 Firefox/6.0.1')
+urlopener.open(request)
 
 logging.debug('Récupération du sid')
 sid = None
