@@ -56,6 +56,8 @@ try:
 except ImportError:
     import md5
 
+import chardet
+
 import progressbar, htmltobbcode, phpbb
 from pyquery import PyQuery
 
@@ -118,7 +120,11 @@ def fa_opener(url):
         encoding = resp.headers['content-type'].split('charset=')[-1]
     else:
         encoding = "latin1"
-    return unicode(resp.read(), encoding)
+    data = resp.read()
+    try:
+        return unicode(data, encoding)
+    except UnicodeDecodeError:
+        return unicode(data, chardet.detect(data)['encoding'])
 
 def get_stats():
     logging.info('Récupération des statistiques')

@@ -105,6 +105,8 @@ Programmé en python en utilisant:
 
  * [PyQuery](https://bitbucket.org/olauzanne/pyquery/)
  * [python-progressbar](http://code.google.com/p/python-progressbar/)
+ * [cssselect](http://pythonhosted.org/cssselect/)
+ * [chardet](https://github.com/erikrose/chardet)
 
 En s'inspirant des [Crawler Converters](http://www.phpbb.com/community/viewtopic.php?f=65&t=1761395)
 de nneonneo 
