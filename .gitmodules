@@ -1,6 +1,0 @@
-[submodule "pyquery"]
-	path = pyquery
-	url = git@github.com:gawel/pyquery.git
-[submodule "cssselect"]
-	path = cssselect
-	url = git@github.com:SimonSapin/cssselect.git
