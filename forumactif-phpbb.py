@@ -59,6 +59,10 @@ except ImportError:
 import chardet
 
 import progressbar, htmltobbcode, phpbb
+
+sys.path.append("./pyquery")
+sys.path.append("./cssselect")
+
 from pyquery import PyQuery
 
 
