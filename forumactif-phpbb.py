@@ -25,7 +25,7 @@ import sys, logging
 try:
     import config
 except:
-    print 'Pas de configuration disponible.'
+    print "Le fichier config.py n'existe pas, renommez le fichier config.example.py en config.py et modifiez le."
     sys.exit(1)
 
 logging.basicConfig(level=logging.DEBUG, filename='debug.log', format='%(asctime)s - %(levelname)-8s : %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
