@@ -1,19 +1,11 @@
 #!/usr/bin/env python
 
-verbose = True
-
 import logging
 logger = logging.getLogger("lalf")
 logger.setLevel(logging.DEBUG)
 
 # Log format
 #formatter = logging.Formatter('%(levelname)-8s : %(message)s')
-
-# File output
-filehandler = logging.FileHandler('debug.log')
-filehandler.setLevel(logging.DEBUG)
-#filehandler.setFormatter(formatter)
-logger.addHandler(filehandler)
 
 import config
 import sys
@@ -22,18 +14,15 @@ from bb import load as bbload
 import ui
 
 def main():
+    # File output
+    filehandler = logging.FileHandler('debug.log')
+    filehandler.setLevel(logging.DEBUG)
+    logger.addHandler(filehandler)
+    
     config.read("config.cfg")
+
     ui.init()
-    """# Console output
-    consolehandler = logging.StreamHandler()
-    if config.config['verbose']:
-        consolehandler.setLevel(logging.DEBUG)
-    else:
-        formatter = logging.Formatter('%(message)s')
-        consolehandler.setLevel(logging.INFO)
-        consolehandler.setFormatter(formatter)
-    logger.addHandler(consolehandler)
-"""
+
     bb = bbload()
 
     try:
