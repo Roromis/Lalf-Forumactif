@@ -22,67 +22,238 @@
 
 import re
 from binascii import crc32
+import codecs
+import hashlib
+import random
 
 def email_hash(email):
-	return str(crc32(email)&0xffffffff) + str(len(email))
+    return str(crc32(email)&0xffffffff) + str(len(email))
 
 def escape_var(i):
-	if isinstance(i,(str,unicode)):
-		return i.replace("\\","\\\\").replace("'","\\'")
-	return i
+    if isinstance(i,(str,unicode)):
+        return i.replace("\\","\\\\").replace("'","\\'")
+    return i
 
-def default_forum_acl(forumnumber):
-	ret=[]
-	for gid, perm in ((1, 17), # guests: readonly
-					  (2, 21), # registered: standard w/ polls
-					  (3, 21), # registered+COPPA: standard w/ polls
-					  (4, 14), # global mods: full access
-					  (4, 11), # global mods: standard moderation
-					  (5, 14), # admins: full access
-					  (5, 10), # admins: full moderation
-					  (6, 19), # bots: bot access
-					 ):
-		ret.append('(%i, %i, 0, %i, 0)'%(gid, forumnumber, perm))
-	return ret
+def default_forum_acl(forumid):
+    for gid, perm in ((1, 17), # guests: readonly
+                      (2, 21), # registered: standard w/ polls
+                      (3, 21), # registered+COPPA: standard w/ polls
+                      (4, 14), # global mods: full access
+                      (4, 11), # global mods: standard moderation
+                      (5, 14), # admins: full access
+                      (5, 10), # admins: full moderation
+                      (6, 19), # bots: bot access
+                     ):
+        yield {
+            "group_id" : gid,
+            "forum_id" : forumid,
+            "auth_option_id" : 0,
+            "auth_role_id" : perm,
+            "auth_setting" : 0
+        }
+        
+bbcodes = [
+    {"bbcode_id" : 13,
+     "bbcode_tag" : "strike",
+     "bbcode_helpline" : "Texte barré",
+     "display_on_posting" : "0",
+     "bbcode_match" : "[strike]{TEXT}[/strike]",
+     "bbcode_tpl" : "<span style=\"text-decoration: line-through;\">{TEXT}</span>",
+     "first_pass_match" : "!\\[strike\\](.*?)\\[/strike\\]!ies",
+     "first_pass_replace" : "'[strike:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/strike:$uid]'",
+     "second_pass_match" : "!\\[strike:$uid\\](.*?)\\[/strike:$uid\\]!s",
+     "second_pass_replace" : "<span style=\"text-decoration: line-through;\">${1}</span>"},
+     
+    {"bbcode_id" : 14,
+     "bbcode_tag" : "left",
+     "bbcode_helpline" : "Texte aligné à gauche",
+     "display_on_posting" : "0",
+     "bbcode_match" : "[left]{TEXT}[/left]",
+     "bbcode_tpl" : "<div style=\"text-align: left;\">{TEXT}</div>",
+     "first_pass_match" : "!\\[left\\](.*?)\\[/left\\]!ies",
+     "first_pass_replace" : "'[left:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/left:$uid]'",
+     "second_pass_match" : "!\\[left:$uid\\](.*?)\\[/left:$uid\\]!s",
+     "second_pass_replace" : "<div style=\"text-align: left;\">${1}</div>"},
+     
+    {"bbcode_id" : 15,
+     "bbcode_tag" : "center",
+     "bbcode_helpline" : "Texte aligné au centre",
+     "display_on_posting" : "0",
+     "bbcode_match" : "[center]{TEXT}[/center]",
+     "bbcode_tpl" : "<div style=\"text-align: center;\">{TEXT}</div>",
+     "first_pass_match" : "!\\[center\\](.*?)\\[/center\\]!ies",
+     "first_pass_replace" : "'[center:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/center:$uid]'",
+     "second_pass_match" : "!\\[center:$uid\\](.*?)\\[/center:$uid\\]!s",
+     "second_pass_replace" : "<div style=\"text-align: center;\">${1}</div>"},
+     
+    {"bbcode_id" : 16,
+     "bbcode_tag" : "right",
+     "bbcode_helpline" : "Texte aligné à droite",
+     "display_on_posting" : "0",
+     "bbcode_match" : "[right]{TEXT}[/right]",
+     "bbcode_tpl" : "<div style=\"text-align: right;\">{TEXT}</div>",
+     "first_pass_match" : "!\\[right\\](.*?)\\[/right\\]!ies",
+     "first_pass_replace" : "'[right:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/right:$uid]'",
+     "second_pass_match" : "!\\[right:$uid\\](.*?)\\[/right:$uid\\]!s",
+     "second_pass_replace" : "<div style=\"text-align: right;\">${1}</div>"},
+     
+    {"bbcode_id" : 17,
+     "bbcode_tag" : "justify",
+     "bbcode_helpline" : "Texte justifié",
+     "display_on_posting" : "0",
+     "bbcode_match" : "[justify]{TEXT}[/justify]",
+     "bbcode_tpl" : "<div style=\"text-align: justify;\">{TEXT}</div>",
+     "first_pass_match" : "!\\[justify\\](.*?)\\[/justify\\]!ies",
+     "first_pass_replace" : "'[justify:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/justify:$uid]'",
+     "second_pass_match" : "!\\[justify:$uid\\](.*?)\\[/justify:$uid\\]!s",
+     "second_pass_replace" : "<div style=\"text-align: justify;\">${1}</div>"},
+     
+    {"bbcode_id" : 18,
+     "bbcode_tag" : "font=",
+     "bbcode_helpline" : "Modifier la police",
+     "display_on_posting" : "0",
+     "bbcode_match" : "[font={SIMPLETEXT}]{TEXT}[/font]",
+     "bbcode_tpl" : "<span style=\"font-family: {SIMPLETEXT};\">{TEXT}</span>",
+     "first_pass_match" : "!\\[font\\=([a-zA-Z0-9-+.,_ ]+)\\](.*?)\\[/font\\]!ies",
+     "first_pass_replace" : "'[font=${1}:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${2}')).'[/font:$uid]'",
+     "second_pass_match" : "!\\[font\\=([a-zA-Z0-9-+.,_ ]+):$uid\\](.*?)\\[/font:$uid\\]!s",
+     "second_pass_replace" : "<span style=\"font-family: ${1};\">${2}</span>"},
+     
+    {"bbcode_id" : 19,
+     "bbcode_tag" : "td",
+     "bbcode_helpline" : "Cellule de tableau",
+     "display_on_posting" : "0",
+     "bbcode_match" : "[td]{TEXT}[/td]",
+     "bbcode_tpl" : "<td>{TEXT}</td>",
+     "first_pass_match" : "!\\[td\\](.*?)\\[/td\\]!ies",
+     "first_pass_replace" : "'[td:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/td:$uid]'",
+     "second_pass_match" : "!\\[td:$uid\\](.*?)\\[/td:$uid\\]!s",
+     "second_pass_replace" : "<td>${1}</td>"},
+
+    {"bbcode_id" : 20,
+     "bbcode_tag" : "tr",
+     "bbcode_helpline" : "Ligne de tableau",
+     "display_on_posting" : "0",
+     "bbcode_match" : "[tr]{TEXT}[/tr]",
+     "bbcode_tpl" : "<tr>{TEXT}</tr>",
+     "first_pass_match" : "!\\[tr\\](.*?)\\[/tr\\]!ies",
+     "first_pass_replace" : "'[tr:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/tr:$uid]'",
+     "second_pass_match" : "!\\[tr:$uid\\](.*?)\\[/tr:$uid\\]!s",
+     "second_pass_replace" : "<tr>${1}</tr>"},
+
+    {"bbcode_id" : 21,
+     "bbcode_tag" : "table",
+     "bbcode_helpline" : "Tableau",
+     "display_on_posting" : "0",
+     "bbcode_match" : "[table{SIMPLETEXT}]{TEXT}[/table]",
+     "bbcode_tpl" : "<table {SIMPLETEXT}>{TEXT}</table>",
+     "first_pass_match" : "!\\[table([a-zA-Z0-9-+.,_ ]+)\\](.*?)\\[/table\\]!ies",
+     "first_pass_replace" : "'[table${1}:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${2}')).'[/table:$uid]'",
+     "second_pass_match" : "!\\[table([a-zA-Z0-9-+.,_ ]+):$uid\\](.*?)\\[/table:$uid\\]!s",
+     "second_pass_replace" : "<table ${1}>${2}</table>"},
+     
+    {"bbcode_id" : 22,
+     "bbcode_tag" : "updown",
+     "bbcode_helpline" : "Texte défilant verticalement",
+     "display_on_posting" : "0",
+     "bbcode_match" : "[updown]{TEXT}[/updown]",
+     "bbcode_tpl" : "<marquee height=\"60\" scrollamount=\"1\" direction=\"up\" behavior=\"scroll\">{TEXT}</marquee>",
+     "first_pass_match" : "!\\[updown\\](.*?)\\[/updown\\]!ies",
+     "first_pass_replace" : "'[updown:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/updown:$uid]'",
+     "second_pass_match" : "!\\[updown:$uid\\](.*?)\\[/updown:$uid\\]!s",
+     "second_pass_replace" : "<marquee height=\"60\" scrollamount=\"1\" direction=\"up\" behavior=\"scroll\">${1}</marquee>"},
+     
+    {"bbcode_id" : 23,
+     "bbcode_tag" : "hr",
+     "bbcode_helpline" : "Ligne horizontale",
+     "display_on_posting" : "0",
+     "bbcode_match" : "[hr][/hr]",
+     "bbcode_tpl" : "<hr />",
+     "first_pass_match" : "!\\[hr\\]\\[/hr\\]!ies",
+     "first_pass_replace" : "'[hr:$uid][/hr:$uid]'",
+     "second_pass_match" : "!\\[hr:$uid\\]\\[/hr:$uid\\]!s",
+     "second_pass_replace" : "<hr />"},
+     
+    {"bbcode_id" : 24,
+     "bbcode_tag" : "scroll",
+     "bbcode_helpline" : "Texte défilant horizontalement",
+     "display_on_posting" : "0",
+     "bbcode_match" : "[scroll]{TEXT}[/scroll]",
+     "bbcode_tpl" : "<marquee>{TEXT}</marquee>",
+     "first_pass_match" : "!\\[scroll\\](.*?)\\[/scroll\\]!ies",
+     "first_pass_replace" : "'[scroll:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/scroll:$uid]'",
+     "second_pass_match" : "!\\[scroll:$uid\\](.*?)\\[/scroll:$uid\\]!s",
+     "second_pass_replace" : "<marquee>${1}</marquee>"},
+     
+    {"bbcode_id" : 25,
+     "bbcode_tag" : "sup",
+     "bbcode_helpline" : "Texte en exposant",
+     "display_on_posting" : "0",
+     "bbcode_match" : "[sup]{TEXT}[/sup]",
+     "bbcode_tpl" : "<sup>{TEXT}</sup>",
+     "first_pass_match" : "!\\[sup\\](.*?)\\[/sup\\]!ies",
+     "first_pass_replace" : "'[sup:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/sup:$uid]'",
+     "second_pass_match" : "!\\[sup:$uid\\](.*?)\\[/sup:$uid\\]!s",
+     "second_pass_replace" : "<sup>${1}</sup>"},
+     
+    {"bbcode_id" : 26,
+     "bbcode_tag" : "sub",
+     "bbcode_helpline" : "Texte en indice",
+     "display_on_posting" : "0",
+     "bbcode_match" : "[sub]{TEXT}[/sub]",
+     "bbcode_tpl" : "<sub>{TEXT}</sub>",
+     "first_pass_match" : "!\\[sub\\](.*?)\\[/sub\\]!ies",
+     "first_pass_replace" : "'[sub:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/sub:$uid]'",
+     "second_pass_match" : "!\\[sub:$uid\\](.*?)\\[/sub:$uid\\]!s",
+     "second_pass_replace" : "<sub>${1}</sub>"},
+     
+    {"bbcode_id" : 27,
+     "bbcode_tag" : "spoiler",
+     "bbcode_helpline" : "Spoiler",
+     "display_on_posting" : "0",
+     "bbcode_match" : "[spoiler]{TEXT}[/spoiler]",
+     "bbcode_tpl" : "<div style=\"padding: 3px; background-color: #FFFFFF; border: 1px solid #d8d8d8; font-size: 1em;\"><div style=\"text-transform: uppercase; border-bottom: 1px solid #CCCCCC; margin-bottom: 3px; font-size: 0.8em; font-weight: bold; display: block;\"><span onClick=\"if (this.parentNode.parentNode.getElementsByTagName('div')[1].getElementsByTagName('div')[0].style.display != '') {  this.parentNode.parentNode.getElementsByTagName('div')[1].getElementsByTagName('div')[0].style.display = ''; this.innerHTML = '<b>Spoiler: </b><a href=\\'#\\' onClick=\\'return false;\\'>Cacher</a>\\'; } else { this.parentNode.parentNode.getElementsByTagName('div')[1].getElementsByTagName('div')[0].style.display = 'none'; this.innerHTML = '<b>Spoiler: </b><a href=\\'#\\' onClick=\\'return false;\\'>Afficher</a>'; }\" /><b>Spoiler: </b><a href=\"#\" onClick=\"return false;\">Afficher</a></span></div><div class=\"quotecontent\"><div style=\"display: none;\">{TEXT}</div></div></div>",
+     "first_pass_match" : "!\\[spoiler\\](.*?)\\[/spoiler\\]!ies",
+     "first_pass_replace" : "'[spoiler:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/spoiler:$uid]'",
+     "second_pass_match" : "!\\[spoiler:$uid\\](.*?)\\[/spoiler:$uid\\]!s",
+     "second_pass_replace" : "<div style=\"padding: 3px; background-color: #FFFFFF; border: 1px solid #d8d8d8; font-size: 1em;\"><div style=\"text-transform: uppercase; border-bottom: 1px solid #CCCCCC; margin-bottom: 3px; font-size: 0.8em; font-weight: bold; display: block;\"><span onClick=\"if (this.parentNode.parentNode.getElementsByTagName('div')[1].getElementsByTagName('div')[0].style.display != '') {  this.parentNode.parentNode.getElementsByTagName('div')[1].getElementsByTagName('div')[0].style.display = ''; this.innerHTML = '<b>Spoiler: </b><a href=\\'#\\' onClick=\\'return false;\\'>Cacher</a>\\'; } else { this.parentNode.parentNode.getElementsByTagName('div')[1].getElementsByTagName('div')[0].style.display = 'none'; this.innerHTML = '<b>Spoiler: </b><a href=\\'#\\' onClick=\\'return false;\\'>Afficher</a>'; }\" /><b>Spoiler: </b><a href=\"#\" onClick=\"return false;\">Afficher</a></span></div><div class=\"quotecontent\"><div style=\"display: none;\">${1}</div></div></div>"}]
 
 def makebitfield(dat):
-	bbcodes={'code' : 8,
-			 'quote' : 0,
-			 'attachment' : 12,
-			 'b' : 1,
-			 'i' : 2,
-			 'url' : 3,
-			 'img' : 4,
-			 'size' : 5,
-			 'color' : 6,
-			 'u' : 7,
-			 'list' : 9,
-			 'email' : 10,
-			 'flash' : 11,
-			 'font' : 13, # custom BBCodes
-			 'align' : 14}
-	bf=[0]*10
-	for i in bbcodes:
-		if re.findall('\\[/'+i+':[^\\[\\]]*<UID>]', dat):
-			c,d=divmod(bbcodes[i],8)
-			bf[c]|=(1<<(7-d))
-	return ''.join([chr(c) for c in bf]).rstrip('\0').encode('base64')
+    tags = {'code' : 8,
+            'quote' : 0,
+            'attachment' : 12,
+            'b' : 1,
+            'i' : 2,
+            'url' : 3,
+            'img' : 4,
+            'size' : 5,
+            'color' : 6,
+            'u' : 7,
+            'list' : 9,
+            'email' : 10,
+            'flash' : 11}
+    for b in bbcodes:
+        tags[b["bbcode_tag"]] = b["bbcode_id"]
+    bf=[0]*10
+    for i in tags:
+        if re.findall('\\[/'+i+':[^\\[\\]]*<UID>]', dat):
+            c,d=divmod(tags[i],8)
+            bf[c]|=(1<<(7-d))
+    return codecs.encode(''.join([chr(c) for c in bf]).rstrip('\0').encode("utf8"), 'base64').strip()
 
-bbcodes = [	u'(13, \'strike\', \'Texte barr\xc3\xa9\', 0, \'[strike]{TEXT}[/strike]\', \'<span style="text-decoration:line-through;">{TEXT}</span>\', \'!\\\\[strike\\\\](.*?)\\\\[/strike\\\\]!ies\', \'\'\'[strike:$uid]\'\'.str_replace(array("\\\\r\\\\n", \'\'\\\\"\'\', \'\'\\\\\'\'\'\', \'\'(\'\', \'\')\'\'), array("\\\\n", \'\'"\'\', \'\'&#39;\'\', \'\'&#40;\'\', \'\'&#41;\'\'), trim(\'\'${1}\'\')).\'\'[/strike:$uid]\'\'\', \'!\\\\[strike:$uid\\\\](.*?)\\\\[/strike:$uid\\\\]!s\', \'<span style="text-decoration:line-through;">${1}</span>\');\n',
-			u'(14, \'left\', \'Texte align\xc3\xa9 \xc3\xa0 gauche\', 0, \'[left]{TEXT1}[/left]\', \'<div style="text-align: left;">{TEXT1}</div>\', \'!\\\\[left\\\\](.*?)\\\\[/left\\\\]!ies\', \'\'\'[left:$uid]\'\'.str_replace(array("\\\\r\\\\n", \'\'\\\\"\'\', \'\'\\\\\'\'\'\', \'\'(\'\', \'\')\'\'), array("\\\\n", \'\'"\'\', \'\'&#39;\'\', \'\'&#40;\'\', \'\'&#41;\'\'), trim(\'\'${1}\'\')).\'\'[/left:$uid]\'\'\', \'!\\\\[left:$uid\\\\](.*?)\\\\[/left:$uid\\\\]!s\', \'<div style="text-align: left;">${1}</div>\');\n',
-			u'(15, \'center\', \'Texte centr\xc3\xa9\', 0, \'[center]{TEXT1}[/center]\', \'<div style="text-align: center;">{TEXT1}</div>\', \'!\\\\[center\\\\](.*?)\\\\[/center\\\\]!ies\', \'\'\'[center:$uid]\'\'.str_replace(array("\\\\r\\\\n", \'\'\\\\"\'\', \'\'\\\\\'\'\'\', \'\'(\'\', \'\')\'\'), array("\\\\n", \'\'"\'\', \'\'&#39;\'\', \'\'&#40;\'\', \'\'&#41;\'\'), trim(\'\'${1}\'\')).\'\'[/center:$uid]\'\'\', \'!\\\\[center:$uid\\\\](.*?)\\\\[/center:$uid\\\\]!s\', \'<div style="text-align: center;">${1}</div>\');\n',
-			u'(16, \'right\', \'Texte align\xc3\xa9 \xc3\xa0 droite\', 0, \'[right]{TEXT1}[/right]\', \'<div style="text-align: right;">{TEXT1}</div>\', \'!\\\\[right\\\\](.*?)\\\\[/right\\\\]!ies\', \'\'\'[right:$uid]\'\'.str_replace(array("\\\\r\\\\n", \'\'\\\\"\'\', \'\'\\\\\'\'\'\', \'\'(\'\', \'\')\'\'), array("\\\\n", \'\'"\'\', \'\'&#39;\'\', \'\'&#40;\'\', \'\'&#41;\'\'), trim(\'\'${1}\'\')).\'\'[/right:$uid]\'\'\', \'!\\\\[right:$uid\\\\](.*?)\\\\[/right:$uid\\\\]!s\', \'<div style="text-align: right;">${1}</div>\');\n',
-			u'(17, \'justify\', \'Texte justifi\xc3\xa9\', 0, \'[justify]{TEXT1}[/justify]\', \'<div style="text-align: justify;">{TEXT1}</div>\', \'!\\\\[justify\\\\](.*?)\\\\[/justify\\\\]!ies\', \'\'\'[justify:$uid]\'\'.str_replace(array("\\\\r\\\\n", \'\'\\\\"\'\', \'\'\\\\\'\'\'\', \'\'(\'\', \'\')\'\'), array("\\\\n", \'\'"\'\', \'\'&#39;\'\', \'\'&#40;\'\', \'\'&#41;\'\'), trim(\'\'${1}\'\')).\'\'[/justify:$uid]\'\'\', \'!\\\\[justify:$uid\\\\](.*?)\\\\[/justify:$uid\\\\]!s\', \'<div style="text-align: justify;">${1}</div>\');\n',
-			u'(18, \'font=\', \'Modifier la police\', 0, \'[font={SIMPLETEXT1}]{SIMPLETEXT2}[/font]\', \'<span style="font-family: {SIMPLETEXT1};">{SIMPLETEXT2}</span>\', \'!\\\\[font\\\\=([a-zA-Z0-9-+.,_ ]+)\\\\]([a-zA-Z0-9-+.,_ ]+)\\\\[/font\\\\]!i\', \'[font=${1}:$uid]${2}[/font:$uid]\', \'!\\\\[font\\\\=([a-zA-Z0-9-+.,_ ]+):$uid\\\\]([a-zA-Z0-9-+.,_ ]+)\\\\[/font:$uid\\\\]!s\', \'<span style="font-family: ${1};">${2}</span>\');\n',
-			u'(19, \'td\', \'Cellule de tableau\', 0, \'[td]{TEXT1}[/td]\', \'<td>{TEXT1}</td>\', \'!\\\\[td\\\\](.*?)\\\\[/td\\\\]!ies\', \'\'\'[td:$uid]\'\'.str_replace(array("\\\\r\\\\n", \'\'\\\\"\'\', \'\'\\\\\'\'\'\', \'\'(\'\', \'\')\'\'), array("\\\\n", \'\'"\'\', \'\'&#39;\'\', \'\'&#40;\'\', \'\'&#41;\'\'), trim(\'\'${1}\'\')).\'\'[/td:$uid]\'\'\', \'!\\\\[td:$uid\\\\](.*?)\\\\[/td:$uid\\\\]!s\', \'<td>${1}</td>\');\n',
-			u'(20, \'tr\', \'Ligne de tableau\', 0, \'[tr]{TEXT1}[/tr]\', \'<tr>{TEXT1}</tr>\', \'!\\\\[tr\\\\](.*?)\\\\[/tr\\\\]!ies\', \'\'\'[tr:$uid]\'\'.str_replace(array("\\\\r\\\\n", \'\'\\\\"\'\', \'\'\\\\\'\'\'\', \'\'(\'\', \'\')\'\'), array("\\\\n", \'\'"\'\', \'\'&#39;\'\', \'\'&#40;\'\', \'\'&#41;\'\'), trim(\'\'${1}\'\')).\'\'[/tr:$uid]\'\'\', \'!\\\\[tr:$uid\\\\](.*?)\\\\[/tr:$uid\\\\]!s\', \'<tr>${1}</tr>\');\n',
-			u'(21, \'table\', \'Tableau\', 0, \'[table{TEXT1}]{TEXT2}[/table]\', \'<table {TEXT1}>{TEXT2}</table>\', \'!\\\\[table(.*?)\\\\](.*?)\\\\[/table\\\\]!ies\', \'\'\'[table\'\'.str_replace(array("\\\\r\\\\n", \'\'\\\\"\'\', \'\'\\\\\'\'\'\', \'\'(\'\', \'\')\'\'), array("\\\\n", \'\'"\'\', \'\'&#39;\'\', \'\'&#40;\'\', \'\'&#41;\'\'), trim(\'\'${1}\'\')).\'\':$uid]\'\'.str_replace(array("\\\\r\\\\n", \'\'\\\\"\'\', \'\'\\\\\'\'\'\', \'\'(\'\', \'\')\'\'), array("\\\\n", \'\'"\'\', \'\'&#39;\'\', \'\'&#40;\'\', \'\'&#41;\'\'), trim(\'\'${2}\'\')).\'\'[/table:$uid]\'\'\', \'!\\\\[table(.*?):$uid\\\\](.*?)\\\\[/table:$uid\\\\]!s\', \'<table ${1}>${2}</table>\');\n',
-			u'(22, \'updown\', \'Texte d\xc3\xa9filant verticalement\', 0, \'[updown]{TEXT}[/updown]\', \'<marquee height="60" scrollamount="1" direction="up" behavior="scroll">{TEXT}</marquee>\', \'!\\\\[updown\\\\](.*?)\\\\[/updown\\\\]!ies\', \'\'\'[updown:$uid]\'\'.str_replace(array("\\\\r\\\\n", \'\'\\\\"\'\', \'\'\\\\\'\'\'\', \'\'(\'\', \'\')\'\'), array("\\\\n", \'\'"\'\', \'\'&#39;\'\', \'\'&#40;\'\', \'\'&#41;\'\'), trim(\'\'${1}\'\')).\'\'[/updown:$uid]\'\'\', \'!\\\\[updown:$uid\\\\](.*?)\\\\[/updown:$uid\\\\]!s\', \'<marquee height="60" scrollamount="1" direction="up" behavior="scroll">${1}</marquee>\');\n',
-			u'(23, \'hr\', \'Ligne horizontale\', 0, \'[hr][/hr]\', \'<hr />\', \'!\\\\[hr\\\\]\\\\[/hr\\\\]!i\', \'[hr:$uid][/hr:$uid]\', \'[hr:$uid][/hr:$uid]\', \'\');\n',
-			u'(24, \'scroll\', \'Texte d\xc3\xa9filant horizontalement\', 0, \'[scroll]{TEXT}[/scroll]\', \'<marquee>{TEXT}</marquee>\', \'!\\\\[scroll\\\\](.*?)\\\\[/scroll\\\\]!ies\', \'\'\'[scroll:$uid]\'\'.str_replace(array("\\\\r\\\\n", \'\'\\\\"\'\', \'\'\\\\\'\'\'\', \'\'(\'\', \'\')\'\'), array("\\\\n", \'\'"\'\', \'\'&#39;\'\', \'\'&#40;\'\', \'\'&#41;\'\'), trim(\'\'${1}\'\')).\'\'[/scroll:$uid]\'\'\', \'!\\\\[scroll:$uid\\\\](.*?)\\\\[/scroll:$uid\\\\]!s\', \'<marquee>${1}</marquee>\');\n',
-			u'(25, \'sup\', \'Texte en exposant\', 0, \'[sup]{TEXT}[/sup]\', \'<sup>{TEXT}</sup>\', \'!\\\\[sup\\\\](.*?)\\\\[/sup\\\\]!ies\', \'\'\'[sup:$uid]\'\'.str_replace(array("\\\\r\\\\n", \'\'\\\\"\'\', \'\'\\\\\'\'\'\', \'\'(\'\', \'\')\'\'), array("\\\\n", \'\'"\'\', \'\'&#39;\'\', \'\'&#40;\'\', \'\'&#41;\'\'), trim(\'\'${1}\'\')).\'\'[/sup:$uid]\'\'\', \'!\\\\[sup:$uid\\\\](.*?)\\\\[/sup:$uid\\\\]!s\', \'<sup>${1}</sup>\');\n',
-			u'(26, \'sub\', \'Texte en indice\', 0, \'[sub]{TEXT}[/sub]\', \'<sub>{TEXT}</sub>\', \'!\\\\[sub\\\\](.*?)\\\\[/sub\\\\]!ies\', \'\'\'[sub:$uid]\'\'.str_replace(array("\\\\r\\\\n", \'\'\\\\"\'\', \'\'\\\\\'\'\'\', \'\'(\'\', \'\')\'\'), array("\\\\n", \'\'"\'\', \'\'&#39;\'\', \'\'&#40;\'\', \'\'&#41;\'\'), trim(\'\'${1}\'\')).\'\'[/sub:$uid]\'\'\', \'!\\\\[sub:$uid\\\\](.*?)\\\\[/sub:$uid\\\\]!s\', \'<sub>${1}</sub>\');\n',
-			u'(27, \'spoiler\', \'Spoiler\', 0, \'[spoiler]{TEXT}[/spoiler]\', \'<div style="padding: 3px; background-color: #FFFFFF; border: 1px solid #d8d8d8; font-size: 1em;"><div style="text-transform: uppercase; border-bottom: 1px solid #CCCCCC; margin-bottom: 3px; font-size: 0.8em; font-weight: bold; display: block;"><span onClick="if (this.parentNode.parentNode.getElementsByTagName(\'\'div\'\')[1].getElementsByTagName(\'\'div\'\')[0].style.display != \'\'\'\') {  this.parentNode.parentNode.getElementsByTagName(\'\'div\'\')[1].getElementsByTagName(\'\'div\'\')[0].style.display = \'\'\'\'; this.innerHTML = \'\'<b>Spoiler: </b><a href=\\\\\'\'#\\\\\'\' onClick=\\\\\'\'return false;\\\\\'\'>Cacher</a>\'\'; } else { this.parentNode.parentNode.getElementsByTagName(\'\'div\'\')[1].getElementsByTagName(\'\'div\'\')[0].style.display = \'\'none\'\'; this.innerHTML = \'\'<b>Spoiler: </b><a href=\\\\\'\'#\\\\\'\' onClick=\\\\\'\'return false;\\\\\'\'>Afficher</a>\'\'; }" /><b>Spoiler: </b><a href="#" onClick="return false;">Afficher</a></span></div><div class="quotecontent"><div style="display: none;">{TEXT}</div></div></div>\', \'!\\\\[spoiler\\\\](.*?)\\\\[/spoiler\\\\]!ies\', \'\'\'[spoiler:$uid]\'\'.str_replace(array("\\\\r\\\\n", \'\'\\\\"\'\', \'\'\\\\\'\'\'\', \'\'(\'\', \'\')\'\'), array("\\\\n", \'\'"\'\', \'\'&#39;\'\', \'\'&#40;\'\', \'\'&#41;\'\'), trim(\'\'${1}\'\')).\'\'[/spoiler:$uid]\'\'\', \'!\\\\[spoiler:$uid\\\\](.*?)\\\\[/spoiler:$uid\\\\]!s\', \'<div style="padding: 3px; background-color: #FFFFFF; border: 1px solid #d8d8d8; font-size: 1em;"><div style="text-transform: uppercase; border-bottom: 1px solid #CCCCCC; margin-bottom: 3px; font-size: 0.8em; font-weight: bold; display: block;"><span onClick="if (this.parentNode.parentNode.getElementsByTagName(\'\'div\'\')[1].getElementsByTagName(\'\'div\'\')[0].style.display != \'\'\'\') {  this.parentNode.parentNode.getElementsByTagName(\'\'div\'\')[1].getElementsByTagName(\'\'div\'\')[0].style.display = \'\'\'\'; this.innerHTML = \'\'<b>Spoiler: </b><a href=\\\\\'\'#\\\\\'\' onClick=\\\\\'\'return false;\\\\\'\'>Cacher</a>\'\'; } else { this.parentNode.parentNode.getElementsByTagName(\'\'div\'\')[1].getElementsByTagName(\'\'div\'\')[0].style.display = \'\'none\'\'; this.innerHTML = \'\'<b>Spoiler: </b><a href=\\\\\'\'#\\\\\'\' onClick=\\\\\'\'return false;\\\\\'\'>Afficher</a>\'\'; }" /><b>Spoiler: </b><a href="#" onClick="return false;">Afficher</a></span></div><div class="quotecontent"><div style="display: none;">${1}</div></div></div>\');\n']
+def format_post(post):
+    tags = ['code', 'quote', 'attachment', 'b', 'i', 'url', 'img', 'size', 'color', 'u', 'list', 'email', 'flash']
+    for n in bbcodes:
+        tags.append(n["bbcode_tag"])
+        
+    uid = ''.join([random.choice('abcdefghijklmnopqrstuvwxyz0123456789') for i in range(8)])
+    bitfield = makebitfield(post)
+    for t in tags:
+        post = post.replace("[{}]".format(t), "[{}:{}]".format(t, uid))
+        post = post.replace("[/{}]".format(t), "[/{}:{}]".format(t, uid))
+    checksum = hashlib.md5(post.encode("utf-8")).hexdigest()
+    return post,uid,bitfield,checksum
+    
 
 bots = [{'name': 'AdsBot [Google]'			, 'agent': 'AdsBot-Google'								, 'ip': ''},
 		{'name': 'Alexa [Bot]'				, 'agent': 'ia_archiver'								, 'ip': ''},

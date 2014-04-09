@@ -1,8 +1,8 @@
 ## Lalf
   
   Logiciel d'Aide à la Libération de Forumactif  
-  Copyright ©2011 Roromis  
-  http://www.le-lalf.fr.nf  
+  Copyright ©2014 Roromis  
+  https://github.com/Roromis/Lalf-Forumactif  
 
 ## Note importante
 
@@ -10,8 +10,6 @@ Ce programme est un logiciel libre ; vous pouvez le redistribuer et/ou
 le modifier au titre des clauses de la Licence Publique Générale GNU, 
 telle que publiée par la Free Software Foundation ; soit la version 3 
 de la Licence.
-
-## Disclaimer
 
 Ce programme est distribué dans l'espoir qu'il sera utile, mais SANS 
 AUCUNE GARANTIE ; sans même une garantie implicite de COMMERCIABILITE 
@@ -21,7 +19,13 @@ un exemplaire de la Licence Publique Générale GNU avec ce programme.
 Les auteurs déclinent toutes responsabilités quant à l'utilisation 
 qui pourrait en être faite.
 
-## Documentation
+## Dépendances
+
+ * Python 3
+ * [PyQuery](https://bitbucket.org/olauzanne/pyquery/)
+ * [Requests](http://docs.python-requests.org/en/latest/)
+
+## Utilisation
 
 ### Prérequis
 
@@ -34,51 +38,30 @@ qui pourrait en être faite.
    HH:MM" (par exemple: Lun 1 Jan 2009 - 00:01), vous devez modifier 
    cela dans le profil de l'administrateur.
 
-### Installation
+### Exportation
 
-Dans un premier temps, installez, si ce n'est pas déjà fait, Python 
-2.* (le script ne fonctionnera PAS avec Python 3).
+ * Créez le fichier de configuration config.cfg en vous inspirant du
+   fichier config.example.cfg.
 
- * Sous Linux, Python est certainement installé par défaut. Vérifiez 
-   que vous avez bien la version 2. Sinon, installez la avec votre 
-   gestionnaire de paquets ou compilez la.
-   
- * Sous Windows, téléchargez Python 2.* sur cette page: 
-   http://www.python.org/download/ 
-   
- * Sous Mac, Python devrait être installé par défaut.
+ * Lancez le script main.py.
+   Il est possible que vous ayez des erreurs de connection pendant
+   l'exécution du script, dans ce cas essayez de le relancez.
 
-Installez ensuite la bibliothèque lxml.
-
- * Sous Linux, installez le paquet correspondant.
- 
- * Sous Windows, téléchargez et installez la dernière version stable 
-   sur cette page: http://pypi.python.org/pypi/lxml/
-
-Modifiez ensuite la configuration dans le fichier config.py.
-
-### Utilisation
-
- * Lancez le script (en double cliquant sur launcher.py ou depuis un 
-   terminal).
-   Il est très probable que vous ayez des erreurs de connection 
-   pendant l'exécution du script (HTTP Error 502: Bad Gateway, 
-   SocketError...). Ces erreurs sont normales (à mon avis, elles 
-   viennent des serveurs de forumactif et non de mon script), essayez 
-   de relancez le script.
+### Importation
 
  * Installez un forum PhpBB3 en suivant la procédure habituelle.
- 
- * Importez ensuite le fichier phpbb.sql généré par le script dans 
-   votre base de donnée.
+
+ * Déconnectez vous.
+
+ * Importez le fichier phpbb.sql généré par le script dans votre base
+   de donnée.
 
 ### Resynchronisation
 
- * Connectez vous au panneau d'administration en utilisant les 
-   identifiants de l'administrateur de votre ancien forum (seul le mot 
-   de passe indiqué dans le fichier config.py est conservé, les autres 
-   sont générés aléatoirement) et resynchronisez les statistiques, 
-   les compteurs de messages et les sujets pointés (Onglet Général).
+ * Connectez vous au panneau d'administration en utilisant les
+   identifiants de l'administrateur de votre ancien forum et
+   resynchronisez les statistiques, les compteurs de messages et les
+   sujets pointés (Onglet Général).
    
  * Resynchronisez tous les forums/sous-forums (Onglet Forums, Bouton 
    orange "Resynchroniser" à droite de chaque forum).
@@ -101,12 +84,10 @@ Modifiez ensuite la configuration dans le fichier config.py.
 
 ## Crédits
 
-Programmé en python en utilisant:
+Programmé en python en utilisant :
 
  * [PyQuery](https://bitbucket.org/olauzanne/pyquery/)
- * [python-progressbar](http://code.google.com/p/python-progressbar/)
- * [cssselect](http://pythonhosted.org/cssselect/)
- * [chardet](https://github.com/erikrose/chardet)
+ * [Requests](http://docs.python-requests.org/en/latest/)
 
 En s'inspirant des [Crawler Converters](http://www.phpbb.com/community/viewtopic.php?f=65&t=1761395)
-de nneonneo 
+de nneonneo.
