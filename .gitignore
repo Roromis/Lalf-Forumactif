@@ -4,3 +4,5 @@ debug.log
 save.pickle
 phpbb.sql
 usermails
+MANIFEST
+dist/
