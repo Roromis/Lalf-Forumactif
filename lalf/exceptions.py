@@ -2,6 +2,9 @@
 Module containing the exceptions raised by the script
 """
 
+import logging
+logger = logging.getLogger("lalf")
+
 import os.path
 import traceback
 

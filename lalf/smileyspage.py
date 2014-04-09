@@ -3,9 +3,10 @@ logger = logging.getLogger("lalf")
 
 import re
 from pyquery import PyQuery
-import session
-from node import Node
-import topicpage
+
+from lalf.node import Node
+from lalf import topicpage
+from lalf import session
 
 class SmileysPage(Node):
     STATE_KEEP = ["smileys", "page"]

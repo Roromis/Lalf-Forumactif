@@ -2,15 +2,16 @@ import logging
 logger = logging.getLogger("lalf")
 
 import os
-import session
 import unicodedata
 import re
-from node import Node
-from forumpage import ForumPage
-from pyquery import PyQuery
-import phpbb
-import sql
 import imghdr
+from pyquery import PyQuery
+
+from lalf.node import Node
+from lalf.forumpage import ForumPage
+from lalf import phpbb
+from lalf import sql
+from lalf import session
 
 def clean(s):
     """Removes all accents from the string"""

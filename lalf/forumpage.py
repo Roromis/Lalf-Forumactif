@@ -1,11 +1,12 @@
 import logging
 logger = logging.getLogger("lalf")
 
-import session
 import re
-from node import Node
 from pyquery import PyQuery
-from topic import Topic
+
+from lalf.node import Node
+from lalf.topic import Topic
+from lalf import session
 
 topicids = []
 

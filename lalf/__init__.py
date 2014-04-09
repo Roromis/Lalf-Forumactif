@@ -7,11 +7,12 @@ logger.setLevel(logging.DEBUG)
 # Log format
 #formatter = logging.Formatter('%(levelname)-8s : %(message)s')
 
-import config
 import sys
-import session
-from bb import load as bbload
-import ui
+
+from lalf.bb import load
+from lalf import config
+from lalf import ui
+from lalf import session
 
 def main():
     # File output
@@ -23,7 +24,7 @@ def main():
 
     ui.init()
 
-    bb = bbload()
+    bb = load()
 
     try:
         bb.export()

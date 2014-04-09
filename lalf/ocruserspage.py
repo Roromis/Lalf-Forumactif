@@ -5,37 +5,13 @@ import re
 import time
 from pyquery import PyQuery
 import urllib.parse
-import session
-from userspage import UsersPage
-from ocruser import OcrUser
-from exceptions import *
-import phpbb
 
-def month(s):
-    if s.startswith("Ja"):
-        return 1 
-    elif s.startswith("F"):
-        return 2
-    elif s.startswith("Mar"):
-        return 3
-    elif s.startswith("Av"):
-        return 4
-    elif s.startswith("Mai"):
-        return 5
-    elif s.startswith("Juin"):
-        return 6
-    elif s.startswith("Juil"):
-        return 7
-    elif s.startswith("Ao"):
-        return 8
-    elif s.startswith("S"):
-        return 9
-    elif s.startswith("O"):
-        return 10
-    elif s.startswith("N"):
-        return 11
-    elif s.startswith("D"):
-        return 12
+from lalf.userspage import UsersPage
+from lalf.ocruser import OcrUser
+from lalf.exceptions import *
+from lalf.util import month
+from lalf import phpbb
+from lalf import session
     
 class OcrUsersPage(UsersPage):
     def _export_(self):

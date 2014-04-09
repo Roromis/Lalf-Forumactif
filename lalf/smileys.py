@@ -3,9 +3,10 @@ logger = logging.getLogger("lalf")
 
 import re
 from pyquery import PyQuery
-import session
-from node import Node
-from smileyspage import SmileysPage
+
+from lalf.node import Node
+from lalf.smileyspage import SmileysPage
+from lalf import session
 
 class Smileys(Node):
     def _export_(self):

@@ -3,9 +3,9 @@ logger = logging.getLogger("lalf")
 
 import re
 from pyquery import PyQuery
-import session
-from users import Users
-from ocruserspage import OcrUsersPage
+from lalf.users import Users
+from lalf.ocruserspage import OcrUsersPage
+from lalf import session
 
 class OcrUsers(Users):
     def _export_(self):

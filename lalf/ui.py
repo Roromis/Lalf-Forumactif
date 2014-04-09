@@ -1,17 +1,15 @@
+import logging
+logger = logging.getLogger("lalf")
+
 import os
 import time
 import shlex
 import struct
 import platform
 import subprocess
-import logging
-logger = logging.getLogger("lalf")
 
-from config import config
-import user
-import topic
-import post
-import bb
+from lalf.config import config
+from lalf import counters
 
 uihandler = None
 exporting = True
@@ -146,9 +144,9 @@ def disp(l):
 def update():
     clearscreen()
     disp([
-        ("Membres", user.number, bb.nbusers),
-        ("Sujets", topic.number, bb.nbtopics),
-        ("Messages", post.number, bb.nbposts)
+        ("Membres", counters.usernumber, counters.usertotal),
+        ("Sujets", counters.postnumber, counters.posttotal),
+        ("Messages", counters.postnumber, counters.posttotal)
     ])
 
 class UiLoggingHandler(logging.Handler):

@@ -1,23 +1,19 @@
 import logging
 logger = logging.getLogger("lalf")
 
-from config import config
 import requests
 import urllib
 import urllib.parse
 import sys
 import time
 from pyquery import PyQuery
-from exceptions import *
+
+from lalf.config import config
+from lalf.exceptions import *
 
 session = requests.Session()
 sid = None
 tid = None
-
-def change_process():
-    return
-    if os.fork() == 0:
-        sys.exit()
 
 def url(path):
     """
@@ -46,11 +42,8 @@ def connect():
     global tid
     
     logger.info('Connection au forum')
-    
-    #time.sleep(1)
+        
     session.close()
-    change_process()
-
     sid = None
     tid = None
 
@@ -106,12 +99,12 @@ def get(path, **kwargs):
 
     n = 1
     while r.status_code == 503 or not connected(r.text):
-        if n > 3:
+        if n > 4:
             raise UnableToConnect()
         n+=1
 
         # If the connection failed two times : wait
-        if n >= 2:
+        if n > 2:
             time.sleep(30)
         
         try:
@@ -132,13 +125,4 @@ def get_admin(path, **kwargs):
     kwargs["params"]["extended_admin"] = 1
     kwargs["params"]["tid"] = tid
         
-    r = _get(path, **kwargs)
-
-    if r.status_code == 503:
-        connect()
-        r = _get(path, **kwargs)
-        
-    if not connected(r.text):
-        raise UnableToConnect()
-
-    return r
+    return get(path, **kwargs)

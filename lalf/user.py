@@ -8,15 +8,14 @@ import random
 import string
 import time
 
-import session
-from node import Node
-import ui
-import sql
-import phpbb
-from config import config
-import about
-
-number = 0
+from lalf.node import Node
+from lalf import ui
+from lalf import sql
+from lalf import phpbb
+from lalf.config import config
+from lalf import about
+from lalf import session
+from lalf import counters
 
 def random_password(length=8):
     return ''.join([random.choice(string.ascii_letters + string.digits) for n in range(8)])
@@ -43,14 +42,12 @@ class User(Node):
             self.inc()
 
     def inc(self):
-        global number
-        number += 1
+        counters.usernumber += 1
         ui.update()
             
     def __setstate__(self, dict):
-        global number
         Node.__setstate__(self, dict)
-        number += 1
+        counters.usernumber += 1
         
     def _export_(self):
         return

@@ -1,15 +1,15 @@
 import logging
 logger = logging.getLogger("lalf")
+
 from pyquery import PyQuery
 import re
 
-import session
-from node import Node
-from topicpage import TopicPage
-import ui
-import sql
-
-number = 0
+from lalf.node import Node
+from lalf.topicpage import TopicPage
+from lalf import ui
+from lalf import sql
+from lalf import session
+from lalf import counters
 
 class Topic(Node):
 
@@ -30,8 +30,7 @@ class Topic(Node):
 
     def _export_(self):
         # Incrémente le nombre de sujets
-        global number
-        number += 1
+        counters.topicnumber += 1
         ui.update()
         
         logger.debug('Récupération : messages du topic %d', self.id)
@@ -50,9 +49,8 @@ class Topic(Node):
             self.children.append(TopicPage(self, self.id, page*topicsperpage))
 
     def __setstate__(self, dict):
-        global number
         Node.__setstate__(self, dict)
-        number += 1
+        counters.topicnumber += 1
 
     def get_posts(self):
         for p in self.children:

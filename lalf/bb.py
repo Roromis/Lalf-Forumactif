@@ -1,25 +1,30 @@
+"""
+Module containing the BB class (the root of the forum)
+"""
+
 import logging
 logger = logging.getLogger("lalf")
 
 import re
-from pyquery import PyQuery
-import session
 import pickle
-from node import Node
-from forums import Forums
-from users import Users
-from ocrusers import OcrUsers
-from smileys import Smileys
-from config import config
-import phpbb
-import sql
+from pyquery import PyQuery
 
-nbusers = 0
-nbtopics = 0
-nbposts = 0
+from lalf.node import Node
+from lalf.forums import Forums
+from lalf.users import Users
+from lalf.ocrusers import OcrUsers
+from lalf.smileys import Smileys
+from lalf.config import config
+from lalf import phpbb
+from lalf import sql
+from lalf import session
+from lalf import counters
 
 class BB(Node):
-
+    """
+    The BB node is the root of the tree representing the forum.
+    """
+    
     """
     Attributes to save
     """
@@ -27,16 +32,9 @@ class BB(Node):
     
     def __init__(self):
         Node.__init__(self, None)
-        self.nbposts = 0
-        self.nbtopics = 0
-        self.nbusers = 0
 
     def _export_(self):
-        global nbusers
-        global nbtopics
-        global nbposts
-        
-        # Récupère les statistiques
+        # Get stats
         logger.info('Récupération des statistiques')
         r = session.get("/statistics")
         d = PyQuery(r.text)
@@ -54,17 +52,19 @@ class BB(Node):
             except:
                 continue
         
-        nbusers = self.nbusers
-        nbtopics = self.nbtopics
-        nbposts = self.nbposts
-        
         logger.debug('Messages : %d', self.nbposts)
         logger.debug('Sujets : %d', self.nbtopics)
         logger.debug('Membres : %d', self.nbusers)
+        
+        counters.postnumber = self.nbusers
+        counters.topicnumber = self.nbtopics
+        counters.usernumber = self.nbposts
 
-        # Ajoute les noeuds fils, qui gère respectivement
-        # l'exportation des utilisateurs, des smileys et des messages
+        # Add the children nodes, which respectively handle the
+        # exportation of the users, the smileys and the message
         if config["use_ocr"]:
+            # Use Optical Character Recognition to get the users'
+            # emails
             self.children.append(OcrUsers(self))
         else:
             self.children.append(Users(self))
@@ -72,13 +72,10 @@ class BB(Node):
         self.children.append(Forums(self))
 
     def __setstate__(self, dict):
-        global nbusers
-        global nbtopics
-        global nbposts
         Node.__setstate__(self, dict)
-        nbusers = self.nbusers
-        nbtopics = self.nbtopics
-        nbposts = self.nbposts
+        counters.postnumber = self.nbusers
+        counters.topicnumber = self.nbtopics
+        counters.usernumber = self.nbposts
 
     def save(self):
         logger.info("Sauvegarde de l'état courant.")
@@ -98,11 +95,14 @@ class BB(Node):
                 yield p
 
     def _dump_(self, file):
-        # Add bbcodes
+        # Add bbcodes tags
         for bbcode in phpbb.bbcodes:
             sql.insert(file, "bbcodes", bbcode)
 
 def load():
+    """
+    Returns the BB node contained in the file save.pickle.
+    """
     try:
         with open("save.pickle", "rb") as f:
             bb = pickle.load(f)

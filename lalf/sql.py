@@ -1,5 +1,6 @@
-from config import config
 from binascii import crc32
+
+from lalf.config import config
 
 def escape(str):
     return str.replace("\\", "\\\\").replace("'", "''")

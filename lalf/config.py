@@ -1,6 +1,10 @@
+import logging
+logger = logging.getLogger("lalf")
+
 import os.path
 import configparser
-from exceptions import *
+
+from lalf.exceptions import *
 
 """
 Dictionnary containing the configuration

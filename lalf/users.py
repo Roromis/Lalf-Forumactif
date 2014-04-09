@@ -3,12 +3,13 @@ logger = logging.getLogger("lalf")
 
 import re
 from pyquery import PyQuery
-import session
-from node import Node
-from userspage import UsersPage
-import sql
-import phpbb
-from exceptions import *
+
+from lalf.node import Node
+from lalf.userspage import UsersPage
+from lalf.exceptions import *
+from lalf import sql
+from lalf import phpbb
+from lalf import session
 
 class Users(Node):
     def _export_(self):

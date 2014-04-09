@@ -3,10 +3,11 @@ logger = logging.getLogger("lalf")
 
 import re
 from pyquery import PyQuery
-import session
-from node import Node
-from forum import Forum
-import sql
+
+from lalf.node import Node
+from lalf.forum import Forum
+from lalf import sql
+from lalf import session
 
 class Forums(Node):
     def _export_(self):
