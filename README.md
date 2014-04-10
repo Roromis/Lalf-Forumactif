@@ -44,9 +44,9 @@ qui pourrait en être faite.
  * Créez le fichier de configuration config.cfg en vous inspirant du
    fichier config.example.cfg.
 
- * Lancez le script main.py.
+ * Lancez le script export.py.
    Il est possible que vous ayez des erreurs de connection pendant
-   l'exécution du script, dans ce cas essayez de le relancez.
+   l'exécution du script, dans ce cas essayez de le relancer.
 
 ### Importation
 
