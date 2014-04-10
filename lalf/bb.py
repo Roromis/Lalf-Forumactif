@@ -68,8 +68,8 @@ class BB(Node):
             self.children.append(OcrUsers(self))
         else:
             self.children.append(Users(self))
-        #self.children.append(Smileys(self))
-        #self.children.append(Forums(self))
+        self.children.append(Smileys(self))
+        self.children.append(Forums(self))
 
     def __setstate__(self, dict):
         Node.__setstate__(self, dict)

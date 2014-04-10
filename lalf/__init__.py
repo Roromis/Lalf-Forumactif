@@ -24,10 +24,6 @@ def main():
 
     ui.init()
 
-    while True:
-        bb = BB()
-        bb.export()
-    
     bb = load()
 
     try:
