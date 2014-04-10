@@ -7,18 +7,12 @@ import re
 import imghdr
 from pyquery import PyQuery
 
+from lalf.util import clean
 from lalf.node import Node
 from lalf.forumpage import ForumPage
 from lalf import phpbb
 from lalf import sql
 from lalf import session
-
-def clean(s):
-    """Removes all accents from the string"""
-    if isinstance(s,str):
-        s = unicode(s,"utf8","replace")
-        s = unicodedata.normalize('NFD',s)
-        return s.encode('ascii','ignore')
 
 class Forum(Node):
 
@@ -49,7 +43,8 @@ class Forum(Node):
         self.icon = ""
 
     def _export_(self):
-        # Télécharge la page de configuration du forum
+        logger.debug('Récupération du forum %s%s', self.type, self.id)
+        
         params = {
             "part" : "general",
             "sub" : "general",
@@ -65,22 +60,27 @@ class Forum(Node):
         except:
             pass
 
-        # Icone
+        if self.description == None:
+            self.description = ""
+
+        # Icon
         for i in d("input"):
             if i.get("name", "") == "image":
                 self.icon = i.text
 
         if self.icon:
-            logger.debug("Téléchargement de l'icône du forum {}".format(self.newid))
+            logger.debug("Téléchargement de l'icône du forum %s%s", self.type, self.id)
             r = session.session.get(self.icon)
+
+            # Try to recognize the file format
             ext = imghdr.what(r.content)
-            
             if ext is None:
-                logger.warning("Le format de l'icône du forum {}, utilisation de l'extension par défaut".format(self.newid))
+                logger.warning("Le format de l'icône du forum %s%s est inconnu, utilisation de l'extension par défaut", self.type, self.id)
                 ext = os.path.splitext(self.icon)[1]
             else:
                 ext = "."+ext
 
+            # Write the image file
             if not os.path.isdir("images/forums"):
                 os.makedirs("images/forums")
             self.icon = "images/forums/{id}{ext}".format(id=self.newid, ext=ext)
@@ -89,7 +89,7 @@ class Forum(Node):
         else:
             self.icon = ""
         
-        # Contenu
+        # Pages
         r = session.get("/{type}{id}-a".format(type=self.type, id=self.id))
         result = re.search('function do_pagination_start\(\)[^\}]*start = \(start > \d+\) \? (\d+) : start;[^\}]*start = \(start - 1\) \* (\d+);[^\}]*\}', r.text)
 

@@ -23,7 +23,6 @@ class Forums(Node):
         for i in d.find("select option"):
             id = i.get("value", "-1")
             if id != "-1":
-                logger.debug('Récupération: forum %s', id)
                 title = re.search('(((\||\xa0)(\xa0\xa0\xa0))*)\|--([^<]+)', i.text).group(5)
                 level = len(re.findall('(\||\xa0)\xa0\xa0\xa0', i.text))
 

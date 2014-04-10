@@ -30,8 +30,6 @@ class OcrUser(User):
         """
         User.__init__(self, parent, id, newid, name, None, posts, date, 0, incuser=False)
         self.trust = 0
-        self.exported = False
-        self.children_exported = True
         self.img = "usermails/{username}.png".format(username=clean_filename(self.name))
 
     def validate_email(self):
@@ -61,6 +59,8 @@ class OcrUser(User):
         return False
         
     def _export_(self, inc=True):
+        logger.debug('Récupération du membre %d', self.id)
+        
         if inc:
             self.inc()
         
@@ -112,7 +112,7 @@ class OcrUser(User):
                     # yet, the email is available
                     self.mail 
                     self.trust = 3
-                
+
                 lastvisit = e("td").eq(4).text()
             
                 if lastvisit != "":

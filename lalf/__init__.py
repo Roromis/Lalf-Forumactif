@@ -9,7 +9,7 @@ logger.setLevel(logging.DEBUG)
 
 import sys
 
-from lalf.bb import load
+from lalf.bb import load, BB
 from lalf import config
 from lalf import ui
 from lalf import session
@@ -24,6 +24,10 @@ def main():
 
     ui.init()
 
+    while True:
+        bb = BB()
+        bb.export()
+    
     bb = load()
 
     try:
@@ -40,8 +44,6 @@ https://github.com/Roromis/Lalf-Forumactif/issues""".format(exception=repr(e)))
         user.confirm_email()
 
     bb.save()
-
-    logging.info("Exportation terminée")
 
     logging.info("Génération du fichier SQL")
     with open("phpbb.sql", "w") as f:

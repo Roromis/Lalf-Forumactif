@@ -14,7 +14,8 @@ from lalf import session
 class Users(Node):
     def _export_(self):
         logger.info('Récupération des membres')
-    
+
+        # Get the list of members from the admin panel
         params = {
             "part" : "users_groups",
             "sub" : "users"
@@ -34,11 +35,17 @@ class Users(Node):
             self.children.append(UsersPage(self.parent, page*usersperpage))
         
     def get_users(self):
+        """
+        Returns the list of users
+        """
         for p in self.children:
             for c in p.children:
                 yield c
 
     def get_newid(self, name):
+        """
+        Return the new id of the user name
+        """
         for u in self.get_users():
             if u.name == name:
                 # The user exists
@@ -47,6 +54,9 @@ class Users(Node):
         return 1
     
     def add_bot(self, file, bot, id):
+        """
+        Add a bot in the sql dump
+        """
         sql.insert(file, "users", {
             "user_id" : id,
             "user_type" : "2",

@@ -56,10 +56,10 @@ class BB(Node):
         logger.debug('Sujets : %d', self.nbtopics)
         logger.debug('Membres : %d', self.nbusers)
         
-        counters.postnumber = self.nbusers
-        counters.topicnumber = self.nbtopics
-        counters.usernumber = self.nbposts
-
+        counters.topictotal = self.nbtopics
+        counters.usertotal = self.nbusers
+        counters.posttotal = self.nbposts
+        
         # Add the children nodes, which respectively handle the
         # exportation of the users, the smileys and the message
         if config["use_ocr"]:
@@ -68,14 +68,14 @@ class BB(Node):
             self.children.append(OcrUsers(self))
         else:
             self.children.append(Users(self))
-        self.children.append(Smileys(self))
-        self.children.append(Forums(self))
+        #self.children.append(Smileys(self))
+        #self.children.append(Forums(self))
 
     def __setstate__(self, dict):
         Node.__setstate__(self, dict)
-        counters.postnumber = self.nbusers
-        counters.topicnumber = self.nbtopics
-        counters.usernumber = self.nbposts
+        counters.topictotal = self.nbtopics
+        counters.usertotal = self.nbusers
+        counters.posttotal = self.nbposts
 
     def save(self):
         logger.info("Sauvegarde de l'état courant.")
@@ -96,6 +96,7 @@ class BB(Node):
 
     def _dump_(self, file):
         # Add bbcodes tags
+        sql.truncate(file, "bbcodes")
         for bbcode in phpbb.bbcodes:
             sql.insert(file, "bbcodes", bbcode)
 

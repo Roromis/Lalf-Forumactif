@@ -29,12 +29,12 @@ class Topic(Node):
         self.posted = {}
 
     def _export_(self):
+        logger.debug('Récupération du sujet %d', self.id)
+
         # Incrémente le nombre de sujets
         counters.topicnumber += 1
         ui.update()
         
-        logger.debug('Récupération : messages du topic %d', self.id)
-
         r = session.get("/t{id}-a".format(id=self.id))
         result = re.search('function do_pagination_start\(\)[^\}]*start = \(start > \d+\) \? (\d+) : start;[^\}]*start = \(start - 1\) \* (\d+);[^\}]*\}', r.text)
 

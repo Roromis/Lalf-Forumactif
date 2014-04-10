@@ -21,6 +21,8 @@ class UsersPage(Node):
         self.page = page
 
     def _export_(self):
+        logger.debug('Récupération des membres (page %d)', self.page)
+
         params = {
             "part" : "users_groups",
             "sub" : "users",
@@ -40,8 +42,8 @@ class UsersPage(Node):
         for i in d('tbody tr'):
             e = PyQuery(i)
             id = int(re.search("&u=(\d+)&", e("td a").eq(0).attr("href")).group(1))
-            logger.debug('Récupération : membre %d', id)
-
+    
+            logger.debug('Récupération du membre %d', id)
             name = e("td a").eq(0).text()
             mail = e("td a").eq(1).text()
             posts = int(e("td").eq(2).text())

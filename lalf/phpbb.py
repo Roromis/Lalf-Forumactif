@@ -251,7 +251,7 @@ def format_post(post):
     for t in tags:
         post = post.replace("[{}]".format(t), "[{}:{}]".format(t, uid))
         post = post.replace("[/{}]".format(t), "[/{}:{}]".format(t, uid))
-    checksum = hashlib.md5(post.encode("utf-8")).hexdigest()
+    checksum = hashlib.md5(post.encode("utf8")).hexdigest()
     return post,uid,bitfield,checksum
     
 

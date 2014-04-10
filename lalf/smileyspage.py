@@ -16,6 +16,8 @@ class SmileysPage(Node):
         self.page = page
 
     def _export_(self):
+        logger.info('Récupération des émoticones (page %d)', self.page)
+
         params = {
             "part" : "themes",
             "sub" : "avatars",

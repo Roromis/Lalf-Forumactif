@@ -1,4 +1,7 @@
 def month(s):
+    """
+    Converts an abbreviated french month name to an int
+    """
     if s.startswith("Ja"):
         return 1 
     elif s.startswith("F"):
@@ -25,6 +28,9 @@ def month(s):
         return 12
 
 def clean_filename(filename):
+    """
+    Returns filename, with the illegal characers (?<>|*/":;) removed
+    """
     chars = [
         (['?', '<', '>', '|', '*', '/', '"'], ''),
         ([':', ';'], ',')
@@ -34,3 +40,9 @@ def clean_filename(filename):
             filename = filename.replace(c1, c2)
     return filename
 
+def clean(s):
+    """Removes all accents from the string"""
+    if isinstance(s,str):
+        s = unicode(s,"utf8","replace")
+        s = unicodedata.normalize('NFD',s)
+        return s.encode('ascii','ignore')

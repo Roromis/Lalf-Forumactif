@@ -31,6 +31,8 @@ class ForumPage(Node):
         self.page = page
 
     def _export_(self):
+        logger.debug('Récupération du forum %s%s (page %d)', self.type, self.id, self.page)
+
         # Get the page
         r = session.get("/{type}{id}p{page}-a".format(type=self.type, id=self.id, page=self.page))
         d = PyQuery(r.text)
@@ -41,8 +43,6 @@ class ForumPage(Node):
             
             id = int(re.search("/t(\d+)-.*", e("a").attr("href")).group(1))
             if id not in topicids:
-                logger.debug('Récupération : sujet %d', id)
-                
                 f = e.parents().eq(-2)
                 locked = u"verrouillé" in f("td img").eq(0).attr("alt")
                 views = int(f("td").eq(5).text())
@@ -53,7 +53,7 @@ class ForumPage(Node):
                 topicids.append(id)
             else:
                 # Topic has already been exported (it's a global announcement)
-                logger.warning('Le sujet %d a déjà été récupéré.', id)
+                logger.warning('Le sujet %d existe déjà.', id)
 
     def __setstate__(self, dict):
         Node.__setstate__(self, dict)

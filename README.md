@@ -24,6 +24,7 @@ qui pourrait en être faite.
  * Python 3
  * [PyQuery](https://bitbucket.org/olauzanne/pyquery/)
  * [Requests](http://docs.python-requests.org/en/latest/)
+ * [gocr](http://jocr.sourceforge.net/)
 
 ## Utilisation
 
@@ -55,6 +56,10 @@ qui pourrait en être faite.
 
  * Importez le fichier phpbb.sql généré par le script dans votre base
    de donnée.
+
+ * Copiez le dossier images (s'il existe) à la racine de votre
+   installation de phpbb (fusionnez le avec le dossier images
+   existant). Ce dossier contient les icônes de vos forums.
 
 ### Resynchronisation
 

@@ -91,20 +91,6 @@ def _get_terminal_size_linux():
             return None
     return int(cr[1]), int(cr[0])
 
-def clearscreen(numlines=100):
-    """Clear the console.
-    numlines is an optional argument used only as a fall-back.
-    """
-    if os.name == "posix":
-        # Unix/Linux/MacOS/BSD/etc
-        os.system('clear')
-    elif os.name in ("nt", "dos", "ce"):
-        # DOS/Windows
-        os.system('CLS')
-    else:
-        # Fallback for other operating systems.
-        print('\n' * numlines)
-
 def disp(l):
     global uihandler
     w, h = get_terminal_size()
@@ -142,14 +128,19 @@ def disp(l):
                 print(e[2])
 
 def update():
-    clearscreen()
+    """
+    Update the progress bars
+    """
     disp([
         ("Membres", counters.usernumber, counters.usertotal),
-        ("Sujets", counters.postnumber, counters.posttotal),
+        ("Sujets", counters.topicnumber, counters.topictotal),
         ("Messages", counters.postnumber, counters.posttotal)
     ])
 
 class UiLoggingHandler(logging.Handler):
+    """
+    Logging handler used to keep the last LENGTH lines of logs.
+    """
     LENGTH = 200
     def __init__(self, level=logging.NOTSET):
         logging.Handler.__init__(self, level)
@@ -163,6 +154,9 @@ class UiLoggingHandler(logging.Handler):
         update()
 
     def display(self, length=None):
+        """
+        Print the last length lines of logs.
+        """
         if not length:
             length = self.LENGTH
         for i in range(self.next-length, self.next):

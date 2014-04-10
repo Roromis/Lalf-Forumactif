@@ -35,8 +35,6 @@ class User(Node):
         self.posts = posts
         self.date = date
         self.lastvisit = lastvisit
-        self.exported = True
-        self.children_exported = True
 
         if incuser:
             self.inc()

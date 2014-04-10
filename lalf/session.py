@@ -105,6 +105,7 @@ def get(path, **kwargs):
 
         # If the connection failed two times : wait
         if n > 2:
+            logger.debug('La connexion a échoué au moins deux fois, attend 30 secondes avant de réessayer.')
             time.sleep(30)
         
         try:

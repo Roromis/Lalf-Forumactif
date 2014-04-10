@@ -15,6 +15,8 @@ from lalf import session
     
 class OcrUsersPage(UsersPage):
     def _export_(self):
+        logger.debug('Récupération des membres (page %d)', self.page)
+
         params = {
             "mode" : "joined",
             "order" : "",
@@ -36,7 +38,6 @@ class OcrUsersPage(UsersPage):
             
             e = PyQuery(i)
             id = int(re.search("u(\d+)$", e("td a").eq(0).attr("href")).group(1))
-            logger.debug('Récupération : membre %d', id)
 
             name = e("td a").eq(1).text()
             posts = int(e("td").eq(6).text())
