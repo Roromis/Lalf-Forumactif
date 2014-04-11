@@ -25,10 +25,10 @@ Méthode 1 (avec pip)
 --------------------
 
 Installez python 3 et `pip
-<http://www.pip-installer.org/en/latest/installing.html>`_, et
+<http://www.pip-installer.org/en/latest/installing.html>`_, puis
 exécutez::
 
-  pip install lalf
+  pip install lalf --pre
 
 Si vous souhaitez utiliser la reconnaissance de caractères pour la
 récupération des adresses e-mail (conseillé), installez `gocr
