@@ -5,7 +5,7 @@ import re
 from pyquery import PyQuery
 import time
 
-from lalf.util import month, clean_filename
+from lalf.util import month, clean_filename, path
 from lalf.user import User
 from lalf import ocr
 from lalf import ui
@@ -91,15 +91,12 @@ class OcrUser(User):
                     # The administration panel has been blocked yet,
                     # the email is replaced by an image, get it
                     r = session.get(e("td a img").eq(0).attr("src"))
-                    dirname = os.path.dirname(self.img)
-                    if not os.path.isdir(dirname):
-                        os.makedirs(dirname, exist_ok=True)
-                    with open(self.img, "wb") as f:
+                    with open(path(self.img), "wb") as f:
                         f.write(r.content)
 
                     # Pass it through the OCR
-                    self.mail = ocr.totext(self.img)
-                    if ocr.toolong(self.img):
+                    self.mail = ocr.totext(path(self.img))
+                    if ocr.toolong(path(self.img)):
                         # The image is too small for the email, the
                         # user will have to give it
                         self.trust = 1

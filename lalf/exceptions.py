@@ -8,22 +8,7 @@ logger = logging.getLogger("lalf")
 import os.path
 import traceback
 
-class NoConfigurationFile(Exception):
-    """
-    Exception raised when the configuration file does not exists
-    """
-    
-    def __init__(self, filename):
-        """
-        filename -- path of the configuration file that could not be found
-        """
-        self.filename = filename
-
-    def __str__(self):
-        root, ext = os.path.splitext(self.filename)
-        examplefilename = "{root}.example{ext}".format(root=root, ext=ext)
-        return """Le fichier de configuration ({filename}) n'existe pas.
-    Créez-le en vous inspirant du fichier {example}.""".format(filename=self.filename, example=examplefilename)
+from lalf import util
 
 class InvalidConfigurationFile(Exception):
     """

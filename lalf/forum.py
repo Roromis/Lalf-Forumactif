@@ -7,7 +7,7 @@ import re
 import imghdr
 from pyquery import PyQuery
 
-from lalf.util import clean
+from lalf.util import clean, path
 from lalf.node import Node
 from lalf.forumpage import ForumPage
 from lalf import phpbb
@@ -84,7 +84,7 @@ class Forum(Node):
             if not os.path.isdir("images/forums"):
                 os.makedirs("images/forums")
             self.icon = "images/forums/{id}{ext}".format(id=self.newid, ext=ext)
-            with open(self.icon, "wb") as f:
+            with open(path(self.icon), "wb") as f:
                 f.write(r.content)
         else:
             self.icon = ""

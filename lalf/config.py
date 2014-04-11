@@ -24,9 +24,6 @@ def read(filename):
     Read the configuration from filename and write it in the config
     dictionnary
     """
-    if not os.path.isfile(filename):
-        raise NoConfigurationFile(filename)
-
     cfg = configparser.ConfigParser()
     with open(filename, "r") as f:
         cfg.read_file(f)
