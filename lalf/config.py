@@ -15,6 +15,7 @@ config = {
     "admin_password" : "",
     "table_prefix" : "",
     "use_ocr" : True,
+    "gocr" : "",
     "verbose" : False
 }
 

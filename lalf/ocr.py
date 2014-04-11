@@ -1,6 +1,9 @@
 import png
 import subprocess
 
+from lalf.exceptions import *
+from lalf.config import config
+
 def toolong(img):
     """
     Returns true if the email displayed in the image img is too long to
@@ -18,5 +21,8 @@ def toolong(img):
 def totext(img):
     """
     Returns the string contained in the image img
-    """ 
-    return subprocess.check_output(["gocr", "-i", img], universal_newlines=True).strip()
+    """
+    try:
+        return subprocess.check_output([config.gocr, "-i", img], universal_newlines=True).strip()
+    except FileNotFoundError:
+        raise GocrNotInstalled()

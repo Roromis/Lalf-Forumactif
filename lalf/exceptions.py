@@ -67,3 +67,11 @@ Pour savoir si vous êtes bloqué, essayez d'accéder à la deuxième page de la
 Pour ne pas avoir à attendre, utilisez l'otion use_ocr."""
         return message
 
+class GocrNotInstalled(Exception):
+    """
+    Exception raised when the gocr executable cannot be found
+    """
+
+    def __str__(self):
+        message = """L'exécutable de gocr ({exe}) n'existe pas. Vérifiez que gocr est bien installé est que le chemin est correctement configuré dans le fichier config.cfg.""".format(exe=config["gocr"])
+        return message

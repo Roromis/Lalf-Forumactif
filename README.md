@@ -24,6 +24,7 @@ qui pourrait en être faite.
  * Python 3
  * [PyQuery](https://bitbucket.org/olauzanne/pyquery/)
  * [Requests](http://docs.python-requests.org/en/latest/)
+ * [pypng](http://docs.python-requests.org/en/latest/)
  * [gocr](http://jocr.sourceforge.net/)
 
 ## Utilisation
