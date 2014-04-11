@@ -100,7 +100,7 @@ def disp(l):
     barwidth = w - namewidth - 2*numwidth - 5
 
     if uihandler:
-        uihandler.display(h-3)
+        uihandler.display(h)
     
     if barwidth < 0:
         for e in l:

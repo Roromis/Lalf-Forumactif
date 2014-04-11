@@ -13,6 +13,7 @@ from lalf.bb import load, BB
 from lalf import config
 from lalf import ui
 from lalf import session
+from lalf.__version__ import __version__
 
 def main():
     # File output
@@ -21,9 +22,10 @@ def main():
     logger.addHandler(filehandler)
     
     config.read("config.cfg")
-
     ui.init()
 
+    logger.info("Lalf %s", __version__)
+    
     bb = load()
 
     try:

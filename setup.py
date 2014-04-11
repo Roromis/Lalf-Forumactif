@@ -1,11 +1,14 @@
 from distutils.core import setup
 
-with open('README.rst') as file:
-    long_description = file.read()
+with open('README.rst') as f:
+    long_description = f.read()
 
+with open("lalf/__version__.py") as f:
+    exec(f.read())
+    
 setup(
     name='lalf',
-    version='3.0a0',
+    version=__version__,
     description='Forumactif to phpbb converter',
     long_description=long_description,
     author='Roromis',
