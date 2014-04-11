@@ -18,6 +18,39 @@ un exemplaire de la Licence Publique Générale GNU avec ce programme.
 Les auteurs déclinent toutes responsabilités quant à l'utilisation 
 qui pourrait en être faite.
 
+Installation
+============
+
+Méthode 1 (avec pip)
+--------------------
+
+Installez python 3 et `pip
+<http://www.pip-installer.org/en/latest/installing.html>`_, et
+exécutez::
+
+  pip install lalf
+
+Si vous souhaitez utiliser la reconnaissance de caractères pour la
+récupération des adresses e-mail (conseillé), installez `gocr
+<http://jocr.sourceforge.net/>`_ (sous windows, téléchargez
+l'exécutable dans le même dossier que le fichier lalf.py).
+
+Méthode 2 (sans pip)
+--------------------
+
+Installez les dépendances suivantes :
+
+- `PyQuery <https://bitbucket.org/olauzanne/pyquery/>`_
+- `Requests <http://docs.python-requests.org/en/latest/>`_
+- `pypng <https://github.com/drj11/pypng>`_
+
+Téléchargez la dernière version du lalf.
+
+Si vous souhaitez utiliser la reconnaissance de caractères pour la
+récupération des adresses e-mail (conseillé), installez `gocr
+<http://jocr.sourceforge.net/>`_ (sous windows, téléchargez
+l'exécutable dans le même dossier que le fichier lalf.py).
+
 Utilisation
 ===========
 
@@ -37,7 +70,8 @@ Exportation
 -----------
 
 - Créez le fichier de configuration config.cfg en vous inspirant du
-  fichier config.example.cfg.
+  fichier config.example.cfg. Vous pouvez placer ce fichier dans le
+  même dossier que le script, ou dans le dossier ~/Lalf.
 
 - Lancez le script ``lalf.py``.
   Il est possible que vous ayez des erreurs de connection pendant
@@ -51,7 +85,8 @@ Importation
 - Déconnectez vous.
 
 - Importez le fichier phpbb.sql généré par le script dans votre base
-  de donnée.
+  de donnée. Ce fichier se trouve dans le même dossier que le fichier
+  config.cfg.
 
 - Copiez le dossier images (s'il existe) à la racine de votre
   installation de phpbb (fusionnez le avec le dossier images
