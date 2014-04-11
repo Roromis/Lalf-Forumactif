@@ -6,3 +6,4 @@ phpbb.sql
 usermails
 MANIFEST
 dist/
+build/

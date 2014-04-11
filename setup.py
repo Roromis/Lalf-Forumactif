@@ -1,13 +1,16 @@
 from distutils.core import setup
 
+with open('README.rst') as file:
+    long_description = file.read()
+
 setup(
     name='lalf',
-    version='3.0a',
+    version='3.0a0',
     description='Forumactif to phpbb converter',
+    long_description=long_description,
     author='Roromis',
-#    author_email='',
+    author_email='lalf@openmailbox.org',
     url='https://github.com/Roromis/Lalf-Forumactif',
-    download_url='https://github.com/Roromis/Lalf-Forumactif/archive/master.zip',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Console',
@@ -20,15 +23,15 @@ setup(
     license="GNU/GPL v3",
     
     packages=['lalf'],
-    requires=[
+    install_requires=[
         'pyquery',
         'requests',
         'pypng'
     ],
-    scripts=['export.py'],
-    data_files=[('', [
+    scripts=['lalf.py'],
+    data_files=[('share/doc/lalf', [
         'config.example.cfg',
-        'README.md',
-        'TODO.md'
+        'README.rst',
+        'TODO.rst'
     ])]
 )
