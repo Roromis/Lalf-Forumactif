@@ -28,7 +28,7 @@ class Forum(Node):
         id -- id in the old forum
         newid -- id in the new forum
         type -- c if the forum is a category, else f
-        parentid -- parent forum (0 if it is a categoryà
+        parentid -- parent forum (0 if it is a category)
         title -- title of the forum
         description -- description of the forum
         icon -- url of the forum icon
