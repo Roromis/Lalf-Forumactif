@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from binascii import crc32
 
 from lalf.config import config

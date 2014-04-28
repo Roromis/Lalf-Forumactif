@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Global variables containing the numbers of users, topics, and posts
 # found and expected
 usernumber = 0

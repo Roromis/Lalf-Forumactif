@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import base64
 
 # I hope spammers wont see right through this, wait and see...

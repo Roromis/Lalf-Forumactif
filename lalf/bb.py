@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Module containing the BB class (the root of the forum)
 """

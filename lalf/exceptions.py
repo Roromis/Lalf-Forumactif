@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Module containing the exceptions raised by the script
 """
