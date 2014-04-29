@@ -17,7 +17,6 @@ from lalf.users import Users
 from lalf.ocrusers import OcrUsers
 from lalf.smileys import Smileys
 from lalf.config import config
-from lalf.util import path
 from lalf import phpbb
 from lalf import sql
 from lalf import session
@@ -82,7 +81,7 @@ class BB(Node):
 
     def save(self):
         logger.info("Sauvegarde de l'état courant.")
-        with open(path("save.pickle"), "wb") as f:
+        with open("save.pickle", "wb") as f:
             pickle.dump(self, f)
     
     def get_forums(self):
@@ -108,7 +107,7 @@ def load():
     Returns the BB node contained in the file save.pickle.
     """
     try:
-        with open(path("save.pickle"), "rb") as f:
+        with open("save.pickle", "rb") as f:
             bb = pickle.load(f)
     except FileNotFoundError:
         bb = BB()

@@ -6,8 +6,9 @@ logger = logging.getLogger("lalf")
 import re
 from pyquery import PyQuery
 import time
+import os
 
-from lalf.util import month, clean_filename, path
+from lalf.util import month, clean_filename
 from lalf.user import User
 from lalf import ocr
 from lalf import ui
@@ -32,7 +33,7 @@ class OcrUser(User):
         """
         User.__init__(self, parent, id, newid, name, None, posts, date, 0, incuser=False)
         self.trust = 0
-        self.img = "usermails/{username}.png".format(username=clean_filename(self.name))
+        self.img = os.path.join("usermails", "{username}.png".format(username=clean_filename(self.name)))
 
     def validate_email(self):
         """
@@ -93,12 +94,12 @@ class OcrUser(User):
                     # The administration panel has been blocked, the
                     # email is replaced by an image, get it
                     r = session.get(e("td a img").eq(0).attr("src"))
-                    with open(path(self.img), "wb") as f:
+                    with open(self.img, "wb") as f:
                         f.write(r.content)
 
                     # Pass it through the OCR
-                    self.mail = ocr.totext(path(self.img))
-                    if ocr.toolong(path(self.img)):
+                    self.mail = ocr.totext(self.img)
+                    if ocr.toolong(self.img):
                         # The image is too small for the email, the
                         # user will have to give it
                         self.trust = 1

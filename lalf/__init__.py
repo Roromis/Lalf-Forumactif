@@ -10,7 +10,6 @@ logger.setLevel(logging.DEBUG)
 
 import sys
 
-from lalf.util import path
 from lalf.bb import load, BB
 from lalf import config
 from lalf import ui
@@ -19,11 +18,11 @@ from lalf.__version__ import __version__
 
 def main():
     # File output
-    filehandler = logging.FileHandler(path('debug.log'))
+    filehandler = logging.FileHandler('debug.log')
     filehandler.setLevel(logging.DEBUG)
     logger.addHandler(filehandler)
     
-    config.read(path("config.cfg"))
+    config.read("config.cfg")
     ui.init()
 
     logger.info("Lalf %s", __version__)
@@ -46,7 +45,7 @@ https://github.com/Roromis/Lalf-Forumactif/issues""".format(exception=repr(e)))
     bb.save()
 
     logging.info("Génération du fichier SQL")
-    with open(path("phpbb.sql"), "w") as f:
+    with open("phpbb.sql", "w") as f:
         bb.dump(f)
 
     logging.info("L'exportation a été effectuée avec succés.")

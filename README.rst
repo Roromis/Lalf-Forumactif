@@ -18,41 +18,8 @@ un exemplaire de la Licence Publique Générale GNU avec ce programme.
 Les auteurs déclinent toutes responsabilités quant à l'utilisation 
 qui pourrait en être faite.
 
-Installation
-============
-
-Méthode 1 (avec pip)
---------------------
-
-Installez python 3 et `pip
-<http://www.pip-installer.org/en/latest/installing.html>`_, puis
-exécutez::
-
-  pip install lalf --pre
-
-Si vous souhaitez utiliser la reconnaissance de caractères pour la
-récupération des adresses e-mail (conseillé), installez `gocr
-<http://jocr.sourceforge.net/>`_ (sous windows, téléchargez
-l'exécutable dans le même dossier que le fichier lalf.py).
-
-Méthode 2 (sans pip)
---------------------
-
-Installez les dépendances suivantes :
-
-- `PyQuery <https://bitbucket.org/olauzanne/pyquery/>`_
-- `Requests <http://docs.python-requests.org/en/latest/>`_
-- `pypng <https://github.com/drj11/pypng>`_
-
-Téléchargez la dernière version du lalf.
-
-Si vous souhaitez utiliser la reconnaissance de caractères pour la
-récupération des adresses e-mail (conseillé), installez `gocr
-<http://jocr.sourceforge.net/>`_ (sous windows, téléchargez
-l'exécutable dans le même dossier que le fichier lalf.py).
-
-Utilisation
-===========
+Documentation
+=============
 
 Prérequis
 ---------
@@ -69,13 +36,65 @@ Prérequis
 Exportation
 -----------
 
-- Créez le fichier de configuration config.cfg en vous inspirant du
-  fichier config.example.cfg. Vous pouvez placer ce fichier dans le
-  même dossier que le script, ou dans le dossier ~/Lalf.
+Vous pouvez installer le lalf avec le gestionnaire de paquets pip (qui
+installera automatiquement toutes les dépendances nécessaires) en
+suivant la `méthode 1`_ ou sans pip (auquel cas vous devrez
+installer les dépendances manuellement) en suivant la `méthode 2`_.
 
-- Lancez le script ``lalf.py``.
-  Il est possible que vous ayez des erreurs de connection pendant
-  l'exécution du script, dans ce cas essayez de le relancer.
+.. _méthode 1:
+
+Méthode 1 (avec pip)
+~~~~~~~~~~~~~~~~~~~~
+
+Installez python 3 et `pip
+<http://www.pip-installer.org/en/latest/installing.html>`_, puis
+exécutez::
+
+  pip install lalf --pre
+
+Pour désintaller le lalf, il suffira d'exécuter::
+
+  pip uninstall lalf
+
+Créez un nouveau dossier (l'emplacement importe peu), et créez y le
+fichier de configuration ``config.cfg`` en vous inspirant du fichier
+``/usr/share/doc/lalf/config.example.cfg``.
+
+Si vous souhaitez utiliser la reconnaissance de caractères pour la
+récupération des adresses e-mail (conseillé), installez `gocr
+<http://jocr.sourceforge.net/>`_ (sous windows, téléchargez
+l'exécutable dans le même dossier que le fichier ``config.cfg``).
+
+Placez vous dans le dosier contenant le fichier de configuration, et
+lancez::
+
+  lalf.py
+
+.. _méthode 2:
+
+Méthode 2 (sans pip)
+~~~~~~~~~~~~~~~~~~~~
+
+Installez les dépendances suivantes :
+
+- `PyQuery <https://bitbucket.org/olauzanne/pyquery/>`_
+- `Requests <http://docs.python-requests.org/en/latest/>`_
+- `pypng <https://github.com/drj11/pypng>`_
+
+Téléchargez la dernière version du lalf et extrayez l'archive.
+
+Créez le fichier de configuration ``config.cfg`` en vous inspirant du
+fichier ``config.example.cfg``.
+
+Si vous souhaitez utiliser la reconnaissance de caractères pour la
+récupération des adresses e-mail (conseillé), installez `gocr
+<http://jocr.sourceforge.net/>`_ (sous windows, téléchargez
+l'exécutable dans le même dossier que le fichier ``config.cfg``).
+
+Placez vous dans le dosier contenant le fichier de configuration, et
+lancez::
+
+  ./lalf.py
 
 Importation
 -----------
@@ -84,12 +103,12 @@ Importation
 
 - Déconnectez vous.
 
-- Importez le fichier phpbb.sql généré par le script dans votre base
-  de donnée. Ce fichier se trouve dans le même dossier que le fichier
-  config.cfg.
+- Importez le fichier ``phpbb.sql`` généré par le script dans votre
+  base de donnée. Ce fichier se trouve dans le même dossier que le
+  fichier ``config.cfg``.
 
-- Copiez le dossier images (s'il existe) à la racine de votre
-  installation de phpbb (fusionnez le avec le dossier images
+- Copiez le dossier ``images`` (s'il existe) à la racine de votre
+  installation de phpbb (fusionnez le avec le dossier ``images``
   existant). Ce dossier contient les icônes de vos forums.
 
 Resynchronisation
