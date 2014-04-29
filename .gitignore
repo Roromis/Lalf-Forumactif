@@ -1,0 +1,9 @@
+*.pyc
+config.cfg
+debug.log
+save.pickle
+phpbb.sql
+usermails
+MANIFEST
+dist/
+build/

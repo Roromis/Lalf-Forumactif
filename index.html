@@ -33,19 +33,20 @@
         <h2>
 <a name="lalf" class="anchor" href="#lalf"><span class="octicon octicon-link"></span></a>Lalf</h2>
 
-<p>Logiciel d'Aide à la Libération de Forumactif<br>
-  Copyright ©2011 Roromis<br><a href="http://www.le-lalf.fr.nf">http://www.le-lalf.fr.nf</a>  </p>
+<p>
+  Logiciel d'Aide à la Libération de Forumactif<br>
+  Copyright ©2011 Roromis<br>
+  <a href="http://www.le-lalf.fr.nf">http://www.le-lalf.fr.nf</a>
+</p>
 
-<h2>
-<a name="note-importante" class="anchor" href="#note-importante"><span class="octicon octicon-link"></span></a>Note importante</h2>
+<h2><a name="note-importante" class="anchor" href="#note-importante"><span class="octicon octicon-link"></span></a>Note importante</h2>
 
 <p>Ce programme est un logiciel libre ; vous pouvez le redistribuer et/ou 
 le modifier au titre des clauses de la Licence Publique Générale GNU, 
 telle que publiée par la Free Software Foundation ; soit la version 3 
 de la Licence.</p>
 
-<h2>
-<a name="disclaimer" class="anchor" href="#disclaimer"><span class="octicon octicon-link"></span></a>Disclaimer</h2>
+<h2><a name="disclaimer" class="anchor" href="#disclaimer"><span class="octicon octicon-link"></span></a>Disclaimer</h2>
 
 <p>Ce programme est distribué dans l'espoir qu'il sera utile, mais SANS 
 AUCUNE GARANTIE ; sans même une garantie implicite de COMMERCIABILITE 
@@ -55,19 +56,17 @@ un exemplaire de la Licence Publique Générale GNU avec ce programme.
 Les auteurs déclinent toutes responsabilités quant à l'utilisation 
 qui pourrait en être faite.</p>
 
-<h2>
-<a name="documentation" class="anchor" href="#documentation"><span class="octicon octicon-link"></span></a>Documentation</h2>
+<h2><a name="documentation" class="anchor" href="#documentation"><span class="octicon octicon-link"></span></a>Documentation</h2>
 
-<h3>
-<a name="pr%C3%A9requis" class="anchor" href="#pr%C3%A9requis"><span class="octicon octicon-link"></span></a>Prérequis</h3>
+<h3><a name="pr%C3%A9requis" class="anchor" href="#pr%C3%A9requis"><span class="octicon octicon-link"></span></a>Prérequis</h3>
 
 <ul>
-<li><p>Vous devez être administrateur du forum que vous souhaitez exporter.</p></li>
-<li><p>Le forum doit être hébergé par forumactif, et doit utiliser le 
-template (style) phpbb2.</p></li>
-<li><p>Le format des dates de votre forum doit-être "jour J mois AAAA - 
+<li>Vous devez être administrateur du forum que vous souhaitez exporter.</li>
+<li>Le forum doit être hébergé par forumactif, et doit utiliser le 
+template (style) phpbb2.</li>
+<li>Le format des dates de votre forum doit-être "jour J mois AAAA - 
 HH:MM" (par exemple: Lun 1 Jan 2009 - 00:01), vous devez modifier 
-cela dans le profil de l'administrateur.</p></li>
+cela dans le profil de l'administrateur.</li>
 </ul><h3>
 <a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h3>
 
@@ -75,58 +74,58 @@ cela dans le profil de l'administrateur.</p></li>
 2.* (le script ne fonctionnera PAS avec Python 3).</p>
 
 <ul>
-<li><p>Sous Linux, Python est certainement installé par défaut. Vérifiez 
+<li>Sous Linux, Python est certainement installé par défaut. Vérifiez 
 que vous avez bien la version 2. Sinon, installez la avec votre 
-gestionnaire de paquets ou compilez la.</p></li>
-<li><p>Sous Windows, téléchargez Python 2.* sur cette page: 
-<a href="http://www.python.org/download/">http://www.python.org/download/</a> </p></li>
-<li><p>Sous Mac, Python devrait être installé par défaut.</p></li>
+gestionnaire de paquets ou compilez la.</li>
+<li>Sous Windows, téléchargez Python 2.* sur cette page: 
+<a href="http://www.python.org/download/">http://www.python.org/download/</a> </li>
+<li>Sous Mac, Python devrait être installé par défaut.</li>
 </ul><p>Installez ensuite la bibliothèque lxml.</p>
 
 <ul>
-<li><p>Sous Linux, installez le paquet correspondant.</p></li>
-<li><p>Sous Windows, téléchargez et installez la dernière version stable 
-sur cette page: <a href="http://pypi.python.org/pypi/lxml/">http://pypi.python.org/pypi/lxml/</a></p></li>
+<li>Sous Linux, installez le paquet correspondant.</li>
+<li>Sous Windows, téléchargez et installez la dernière version stable 
+sur cette page: <a href="http://pypi.python.org/pypi/lxml/">http://pypi.python.org/pypi/lxml/</a></li>
 </ul><p>Modifiez ensuite la configuration dans le fichier config.py.</p>
 
 <h3>
 <a name="utilisation" class="anchor" href="#utilisation"><span class="octicon octicon-link"></span></a>Utilisation</h3>
 
 <ul>
-<li><p>Lancez le script (en double cliquant sur launcher.py ou depuis un 
+<li>Lancez le script (en double cliquant sur launcher.py ou depuis un 
 terminal).
 Il est très probable que vous ayez des erreurs de connection 
 pendant l'exécution du script (HTTP Error 502: Bad Gateway, 
 SocketError...). Ces erreurs sont normales (à mon avis, elles 
 viennent des serveurs de forumactif et non de mon script), essayez 
-de relancez le script.</p></li>
-<li><p>Installez un forum PhpBB3 en suivant la procédure habituelle.</p></li>
-<li><p>Importez ensuite le fichier phpbb.sql généré par le script dans 
-votre base de donnée.</p></li>
+de relancez le script.</li>
+<li>Installez un forum PhpBB3 en suivant la procédure habituelle.</li>
+<li>Importez ensuite le fichier phpbb.sql généré par le script dans 
+votre base de donnée.</li>
 </ul><h3>
 <a name="resynchronisation" class="anchor" href="#resynchronisation"><span class="octicon octicon-link"></span></a>Resynchronisation</h3>
 
 <ul>
-<li><p>Connectez vous au panneau d'administration en utilisant les 
+<li>Connectez vous au panneau d'administration en utilisant les 
 identifiants de l'administrateur de votre ancien forum (seul le mot 
 de passe indiqué dans le fichier config.py est conservé, les autres 
 sont générés aléatoirement) et resynchronisez les statistiques, 
-les compteurs de messages et les sujets pointés (Onglet Général).</p></li>
-<li><p>Resynchronisez tous les forums/sous-forums (Onglet Forums, Bouton 
-orange "Resynchroniser" à droite de chaque forum).</p></li>
-<li><p>Créez les index de recherche (Onglet Maintenance -&gt; Base de donnée 
+les compteurs de messages et les sujets pointés (Onglet Général).</li>
+<li>Resynchronisez tous les forums/sous-forums (Onglet Forums, Bouton 
+orange "Resynchroniser" à droite de chaque forum).</li>
+<li>Créez les index de recherche (Onglet Maintenance -&gt; Base de donnée 
 -&gt; Index de recherche, cliquez sur les deux boutons "Supprimer 
 l'index de recherche" (s'ils sont présent) puis sur les boutons 
-"Créer l'index de recherche").</p></li>
-<li><p>Téléchargez le Support Toolkit (et éventuellement la traduction 
+"Créer l'index de recherche").</li>
+<li>Téléchargez le Support Toolkit (et éventuellement la traduction 
 française) sur <a href="http://www.phpbb.com/support/stk/">http://www.phpbb.com/support/stk/</a> et extrayez le 
 dossier stk/stk à la racine de votre forum. Ouvrez ce dossier dans 
 votre navigateur (http://lien vers phpbb/stk) et réanalysez les 
 BBCodes (onglet Outils pour les administrateurs, cochez "Réanalyser 
-tous les BBCodes" et cliquez sur Envoyer).</p></li>
-<li><p>Modifiez les permissions de vos forums (par défaut, ils sont 
+tous les BBCodes" et cliquez sur Envoyer).</li>
+<li>Modifiez les permissions de vos forums (par défaut, ils sont 
 visibles par tous les utilisateurs et les invités), ajoutez les 
-modérateurs, co-administrateurs manuellement.</p></li>
+modérateurs, co-administrateurs manuellement.</li>
 </ul><h2>
 <a name="cr%C3%A9dits" class="anchor" href="#cr%C3%A9dits"><span class="octicon octicon-link"></span></a>Crédits</h2>
 
