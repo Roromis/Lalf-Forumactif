@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Lalf-forumactif by Roromis</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1 class="header">Lalf-forumactif</h1>
+        <p class="header">Scripts permettant de convertir un forum clé en main (forumactif) en forum phpbb.</p>
+
+        <ul>
+          <li class="download"><a class="buttons" href="https://github.com/Roromis/Lalf-Forumactif/zipball/master">Download ZIP</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/Roromis/Lalf-Forumactif/tarball/master">Download TAR</a></li>
+          <li><a class="buttons github" href="https://github.com/Roromis/Lalf-Forumactif">View On GitHub</a></li>
+        </ul>
+
+        <p class="header">This project is maintained by <a class="header name" href="https://github.com/Roromis">Roromis</a></p>
+
+
+      </header>
+      <section>
+        <h2>
+<a name="lalf" class="anchor" href="#lalf"><span class="octicon octicon-link"></span></a>Lalf</h2>
+
+<p>Logiciel d'Aide à la Libération de Forumactif<br>
+  Copyright ©2011 Roromis<br><a href="http://www.le-lalf.fr.nf">http://www.le-lalf.fr.nf</a>  </p>
+
+<h2>
+<a name="note-importante" class="anchor" href="#note-importante"><span class="octicon octicon-link"></span></a>Note importante</h2>
+
+<p>Ce programme est un logiciel libre ; vous pouvez le redistribuer et/ou 
+le modifier au titre des clauses de la Licence Publique Générale GNU, 
+telle que publiée par la Free Software Foundation ; soit la version 3 
+de la Licence.</p>
+
+<h2>
+<a name="disclaimer" class="anchor" href="#disclaimer"><span class="octicon octicon-link"></span></a>Disclaimer</h2>
+
+<p>Ce programme est distribué dans l'espoir qu'il sera utile, mais SANS 
+AUCUNE GARANTIE ; sans même une garantie implicite de COMMERCIABILITE 
+ou DE CONFORMITE A UNE UTILISATION PARTICULIERE. Voir la Licence 
+Publique Générale GNU pour plus de détails. Vous devriez avoir reçu 
+un exemplaire de la Licence Publique Générale GNU avec ce programme.
+Les auteurs déclinent toutes responsabilités quant à l'utilisation 
+qui pourrait en être faite.</p>
+
+<h2>
+<a name="documentation" class="anchor" href="#documentation"><span class="octicon octicon-link"></span></a>Documentation</h2>
+
+<h3>
+<a name="pr%C3%A9requis" class="anchor" href="#pr%C3%A9requis"><span class="octicon octicon-link"></span></a>Prérequis</h3>
+
+<ul>
+<li><p>Vous devez être administrateur du forum que vous souhaitez exporter.</p></li>
+<li><p>Le forum doit être hébergé par forumactif, et doit utiliser le 
+template (style) phpbb2.</p></li>
+<li><p>Le format des dates de votre forum doit-être "jour J mois AAAA - 
+HH:MM" (par exemple: Lun 1 Jan 2009 - 00:01), vous devez modifier 
+cela dans le profil de l'administrateur.</p></li>
+</ul><h3>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h3>
+
+<p>Dans un premier temps, installez, si ce n'est pas déjà fait, Python 
+2.* (le script ne fonctionnera PAS avec Python 3).</p>
+
+<ul>
+<li><p>Sous Linux, Python est certainement installé par défaut. Vérifiez 
+que vous avez bien la version 2. Sinon, installez la avec votre 
+gestionnaire de paquets ou compilez la.</p></li>
+<li><p>Sous Windows, téléchargez Python 2.* sur cette page: 
+<a href="http://www.python.org/download/">http://www.python.org/download/</a> </p></li>
+<li><p>Sous Mac, Python devrait être installé par défaut.</p></li>
+</ul><p>Installez ensuite la bibliothèque lxml.</p>
+
+<ul>
+<li><p>Sous Linux, installez le paquet correspondant.</p></li>
+<li><p>Sous Windows, téléchargez et installez la dernière version stable 
+sur cette page: <a href="http://pypi.python.org/pypi/lxml/">http://pypi.python.org/pypi/lxml/</a></p></li>
+</ul><p>Modifiez ensuite la configuration dans le fichier config.py.</p>
+
+<h3>
+<a name="utilisation" class="anchor" href="#utilisation"><span class="octicon octicon-link"></span></a>Utilisation</h3>
+
+<ul>
+<li><p>Lancez le script (en double cliquant sur launcher.py ou depuis un 
+terminal).
+Il est très probable que vous ayez des erreurs de connection 
+pendant l'exécution du script (HTTP Error 502: Bad Gateway, 
+SocketError...). Ces erreurs sont normales (à mon avis, elles 
+viennent des serveurs de forumactif et non de mon script), essayez 
+de relancez le script.</p></li>
+<li><p>Installez un forum PhpBB3 en suivant la procédure habituelle.</p></li>
+<li><p>Importez ensuite le fichier phpbb.sql généré par le script dans 
+votre base de donnée.</p></li>
+</ul><h3>
+<a name="resynchronisation" class="anchor" href="#resynchronisation"><span class="octicon octicon-link"></span></a>Resynchronisation</h3>
+
+<ul>
+<li><p>Connectez vous au panneau d'administration en utilisant les 
+identifiants de l'administrateur de votre ancien forum (seul le mot 
+de passe indiqué dans le fichier config.py est conservé, les autres 
+sont générés aléatoirement) et resynchronisez les statistiques, 
+les compteurs de messages et les sujets pointés (Onglet Général).</p></li>
+<li><p>Resynchronisez tous les forums/sous-forums (Onglet Forums, Bouton 
+orange "Resynchroniser" à droite de chaque forum).</p></li>
+<li><p>Créez les index de recherche (Onglet Maintenance -&gt; Base de donnée 
+-&gt; Index de recherche, cliquez sur les deux boutons "Supprimer 
+l'index de recherche" (s'ils sont présent) puis sur les boutons 
+"Créer l'index de recherche").</p></li>
+<li><p>Téléchargez le Support Toolkit (et éventuellement la traduction 
+française) sur <a href="http://www.phpbb.com/support/stk/">http://www.phpbb.com/support/stk/</a> et extrayez le 
+dossier stk/stk à la racine de votre forum. Ouvrez ce dossier dans 
+votre navigateur (http://lien vers phpbb/stk) et réanalysez les 
+BBCodes (onglet Outils pour les administrateurs, cochez "Réanalyser 
+tous les BBCodes" et cliquez sur Envoyer).</p></li>
+<li><p>Modifiez les permissions de vos forums (par défaut, ils sont 
+visibles par tous les utilisateurs et les invités), ajoutez les 
+modérateurs, co-administrateurs manuellement.</p></li>
+</ul><h2>
+<a name="cr%C3%A9dits" class="anchor" href="#cr%C3%A9dits"><span class="octicon octicon-link"></span></a>Crédits</h2>
+
+<p>Programmé en python en utilisant:</p>
+
+<ul>
+<li><a href="https://bitbucket.org/olauzanne/pyquery/">PyQuery</a></li>
+<li><a href="http://code.google.com/p/python-progressbar/">python-progressbar</a></li>
+<li><a href="http://pythonhosted.org/cssselect/">cssselect</a></li>
+<li><a href="https://github.com/erikrose/chardet">chardet</a></li>
+</ul><p>En s'inspirant des <a href="http://www.phpbb.com/community/viewtopic.php?f=65&amp;t=1761395">Crawler Converters</a>
+de nneonneo </p>
+      </section>
+      <footer>
+        <p><small>Hosted on <a href="http://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+		
+  </body>
+</html>
