@@ -89,9 +89,9 @@ class OcrUser(User):
             if e("td a").eq(0).text() == self.name:
                 # The user was found
                 self.mail = e("td a").eq(1).text()
-                if self.mail == "":
-                    # The administration panel has been blocked yet,
-                    # the email is replaced by an image, get it
+                if self.mail == "" and e("td a").eq(0).is_('img'):
+                    # The administration panel has been blocked, the
+                    # email is replaced by an image, get it
                     r = session.get(e("td a img").eq(0).attr("src"))
                     with open(path(self.img), "wb") as f:
                         f.write(r.content)
