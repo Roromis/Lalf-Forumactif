@@ -55,9 +55,14 @@ class TopicPage(Node):
             id = int(e("td span.name a").attr("name"))
 
             logger.debug('Récupération du message %d (sujet %d, page %d)', id, self.id, self.page)
-                
+            
             author = e("td span.name").text()
-            post = htmltobbcode.htmltobbcode(e("td div.postbody div").eq(0).html(), smileys)
+            htmlpost = e("td div.postbody div").eq(0).html()
+            if htmlpost:
+                post = htmltobbcode.htmltobbcode(htmlpost, smileys)
+            else:
+                logging.warning('Le message  %d (sujet %d, page %d) semble être vide', id, self.id, self.page)
+                post = ""
 
             title = e("table td span.postdetails").text()
             title = re.split(r'\s(?=(?:Lun|Mar|Mer|Jeu|Ven|Sam|Dim|Hier|Aujourd\'hui)\b)', title)[0]
