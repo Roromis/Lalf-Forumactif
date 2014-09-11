@@ -43,6 +43,12 @@ def _get(path, **kwargs):
     Download the page with the GET method.
     """
 
+    if config["temp_theme_id"] is not '' and path[:6] is not '/admin':
+        if "params" not in kwargs:
+            kwargs["params"] = {}
+
+        kwargs["params"]["change_temp"] = config["temp_theme_id"]
+
     if "headers" not in kwargs:
         kwargs["headers"] = {}
     
