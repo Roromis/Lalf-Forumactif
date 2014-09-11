@@ -51,7 +51,7 @@ setup(
     ],
     scripts=['lalf.py'],
     data_files=[('share/doc/lalf', [
-        'config.example.cfg',
+        'config.cfg',
         'LICENSE',
         'README.rst',
         'TODO.rst'

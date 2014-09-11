@@ -106,8 +106,9 @@ class Topic(Node):
             posted[p.author] = 1
 
         for user, posted in posted.items():
-            sql.insert(file, "topics_posted", {
-                "user_id" : users.get_newid(user),
-                "topic_id" : self.id,
-                "topic_posted" : posted
-            })
+            if posted != 0 :
+                sql.insert(file, "topics_posted", {
+                    "user_id" : users.get_newid(user),
+                    "topic_id" : self.id,
+                    "topic_posted" : posted  # should only be when posted != 0
+                })
