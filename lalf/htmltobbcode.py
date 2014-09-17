@@ -16,6 +16,7 @@
 # along with Lalf.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
+from html import escape
 from html.parser import HTMLParser
 
 
@@ -30,14 +31,16 @@ class HtmltobbcodeParser(HTMLParser):
         self.div = []
         self.font = []
         self.table = []
+        self.li = []
         self.tr = []
         self.td = []
+        self.dd = []
         self.a = []
         self.marquee = []
 
     def handle_data(self, data):
         if self.quote:
-            if data[-9:] == u" a écrit:":
+            if data[-9:] == " a écrit:":
                 self.author = data[:-9]
             self.quote = False
         else:
@@ -52,7 +55,7 @@ class HtmltobbcodeParser(HTMLParser):
                 if attrs["longdesc"] in self.smileys:
                     self.bbcode += " " + self.smileys[attrs["longdesc"]] + " "
             elif "src" in attrs:
-                self.bbcode += "[img]" + attrs["src"] + "[/img]"
+                self.bbcode += "[img]" + escape(attrs["src"]) + "[/img]"
         elif tag == 'hr':
             self.bbcode += "[hr][/hr]"
 
@@ -72,7 +75,7 @@ class HtmltobbcodeParser(HTMLParser):
             if "class" in attrs:
                 if attrs["class"] == "postlink":
                     if "href" in attrs:
-                        self.bbcode += "[url=" + attrs["href"] + "]"
+                        self.bbcode += "[url=" + escape(attrs["href"]) + "]"
                         self.a.append("[/url]")
                     else:
                         self.a.append("")
@@ -80,7 +83,7 @@ class HtmltobbcodeParser(HTMLParser):
                     self.a.append("")
             elif "href" in attrs:
                 if attrs["href"][:7] == "mailto:":
-                    self.bbcode += "[email=" + attrs["href"][7:] + "]"
+                    self.bbcode += "[email=" + escape(attrs["href"][7:]) + "]"
                     self.a.append("[/email]")
                 else:
                     self.a.append("")
@@ -100,7 +103,7 @@ class HtmltobbcodeParser(HTMLParser):
         elif tag == 'span':
             if "style" in attrs:
                 size = re.search('font-size: (\d*)px', attrs["style"])
-                if size != None:
+                if size:
                     self.bbcode += "[size=" + str(int(int(size.group(1)) * 100 / 12)) + "]"
                     self.span.append("[/size]")
                 else:
@@ -110,11 +113,17 @@ class HtmltobbcodeParser(HTMLParser):
         elif tag == 'div':
             if "align" in attrs:
                 self.bbcode += "[" + attrs["align"] + "]"
-                self.div.append("[/" + attrs["align"] + "]")
+                self.div.append("[/" + attrs["align"] + "]\n")
             elif "style" in attrs:
                 if "text-align:center" in attrs["style"]:
                     self.bbcode += "[center]"
-                    self.div.append("[/center]")
+                    self.div.append("[/center]\n")
+                else:
+                    self.div.append("")
+            elif "class" in attrs:
+                if attrs["class"] == "spoiler_content hidden":
+                    self.bbcode += "[spoiler]"
+                    self.div.append("[/spoiler]\n")
                 else:
                     self.div.append("")
             else:
@@ -125,9 +134,9 @@ class HtmltobbcodeParser(HTMLParser):
             self.bbcode += "[list=" + attrs["type"] + "]"
         elif tag == 'li':
             self.bbcode += "[*]"
+            self.li.append("[/*:m]")
         elif tag == 'table':
-            if not (
-                                "cellspacing" in attrs and "cellpadding" in attrs and "border" in attrs and "align" in attrs and "width" in attrs):
+            if not ("cellspacing" in attrs and "cellpadding" in attrs and "border" in attrs and "align" in attrs and "width" in attrs):
                 args = ""
                 if "border" in attrs:
                     args += " border=" + attrs["border"]
@@ -136,7 +145,7 @@ class HtmltobbcodeParser(HTMLParser):
                 if "cellpadding" in attrs:
                     args += " cellpadding=" + attrs["cellpadding"]
                 self.bbcode += "[table" + args + "]"
-                self.table.append("[/table]")
+                self.table.append("[/table]\n")
             else:
                 self.table.append("")
         elif tag == 'tr':
@@ -145,30 +154,30 @@ class HtmltobbcodeParser(HTMLParser):
                 self.tr.append("[/tr]")
             else:
                 self.tr.append("")
-        elif tag == 'td':
+        elif tag == 'dd':
             if "class" in attrs:
                 if attrs["class"] == "quote":
                     if self.author != "":
-                        self.bbcode += "[quote=\"" + self.author + "\"]"
+                        self.bbcode += "[quote=&quot;" + escape(self.author) + "&quot;]"
                     else:
                         self.bbcode += "[quote]"
-                    self.td.append("[/quote]")
+                    self.dd.append("[/quote]\n")
                 elif attrs["class"] == "code":
                     self.bbcode += "[code]"
-                    self.td.append("[/code]")
-                elif attrs["class"] == "spoiler_content hidden":
-                    self.bbcode += "[spoiler]"
-                    self.td.append("[/spoiler]")
+                    self.dd.append("[/code]\n")
                 else:
-                    self.td.append("")
-            elif self.table[len(self.table) - 1] == "[/table]":
+                    self.dd.append("")
+            else:
+                self.dd.append("")
+        elif tag == 'td':
+            if self.table[len(self.table) - 1] == "[/table]":
                 self.bbcode += "[td]"
                 self.td.append("[/td]")
             else:
                 self.td.append("")
         elif tag == 'embed':
             if "width" in attrs and "height" in attrs and "src" in attrs:
-                self.bbcode += "[flash=" + attrs["width"] + "," + attrs["height"] + "]" + attrs["src"] + "[/flash]"
+                self.bbcode += "[flash=" + attrs["width"] + "," + attrs["height"] + "]" + escape(attrs["src"]) + "[/flash]"
         elif tag == 'marquee':
             if "direction" in attrs:
                 if attrs["direction"] == "up":
@@ -205,13 +214,23 @@ class HtmltobbcodeParser(HTMLParser):
         elif tag == 'div':
             self.bbcode += self.div.pop()
         elif tag == 'ul':
-            self.bbcode += "[/list]"
+            self.bbcode = self.bbcode.rstrip("\n")
+            self.bbcode += "[/list:u]"
         elif tag == 'ol':
-            self.bbcode += "[/list]"
+            self.bbcode = self.bbcode.rstrip("\n")
+            self.bbcode += "[/list:o]"
+        elif tag == 'li':
+            if self.bbcode.endswith("\n"):
+                self.bbcode = self.bbcode.rstrip("\n")
+                self.bbcode += self.li.pop() + "\n"
+            else:
+                self.bbcode += self.li.pop()
         elif tag == 'table':
             self.bbcode += self.table.pop()
         elif tag == 'td':
             self.bbcode += self.td.pop()
+        elif tag == 'dd':
+            self.bbcode += self.dd.pop()
         elif tag == 'tr':
             self.bbcode += self.tr.pop()
         elif tag == 'marquee':
