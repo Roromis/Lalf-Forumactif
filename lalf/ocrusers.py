@@ -19,7 +19,6 @@ import logging
 logger = logging.getLogger("lalf")
 
 import re
-from pyquery import PyQuery
 from lalf.users import Users
 from lalf.ocruserspage import OcrUsersPage
 from lalf import session
