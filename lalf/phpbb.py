@@ -323,15 +323,3 @@ bots = [{'name': 'AdsBot [Google]'			, 'agent': 'AdsBot-Google'								, 'ip': '
 		{'name': 'Yahoo Slurp [Bot]'		, 'agent': 'Yahoo! DE Slurp'							, 'ip': ''},
 		{'name': 'Yahoo [Bot]'				, 'agent': 'Yahoo! Slurp'								, 'ip': ''},
 		{'name': 'YahooSeeker [Bot]'		, 'agent': 'YahooSeeker/'								, 'ip': ''}]
-
-if __name__ == "__main__":
-
-    print(makebitfield("[/right]"))
-
-    print(makebitfield('''[b]bold[/b][i]italics[/i][u]underline[/u][strike]strike[/strike]
-    [left]left[/left][center]center[/center][right]right[/right][justify]justify[/justify]
-    [list][*]listitem1[/*][*]listitem2[/*][/list][list=1][*]listitem1[/*][*]listitem2[/*]
-    [/list][hr][/hr][quote="me"]I say[/quote][code]Hello World![/code][url=http://www.google.com]Google[/url]
-    [size=166]size 20[/size][table][tr][td]table cell[/td][/tr][/table][color=#ff3300]color red[/color]
-    [font=Impact]font impact[/font][sub]sub[/sub][sup]sup[/sup][scroll]scroll[/scroll][updown]updown[/updown]
-    [spoiler]spoiled[/spoiler] [spoiler]spoiler[/spoiler]'''))
