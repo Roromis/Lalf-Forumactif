@@ -115,7 +115,7 @@ def get(path, **kwargs):
     r = _get(path, **kwargs)
 
     n = 1
-    while r.status_code == 503 or not connected(r.text):
+    while r.status_code >= 300 or not connected(r.text):
         if n > 4:
             raise UnableToConnect()
         n+=1
