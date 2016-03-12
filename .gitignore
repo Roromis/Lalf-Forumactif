@@ -7,3 +7,6 @@ usermails
 MANIFEST
 dist/
 build/
+/.idea/
+.idea
+/.project
