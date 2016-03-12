@@ -46,7 +46,7 @@ def main():
 
     try:
         bb.export()
-    except Exception as e:
+    except BaseException as e:
         bb.save()
         logger.exception("""Une erreur est survenue. Essayez de relancer le script. Si vous rencontrez la même erreur ("{exception}"), créez un rapport de bug à l'adresse suivante SI ELLE N'A PAS ENCORE ÉTÉ SIGNALÉE :
 https://github.com/Roromis/Lalf-Forumactif/issues""".format(exception=repr(e)))
