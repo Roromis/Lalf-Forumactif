@@ -149,7 +149,7 @@ class HtmltobbcodeParser(HTMLParser):
             else:
                 self.table.append("")
         elif tag == 'tr':
-            if self.table[len(self.table) - 1] == "[/table]":
+            if self.table[len(self.table) - 1].startswith("[/table]"):
                 self.bbcode += "[tr]"
                 self.tr.append("[/tr]")
             else:
@@ -170,7 +170,7 @@ class HtmltobbcodeParser(HTMLParser):
             else:
                 self.dd.append("")
         elif tag == 'td':
-            if self.table[len(self.table) - 1] == "[/table]":
+            if self.table[len(self.table) - 1].startswith("[/table]"):
                 self.bbcode += "[td]"
                 self.td.append("[/td]")
             else:

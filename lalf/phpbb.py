@@ -136,12 +136,13 @@ bbcodes = [
      "second_pass_match" : "!\\[tr:$uid\\](.*?)\\[/tr:$uid\\]!s",
      "second_pass_replace" : "<tr>${1}</tr>"},
 
+
     {"bbcode_id" : 21,
      "bbcode_tag" : "table",
      "bbcode_helpline" : "Tableau",
      "display_on_posting" : "0",
-     "bbcode_match" : "[table]{TEXT}[/table]",
-     "bbcode_tpl" : "<table>{TEXT}</table>",
+     "bbcode_match" : "[table{SIMPLETEXT}]{TEXT}[/table]",
+     "bbcode_tpl" : "<table {SIMPLETEXT}>{TEXT}</table>",
      "first_pass_match" : "!\\[table([a-zA-Z0-9-+.,_= ]*)\\](.*?)\\[/table\\]!ies",
      "first_pass_replace" : "'[table${1}:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${2}')).'[/table:$uid]'",
      "second_pass_match" : "!\\[table([a-zA-Z0-9-+.,_= ]*):$uid\\](.*?)\\[/table:$uid\\]!s",
@@ -233,13 +234,15 @@ def makebitfield(dat):
 
     bf = [0] * 10
     for i in tags:
-        bbtag = '\[/'+i+'\]'
+        bbtag = '\[/{}:?[^\]]*\]'.format(i)
         if re.findall(bbtag, dat):
+            c,d=divmod(tags[i],8)
+            bf[c]|=(1<<(7-d))
             c, d = divmod(tags[i], 8)
             bf[c] |= (1 << (7-d))
 
     tempstr = ''.join([chr(c) for c in bf]).rstrip('\0').encode("latin-1")
-    return base64.b64encode(tempstr).decode("UTF-8")  # decode("UTF-8") is required to convert from byte list to string
+    return base64.b64encode(tempstr).decode("utf-8")
 
 def format_post(post):
     tags = ['*', 'code', 'quote', 'attachment', 'b', 'i', 'url', 'img', 'size', 'color', 'u', 'list', 'email', 'flash']
@@ -259,10 +262,16 @@ def format_post(post):
     checksum = hashlib.md5(post.encode("utf8")).hexdigest()
 
     # find tags such as [list=1] or [quote="me"] that are ignored by the code above
-    regex = re.compile("\[(list|quote|url|flash|size|color|font)=(.+?)\]", re.IGNORECASE)
+    regex = re.compile("\[(list|quote|url|flash|size|color|font|email|)=([^\]]*)\]", re.IGNORECASE)
     foundtags = regex.findall(post)
     for tag in foundtags:
         post = post.replace("[{}={}]".format(tag[0], tag[1]), "[{}={}:{}]".format(tag[0], tag[1], uid))
+
+    # find tags such as [table border=1] that are ignored by the code above
+    regex = re.compile("\[(table) ([^\]]*)\]", re.IGNORECASE)
+    foundtags = regex.findall(post)
+    for tag in foundtags:
+        post = post.replace("[{} {}]".format(tag[0], tag[1]), "[{} {}:{}]".format(tag[0], tag[1], uid))
 
     # handle [/*:m], [/list:u] and [/list:o] cases
     post = post.replace("[/*:m]", "[/*:m:{}]".format(uid))
