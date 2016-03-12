@@ -66,9 +66,9 @@ class ForumPage(Node):
             id = int(re.search("/t(\d+)-.*", e("a").attr("href")).group(1))
             if id not in topicids:
                 f = e.parents().eq(-2)
-                locked = 1 if ("verrouillé" in f("td img").eq(0).attr("alt")) else 0  # should be 0 or 1, not boolean
+                locked = 1 if ("verrouillé" in f("td img").eq(0).attr("alt")) else 0
                 views = int(f("td").eq(5).text())
-                type = type_dic.get(e("strong").text(),0)  # should be 0,1,2,3 or 4 and not text
+                type = type_dic.get(e("strong").text(),0)
                 title = e("a").text()
 
                 self.children.append(Topic(self.parent, id, type, self.newid, title, locked, views))
