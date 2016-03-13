@@ -26,8 +26,10 @@ Prérequis
 
 - Vous devez être administrateur du forum que vous souhaitez exporter.
  
-- Le forum doit être hébergé par forumactif, et doit utiliser le 
-  template (style) phpbb2.
+- Le forum doit être hébergé par forumactif, et doit utiliser la
+  version phpbb2 du thème. Dans le cas contraire, vous pouvez créer
+  un thème temporaire utilisant la version phpbb2 (dans le panneau
+  d'administration, onglet "Affichage", "Thèmes temporaires").
    
 - Le format des dates de votre forum doit-être "jour J mois AAAA - 
   HH:MM" (par exemple: Lun 1 Jan 2009 - 00:01), vous devez modifier 

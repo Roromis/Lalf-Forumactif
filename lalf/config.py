@@ -33,7 +33,7 @@ config = {
     "table_prefix" : "",
     "use_ocr" : True,
     "gocr" : "",
-    "temp_theme_id": "",
+    "temporary_theme": "",
     "verbose" : False
 }
 
