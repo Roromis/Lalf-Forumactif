@@ -17,7 +17,7 @@
 
 import re
 from binascii import crc32
-import codecs
+import base64
 import hashlib
 import random
 
@@ -46,7 +46,7 @@ def default_forum_acl(forumid):
             "auth_role_id" : perm,
             "auth_setting" : 0
         }
-        
+
 bbcodes = [
     {"bbcode_id" : 13,
      "bbcode_tag" : "strike",
@@ -104,7 +104,7 @@ bbcodes = [
      "second_pass_replace" : "<div style=\"text-align: justify;\">${1}</div>"},
      
     {"bbcode_id" : 18,
-     "bbcode_tag" : "font=",
+     "bbcode_tag" : "font",
      "bbcode_helpline" : "Modifier la police",
      "display_on_posting" : "0",
      "bbcode_match" : "[font={SIMPLETEXT}]{TEXT}[/font]",
@@ -136,15 +136,16 @@ bbcodes = [
      "second_pass_match" : "!\\[tr:$uid\\](.*?)\\[/tr:$uid\\]!s",
      "second_pass_replace" : "<tr>${1}</tr>"},
 
+
     {"bbcode_id" : 21,
      "bbcode_tag" : "table",
      "bbcode_helpline" : "Tableau",
      "display_on_posting" : "0",
      "bbcode_match" : "[table{SIMPLETEXT}]{TEXT}[/table]",
      "bbcode_tpl" : "<table {SIMPLETEXT}>{TEXT}</table>",
-     "first_pass_match" : "!\\[table([a-zA-Z0-9-+.,_ ]+)\\](.*?)\\[/table\\]!ies",
+     "first_pass_match" : "!\\[table([a-zA-Z0-9-+.,_= ]*)\\](.*?)\\[/table\\]!ies",
      "first_pass_replace" : "'[table${1}:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${2}')).'[/table:$uid]'",
-     "second_pass_match" : "!\\[table([a-zA-Z0-9-+.,_ ]+):$uid\\](.*?)\\[/table:$uid\\]!s",
+     "second_pass_match" : "!\\[table([a-zA-Z0-9-+.,_= ]*):$uid\\](.*?)\\[/table:$uid\\]!s",
      "second_pass_replace" : "<table ${1}>${2}</table>"},
      
     {"bbcode_id" : 22,
@@ -207,11 +208,11 @@ bbcodes = [
      "bbcode_helpline" : "Spoiler",
      "display_on_posting" : "0",
      "bbcode_match" : "[spoiler]{TEXT}[/spoiler]",
-     "bbcode_tpl" : "<div style=\"padding: 3px; background-color: #FFFFFF; border: 1px solid #d8d8d8; font-size: 1em;\"><div style=\"text-transform: uppercase; border-bottom: 1px solid #CCCCCC; margin-bottom: 3px; font-size: 0.8em; font-weight: bold; display: block;\"><span onClick=\"if (this.parentNode.parentNode.getElementsByTagName('div')[1].getElementsByTagName('div')[0].style.display != '') {  this.parentNode.parentNode.getElementsByTagName('div')[1].getElementsByTagName('div')[0].style.display = ''; this.innerHTML = '<b>Spoiler: </b><a href=\\'#\\' onClick=\\'return false;\\'>Cacher</a>\\'; } else { this.parentNode.parentNode.getElementsByTagName('div')[1].getElementsByTagName('div')[0].style.display = 'none'; this.innerHTML = '<b>Spoiler: </b><a href=\\'#\\' onClick=\\'return false;\\'>Afficher</a>'; }\" /><b>Spoiler: </b><a href=\"#\" onClick=\"return false;\">Afficher</a></span></div><div class=\"quotecontent\"><div style=\"display: none;\">{TEXT}</div></div></div>",
+     "bbcode_tpl" : "<dl class=\"codebox\"><dt>Spoiler: <a href=\"#\" onclick=\"var content = this.parentNode.parentNode.getElementsByTagName('dd')[0]; if (content.style.display != '') { content.style.display = ''; this.innerText = 'Cacher'; this.value = 'Hide'; } else { content.style.display = 'none'; this.innerText = 'Afficher'; }; return false;\">Afficher</a></dt><dd style=\"display: none;\">{TEXT}</dd></dl>",
      "first_pass_match" : "!\\[spoiler\\](.*?)\\[/spoiler\\]!ies",
      "first_pass_replace" : "'[spoiler:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/spoiler:$uid]'",
      "second_pass_match" : "!\\[spoiler:$uid\\](.*?)\\[/spoiler:$uid\\]!s",
-     "second_pass_replace" : "<div style=\"padding: 3px; background-color: #FFFFFF; border: 1px solid #d8d8d8; font-size: 1em;\"><div style=\"text-transform: uppercase; border-bottom: 1px solid #CCCCCC; margin-bottom: 3px; font-size: 0.8em; font-weight: bold; display: block;\"><span onClick=\"if (this.parentNode.parentNode.getElementsByTagName('div')[1].getElementsByTagName('div')[0].style.display != '') {  this.parentNode.parentNode.getElementsByTagName('div')[1].getElementsByTagName('div')[0].style.display = ''; this.innerHTML = '<b>Spoiler: </b><a href=\\'#\\' onClick=\\'return false;\\'>Cacher</a>\\'; } else { this.parentNode.parentNode.getElementsByTagName('div')[1].getElementsByTagName('div')[0].style.display = 'none'; this.innerHTML = '<b>Spoiler: </b><a href=\\'#\\' onClick=\\'return false;\\'>Afficher</a>'; }\" /><b>Spoiler: </b><a href=\"#\" onClick=\"return false;\">Afficher</a></span></div><div class=\"quotecontent\"><div style=\"display: none;\">${1}</div></div></div>"}]
+     "second_pass_replace" : "<dl class=\"codebox\"><dt>Spoiler: <a href=\"#\" onclick=\"var content = this.parentNode.parentNode.getElementsByTagName('dd')[0]; if (content.style.display != '') { content.style.display = ''; this.innerText = 'Cacher'; this.value = 'Hide'; } else { content.style.display = 'none'; this.innerText = 'Afficher'; }; return false;\">Afficher</a></dt><dd style=\"display: none;\">${1}</dd></dl>"}]
 
 def makebitfield(dat):
     tags = {'code' : 8,
@@ -227,27 +228,57 @@ def makebitfield(dat):
             'list' : 9,
             'email' : 10,
             'flash' : 11}
+
     for b in bbcodes:
         tags[b["bbcode_tag"]] = b["bbcode_id"]
-    bf=[0]*10
+
+    bf = [0] * 10
     for i in tags:
-        if re.findall('\\[/'+i+':[^\\[\\]]*<UID>]', dat):
+        bbtag = '\[/{}:?[^\]]*\]'.format(i)
+        if re.findall(bbtag, dat):
             c,d=divmod(tags[i],8)
             bf[c]|=(1<<(7-d))
-    return codecs.encode(''.join([chr(c) for c in bf]).rstrip('\0').encode("utf8"), 'base64').strip()
+            c, d = divmod(tags[i], 8)
+            bf[c] |= (1 << (7-d))
+
+    tempstr = ''.join([chr(c) for c in bf]).rstrip('\0').encode("latin-1")
+    return base64.b64encode(tempstr).decode("utf-8")
 
 def format_post(post):
-    tags = ['code', 'quote', 'attachment', 'b', 'i', 'url', 'img', 'size', 'color', 'u', 'list', 'email', 'flash']
+    tags = ['*', 'code', 'quote', 'attachment', 'b', 'i', 'url', 'img', 'size', 'color', 'u', 'list', 'email', 'flash']
     for n in bbcodes:
         tags.append(n["bbcode_tag"])
         
     uid = ''.join([random.choice('abcdefghijklmnopqrstuvwxyz0123456789') for i in range(8)])
     bitfield = makebitfield(post)
+
+    # Cleanup one ugly case
+    post = post.replace("Spoiler: [spoiler]", "[spoiler]")
+    post = post.replace("[spoiler]", "[spoiler]")
+
     for t in tags:
         post = post.replace("[{}]".format(t), "[{}:{}]".format(t, uid))
         post = post.replace("[/{}]".format(t), "[/{}:{}]".format(t, uid))
     checksum = hashlib.md5(post.encode("utf8")).hexdigest()
-    return post,uid,bitfield,checksum
+
+    # find tags such as [list=1] or [quote="me"] that are ignored by the code above
+    regex = re.compile("\[(list|quote|url|flash|size|color|font|email|)=([^\]]*)\]", re.IGNORECASE)
+    foundtags = regex.findall(post)
+    for tag in foundtags:
+        post = post.replace("[{}={}]".format(tag[0], tag[1]), "[{}={}:{}]".format(tag[0], tag[1], uid))
+
+    # find tags such as [table border=1] that are ignored by the code above
+    regex = re.compile("\[(table) ([^\]]*)\]", re.IGNORECASE)
+    foundtags = regex.findall(post)
+    for tag in foundtags:
+        post = post.replace("[{} {}]".format(tag[0], tag[1]), "[{} {}:{}]".format(tag[0], tag[1], uid))
+
+    # handle [/*:m], [/list:u] and [/list:o] cases
+    post = post.replace("[/*:m]", "[/*:m:{}]".format(uid))
+    post = post.replace("[/list:u]", "[/list:u:{}]".format(uid))
+    post = post.replace("[/list:o]", "[/list:o:{}]".format(uid))
+
+    return post, uid, bitfield, checksum
     
 
 bots = [{'name': 'AdsBot [Google]'			, 'agent': 'AdsBot-Google'								, 'ip': ''},

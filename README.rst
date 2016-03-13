@@ -99,7 +99,9 @@ lancez::
 Importation
 -----------
 
-- Installez un forum PhpBB3 en suivant la procédure habituelle.
+- Installez un forum PhpBB 3.0.x en suivant la procédure habituelle
+  (cette version n'est pas compatible avec phpBB 3.1, vous pourrez
+  effectuer la mise à jour à la fin de l'exportation).
 
 - Déconnectez vous.
 
@@ -150,3 +152,7 @@ Programmé en python en utilisant :
 
 En s'inspirant des `Crawler Converters <http://www.phpbb.com/community/viewtopic.php?f=65&t=1761395>`_
 de nneonneo.
+
+Merci aux contributeurices :
+
+- `jeancf <https://github.com/jeancf>`_
