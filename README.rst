@@ -158,3 +158,4 @@ de nneonneo.
 Merci aux contributeurices :
 
 - `jeancf <https://github.com/jeancf>`_
+- `vikbez <https://github.com/vikbez>`_
