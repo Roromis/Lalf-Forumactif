@@ -112,6 +112,16 @@ class BB(Node):
                 yield p
 
     def _dump_(self, file):
+        # Clean tables
+        sql.truncate(file, "forums")
+        sql.truncate(file, "acl_groups")
+
+        sql.truncate(file, "topics")
+        sql.truncate(file, "topics_posted")
+
+        sql.truncate(file, "posts")
+        sql.truncate(file, "privmsgs")
+
         # Add bbcodes tags
         sql.truncate(file, "bbcodes")
         for bbcode in phpbb.bbcodes:

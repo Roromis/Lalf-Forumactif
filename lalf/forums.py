@@ -65,13 +65,3 @@ class Forums(Node):
             f = levels.pop()
             f.right_id = left_id
             left_id += 1
-
-    def _dump_(self, file):
-        # Clean tables
-        sql.truncate(file, "forums")
-        sql.truncate(file, "acl_groups")
-
-        sql.truncate(file, "topics")
-        sql.truncate(file, "topics_posted")
-        
-        sql.truncate(file, "posts")
