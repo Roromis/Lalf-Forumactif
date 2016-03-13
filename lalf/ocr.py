@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Lalf.  If not, see <http://www.gnu.org/licenses/>.
 
-import png
 import subprocess
+from PIL import Image
 
 from lalf.exceptions import *
 from lalf.config import config
@@ -26,13 +26,14 @@ def toolong(img):
     Returns true if the email displayed in the image img is too long to
     be displayed entirely
     """
-    reader = png.Reader(filename=img)
-    w, h, pixels, metadata = reader.read_flat()
+    with Image.open(img) as image:
+        width, height = image.size
 
-    for i in range(w-6,w):
-        for j in range(0,h):
-            if pixels[i+j*w] != 0:
-                return True
+        for i in range(width-6,width):
+            for j in range(0,height):
+                if image.getpixel((i, j)) != (255, 255, 255):
+                    return True
+
     return False
 
 def totext(img):

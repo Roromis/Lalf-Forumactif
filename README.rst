@@ -67,7 +67,7 @@ récupération des adresses e-mail (conseillé), installez `gocr
 <http://jocr.sourceforge.net/>`_ (sous windows, téléchargez
 l'exécutable dans le même dossier que le fichier ``config.cfg``).
 
-Placez vous dans le dosier contenant le fichier de configuration, et
+Placez vous dans le dossier contenant le fichier de configuration, et
 lancez::
 
   lalf.py
@@ -81,8 +81,8 @@ Installez les dépendances suivantes :
 
 - `PyQuery <https://bitbucket.org/olauzanne/pyquery/>`_
 - `Requests <http://docs.python-requests.org/en/latest/>`_
-- `pypng <https://github.com/drj11/pypng>`_
-
+- `Pillow <http://python-pillow.org/>`_
+  
 Téléchargez la dernière version du lalf et extrayez l'archive.
 
 Créez le fichier de configuration ``config.cfg`` en vous inspirant du
@@ -93,7 +93,7 @@ récupération des adresses e-mail (conseillé), installez `gocr
 <http://jocr.sourceforge.net/>`_ (sous windows, téléchargez
 l'exécutable dans le même dossier que le fichier ``config.cfg``).
 
-Placez vous dans le dosier contenant le fichier de configuration, et
+Placez vous dans le dossier contenant le fichier de configuration, et
 lancez::
 
   ./lalf.py
@@ -149,7 +149,7 @@ Programmé en python en utilisant :
 
 - `PyQuery <https://bitbucket.org/olauzanne/pyquery/>`_
 - `Requests <http://docs.python-requests.org/en/latest/>`_
-- `pypng <https://github.com/drj11/pypng>`_
+- `Pillow <http://python-pillow.org/>`_
 - `gocr <http://jocr.sourceforge.net/>`_
 
 En s'inspirant des `Crawler Converters <http://www.phpbb.com/community/viewtopic.php?f=65&t=1761395>`_

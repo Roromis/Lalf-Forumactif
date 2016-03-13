@@ -24,7 +24,6 @@ import re
 import imghdr
 from pyquery import PyQuery
 
-from lalf.util import clean
 from lalf.node import Node
 from lalf.forumpage import ForumPage
 from lalf import phpbb

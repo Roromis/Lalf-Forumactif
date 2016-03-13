@@ -47,7 +47,7 @@ setup(
     install_requires=[
         'pyquery',
         'requests',
-        'pypng'
+        'Pillow'
     ],
     scripts=['lalf.py'],
     data_files=[('share/doc/lalf', [
