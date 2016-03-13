@@ -34,6 +34,7 @@ config = {
     "use_ocr" : True,
     "gocr" : "",
     "temporary_theme": "",
+    "export_smilies": "",
     "verbose" : False
 }
 

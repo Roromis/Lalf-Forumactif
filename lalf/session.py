@@ -150,3 +150,11 @@ def get_admin(path, **kwargs):
     kwargs["params"]["tid"] = tid
         
     return get(path, **kwargs)
+
+def get_image(image, **kwargs):
+    o = urllib.parse.urlparse(image)
+
+    if o.scheme == '' or o.netloc == '':
+        image = url(image)
+
+    return session.get(image)

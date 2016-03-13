@@ -79,13 +79,13 @@ class BB(Node):
         
         # Add the children nodes, which respectively handle the
         # exportation of the users, the smileys and the message
+        self.children.append(Smileys(self))
         if config["use_ocr"]:
             # Use Optical Character Recognition to get the users'
             # emails
             self.children.append(OcrUsers(self))
         else:
             self.children.append(Users(self))
-        self.children.append(Smileys(self))
         self.children.append(Forums(self))
 
     def __setstate__(self, dict):

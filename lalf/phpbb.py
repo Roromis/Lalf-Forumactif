@@ -58,7 +58,7 @@ bbcodes = [
      "first_pass_replace" : "'[strike:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/strike:$uid]'",
      "second_pass_match" : "!\\[strike:$uid\\](.*?)\\[/strike:$uid\\]!s",
      "second_pass_replace" : "<span style=\"text-decoration: line-through;\">${1}</span>"},
-     
+
     {"bbcode_id" : 14,
      "bbcode_tag" : "left",
      "bbcode_helpline" : "Texte aligné à gauche",
@@ -69,7 +69,7 @@ bbcodes = [
      "first_pass_replace" : "'[left:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/left:$uid]'",
      "second_pass_match" : "!\\[left:$uid\\](.*?)\\[/left:$uid\\]!s",
      "second_pass_replace" : "<div style=\"text-align: left;\">${1}</div>"},
-     
+
     {"bbcode_id" : 15,
      "bbcode_tag" : "center",
      "bbcode_helpline" : "Texte aligné au centre",
@@ -80,7 +80,7 @@ bbcodes = [
      "first_pass_replace" : "'[center:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/center:$uid]'",
      "second_pass_match" : "!\\[center:$uid\\](.*?)\\[/center:$uid\\]!s",
      "second_pass_replace" : "<div style=\"text-align: center;\">${1}</div>"},
-     
+
     {"bbcode_id" : 16,
      "bbcode_tag" : "right",
      "bbcode_helpline" : "Texte aligné à droite",
@@ -91,7 +91,7 @@ bbcodes = [
      "first_pass_replace" : "'[right:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/right:$uid]'",
      "second_pass_match" : "!\\[right:$uid\\](.*?)\\[/right:$uid\\]!s",
      "second_pass_replace" : "<div style=\"text-align: right;\">${1}</div>"},
-     
+
     {"bbcode_id" : 17,
      "bbcode_tag" : "justify",
      "bbcode_helpline" : "Texte justifié",
@@ -102,7 +102,7 @@ bbcodes = [
      "first_pass_replace" : "'[justify:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/justify:$uid]'",
      "second_pass_match" : "!\\[justify:$uid\\](.*?)\\[/justify:$uid\\]!s",
      "second_pass_replace" : "<div style=\"text-align: justify;\">${1}</div>"},
-     
+
     {"bbcode_id" : 18,
      "bbcode_tag" : "font",
      "bbcode_helpline" : "Modifier la police",
@@ -113,7 +113,7 @@ bbcodes = [
      "first_pass_replace" : "'[font=${1}:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${2}')).'[/font:$uid]'",
      "second_pass_match" : "!\\[font\\=([a-zA-Z0-9-+.,_ ]+):$uid\\](.*?)\\[/font:$uid\\]!s",
      "second_pass_replace" : "<span style=\"font-family: ${1};\">${2}</span>"},
-     
+
     {"bbcode_id" : 19,
      "bbcode_tag" : "td",
      "bbcode_helpline" : "Cellule de tableau",
@@ -147,7 +147,7 @@ bbcodes = [
      "first_pass_replace" : "'[table${1}:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${2}')).'[/table:$uid]'",
      "second_pass_match" : "!\\[table([a-zA-Z0-9-+.,_= ]*):$uid\\](.*?)\\[/table:$uid\\]!s",
      "second_pass_replace" : "<table ${1}>${2}</table>"},
-     
+
     {"bbcode_id" : 22,
      "bbcode_tag" : "updown",
      "bbcode_helpline" : "Texte défilant verticalement",
@@ -158,7 +158,7 @@ bbcodes = [
      "first_pass_replace" : "'[updown:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/updown:$uid]'",
      "second_pass_match" : "!\\[updown:$uid\\](.*?)\\[/updown:$uid\\]!s",
      "second_pass_replace" : "<marquee height=\"60\" scrollamount=\"1\" direction=\"up\" behavior=\"scroll\">${1}</marquee>"},
-     
+
     {"bbcode_id" : 23,
      "bbcode_tag" : "hr",
      "bbcode_helpline" : "Ligne horizontale",
@@ -169,7 +169,7 @@ bbcodes = [
      "first_pass_replace" : "'[hr:$uid][/hr:$uid]'",
      "second_pass_match" : "!\\[hr:$uid\\]\\[/hr:$uid\\]!s",
      "second_pass_replace" : "<hr />"},
-     
+
     {"bbcode_id" : 24,
      "bbcode_tag" : "scroll",
      "bbcode_helpline" : "Texte défilant horizontalement",
@@ -180,7 +180,7 @@ bbcodes = [
      "first_pass_replace" : "'[scroll:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/scroll:$uid]'",
      "second_pass_match" : "!\\[scroll:$uid\\](.*?)\\[/scroll:$uid\\]!s",
      "second_pass_replace" : "<marquee>${1}</marquee>"},
-     
+
     {"bbcode_id" : 25,
      "bbcode_tag" : "sup",
      "bbcode_helpline" : "Texte en exposant",
@@ -191,7 +191,7 @@ bbcodes = [
      "first_pass_replace" : "'[sup:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/sup:$uid]'",
      "second_pass_match" : "!\\[sup:$uid\\](.*?)\\[/sup:$uid\\]!s",
      "second_pass_replace" : "<sup>${1}</sup>"},
-     
+
     {"bbcode_id" : 26,
      "bbcode_tag" : "sub",
      "bbcode_helpline" : "Texte en indice",
@@ -202,7 +202,7 @@ bbcodes = [
      "first_pass_replace" : "'[sub:$uid]'.str_replace(array(\"\\r\\n\", '\\\"', '\\'', '(', ')'), array(\"\\n\", '\"', '&#39;', '&#40;', '&#41;'), trim('${1}')).'[/sub:$uid]'",
      "second_pass_match" : "!\\[sub:$uid\\](.*?)\\[/sub:$uid\\]!s",
      "second_pass_replace" : "<sub>${1}</sub>"},
-     
+
     {"bbcode_id" : 27,
      "bbcode_tag" : "spoiler",
      "bbcode_helpline" : "Spoiler",
@@ -248,9 +248,15 @@ def format_post(post):
     tags = ['*', 'code', 'quote', 'attachment', 'b', 'i', 'url', 'img', 'size', 'color', 'u', 'list', 'email', 'flash']
     for n in bbcodes:
         tags.append(n["bbcode_tag"])
-        
+
     uid = ''.join([random.choice('abcdefghijklmnopqrstuvwxyz0123456789') for i in range(8)])
     bitfield = makebitfield(post)
+
+    # Smilies
+    for smiley in smileys:
+        pattern = "(^|\s){}".format(re.escape(smiley["code"]))
+        html = "  <!-- s{code} --><img src=\"{{SMILIES_PATH}}/{smiley_url}\" alt=\"{code}\" title=\"{emotion}\" /><!-- s{code} -->  ".format(**smiley)
+        post = re.sub(pattern, html, post)
 
     # Cleanup one ugly case
     post = post.replace("Spoiler: [spoiler]", "[spoiler]")
@@ -279,7 +285,7 @@ def format_post(post):
     post = post.replace("[/list:o]", "[/list:o:{}]".format(uid))
 
     return post, uid, bitfield, checksum
-    
+
 
 bots = [{'name': 'AdsBot [Google]'			, 'agent': 'AdsBot-Google'								, 'ip': ''},
 		{'name': 'Alexa [Bot]'				, 'agent': 'ia_archiver'								, 'ip': ''},
@@ -332,3 +338,51 @@ bots = [{'name': 'AdsBot [Google]'			, 'agent': 'AdsBot-Google'								, 'ip': '
 		{'name': 'Yahoo Slurp [Bot]'		, 'agent': 'Yahoo! DE Slurp'							, 'ip': ''},
 		{'name': 'Yahoo [Bot]'				, 'agent': 'Yahoo! Slurp'								, 'ip': ''},
 		{'name': 'YahooSeeker [Bot]'		, 'agent': 'YahooSeeker/'								, 'ip': ''}]
+
+smileys = [
+    {"code": ":D",         "emotion": "Very Happy",         "smiley_url": "icon_e_biggrin.gif",   "export": False},
+    {"code": ":-D",        "emotion": "Very Happy",         "smiley_url": "icon_e_biggrin.gif",   "export": False},
+    {"code": ":grin:",     "emotion": "Very Happy",         "smiley_url": "icon_e_biggrin.gif",   "export": False},
+    {"code": ":)",         "emotion": "Smile",              "smiley_url": "icon_e_smile.gif",     "export": False},
+    {"code": ":-)",        "emotion": "Smile",              "smiley_url": "icon_e_smile.gif",     "export": False},
+    {"code": ":smile:",    "emotion": "Smile",              "smiley_url": "icon_e_smile.gif",     "export": False},
+    {"code": ";)",         "emotion": "Wink",               "smiley_url": "icon_e_wink.gif",      "export": False},
+    {"code": ";-)",        "emotion": "Wink",               "smiley_url": "icon_e_wink.gif",      "export": False},
+    {"code": ":wink:",     "emotion": "Wink",               "smiley_url": "icon_e_wink.gif",      "export": False},
+    {"code": ":(",         "emotion": "Sad",                "smiley_url": "icon_e_sad.gif",       "export": False},
+    {"code": ":-(",        "emotion": "Sad",                "smiley_url": "icon_e_sad.gif",       "export": False},
+    {"code": ":sad:",      "emotion": "Sad",                "smiley_url": "icon_e_sad.gif",       "export": False},
+    {"code": ":o",         "emotion": "Surprised",          "smiley_url": "icon_e_surprised.gif", "export": False},
+    {"code": ":-o",        "emotion": "Surprised",          "smiley_url": "icon_e_surprised.gif", "export": False},
+    {"code": ":eek:",      "emotion": "Surprised",          "smiley_url": "icon_e_surprised.gif", "export": False},
+    {"code": ":shock:",    "emotion": "Shocked",            "smiley_url": "icon_eek.gif",         "export": False},
+    {"code": ":?",         "emotion": "Confused",           "smiley_url": "icon_e_confused.gif",  "export": False},
+    {"code": ":-?",        "emotion": "Confused",           "smiley_url": "icon_e_confused.gif",  "export": False},
+    {"code": ":???:",      "emotion": "Confused",           "smiley_url": "icon_e_confused.gif",  "export": False},
+    {"code": "8-)",        "emotion": "Cool",               "smiley_url": "icon_cool.gif",        "export": False},
+    {"code": ":cool:",     "emotion": "Cool",               "smiley_url": "icon_cool.gif",        "export": False},
+    {"code": ":lol:",      "emotion": "Laughing",           "smiley_url": "icon_lol.gif",         "export": False},
+    {"code": ":x",         "emotion": "Mad",                "smiley_url": "icon_mad.gif",         "export": False},
+    {"code": ":-x",        "emotion": "Mad",                "smiley_url": "icon_mad.gif",         "export": False},
+    {"code": ":mad:",      "emotion": "Mad",                "smiley_url": "icon_mad.gif",         "export": False},
+    {"code": ":P",         "emotion": "Razz",               "smiley_url": "icon_razz.gif",        "export": False},
+    {"code": ":-P",        "emotion": "Razz",               "smiley_url": "icon_razz.gif",        "export": False},
+    {"code": ":razz:",     "emotion": "Razz",               "smiley_url": "icon_razz.gif",        "export": False},
+    {"code": ":oops:",     "emotion": "Embarrassed",        "smiley_url": "icon_redface.gif",     "export": False},
+    {"code": ":cry:",      "emotion": "Crying or Very Sad", "smiley_url": "icon_cry.gif",         "export": False},
+    {"code": ":evil:",     "emotion": "Evil or Very Mad",   "smiley_url": "icon_evil.gif",        "export": False},
+    {"code": ":twisted:",  "emotion": "Twisted Evil",       "smiley_url": "icon_twisted.gif",     "export": False},
+    {"code": ":roll:",     "emotion": "Rolling Eyes",       "smiley_url": "icon_rolleyes.gif",    "export": False},
+    {"code": ":!:",        "emotion": "Exclamation",        "smiley_url": "icon_exclaim.gif",     "export": False},
+    {"code": ":?:",        "emotion": "Question",           "smiley_url": "icon_question.gif",    "export": False},
+    {"code": ":idea:",     "emotion": "Idea",               "smiley_url": "icon_idea.gif",        "export": False},
+    {"code": ":arrow:",    "emotion": "Arrow",              "smiley_url": "icon_arrow.gif",       "export": False},
+    {"code": ":|",         "emotion": "Neutral",            "smiley_url": "icon_neutral.gif",     "export": False},
+    {"code": ":-|",        "emotion": "Neutral",            "smiley_url": "icon_neutral.gif",     "export": False},
+    {"code": ":mrgreen:",  "emotion": "Mr. Green",          "smiley_url": "icon_mrgreen.gif",     "export": False},
+    {"code": ":geek:",     "emotion": "Geek",               "smiley_url": "icon_e_geek.gif",      "export": False},
+    {"code": ":ugeek:",    "emotion": "Uber Geek",          "smiley_url": "icon_e_ugeek.gif",     "export": False},
+
+    {"code": "8)",         "emotion": "Cool",               "smiley_url": "icon_cool.gif",        "export": True,
+     "smiley_width": "15", "smiley_height": "17", "smiley_order": "42", "display_on_posting": "0"}
+]

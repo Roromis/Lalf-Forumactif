@@ -29,8 +29,6 @@ from lalf.util import month
 from lalf import session
 from lalf import htmltobbcode
 
-smileys = {}
-
 class TopicPage(Node):
 
     """
@@ -59,7 +57,7 @@ class TopicPage(Node):
             author = e("td span.name").text()
             htmlpost = e("td div.postbody div").eq(0).html()
             if htmlpost:
-                post = htmltobbcode.htmltobbcode(htmlpost, smileys)
+                post = htmltobbcode.htmltobbcode(htmlpost)
             else:
                 logging.warning('Le message  %d (sujet %d, page %d) semble être vide', id, self.id, self.page)
                 post = ""

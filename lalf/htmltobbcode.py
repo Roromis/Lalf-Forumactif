@@ -19,11 +19,11 @@ import re
 from html import escape
 from html.parser import HTMLParser
 
-
 class HtmltobbcodeParser(HTMLParser):
-    def __init__(self, smileys):
+    smileys = {}
+    
+    def __init__(self):
         HTMLParser.__init__(self)
-        self.smileys = smileys
         self.bbcode = ""
         self.quote = False
         self.author = ""
@@ -52,13 +52,13 @@ class HtmltobbcodeParser(HTMLParser):
             self.bbcode += "\n"
         elif tag == 'img':
             if "longdesc" in attrs:
-                if attrs["longdesc"] in self.smileys:
-                    self.bbcode += " " + self.smileys[attrs["longdesc"]] + " "
+                if attrs["longdesc"] in HtmltobbcodeParser.smileys:
+                    HtmltobbcodeParser.smileys[attrs["longdesc"]]["used"] = True
+                    self.bbcode += " " + HtmltobbcodeParser.smileys[attrs["longdesc"]]["code"] + " "
             elif "src" in attrs:
                 self.bbcode += "[img]" + escape(attrs["src"]) + "[/img]"
         elif tag == 'hr':
             self.bbcode += "[hr][/hr]"
-
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
@@ -241,8 +241,8 @@ class HtmltobbcodeParser(HTMLParser):
             self.bbcode += "[/sup]"
 
 
-def htmltobbcode(string, smileys):
-    p = HtmltobbcodeParser(smileys)
+def htmltobbcode(string):
+    p = HtmltobbcodeParser()
     p.feed(string)
 
     return p.bbcode

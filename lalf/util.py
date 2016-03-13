@@ -15,8 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Lalf.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-    
 def month(s):
     """
     Converts an abbreviated french month name to an int
@@ -58,10 +56,3 @@ def clean_filename(filename):
         for c1 in c:
             filename = filename.replace(c1, c2)
     return filename
-
-def clean(s):
-    """Removes all accents from the string"""
-    if isinstance(s,str):
-        s = unicode(s,"utf8","replace")
-        s = unicodedata.normalize('NFD',s)
-        return s.encode('ascii','ignore')

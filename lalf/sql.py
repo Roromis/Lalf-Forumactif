@@ -25,12 +25,13 @@ def escape(str):
 def email_hash(email):
 	return str(crc32(email.encode("utf-8"))&0xffffffff) + str(len(email))
 
-def insert(file, table, d):
+def insert(file, table, d, ignore_keys=[]):
     keys = []
     values = []
     for k,v in d.items():
-        keys.append(k)
-        values.append("'"+escape(str(v))+"'")
+        if k not in ignore_keys:
+            keys.append(k)
+            values.append("'"+escape(str(v))+"'")
 
     file.write('INSERT INTO {prefix}{table} ({keys}) VALUES ({values});\n'.format(
         prefix=config["table_prefix"],
