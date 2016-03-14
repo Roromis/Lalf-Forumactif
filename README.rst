@@ -1,21 +1,21 @@
 ======
- Lalf 
+ Lalf
 ======
 
 Note importante
 ===============
 
-Ce programme est un logiciel libre ; vous pouvez le redistribuer et/ou 
-le modifier au titre des clauses de la Licence Publique Générale GNU, 
-telle que publiée par la Free Software Foundation ; soit la version 3 
+Ce programme est un logiciel libre ; vous pouvez le redistribuer et/ou
+le modifier au titre des clauses de la Licence Publique Générale GNU,
+telle que publiée par la Free Software Foundation ; soit la version 3
 de la Licence.
 
-Ce programme est distribué dans l'espoir qu'il sera utile, mais SANS 
-AUCUNE GARANTIE ; sans même une garantie implicite de COMMERCIABILITE 
-ou DE CONFORMITE A UNE UTILISATION PARTICULIERE. Voir la Licence 
-Publique Générale GNU pour plus de détails. Vous devriez avoir reçu 
+Ce programme est distribué dans l'espoir qu'il sera utile, mais SANS
+AUCUNE GARANTIE ; sans même une garantie implicite de COMMERCIABILITE
+ou DE CONFORMITE A UNE UTILISATION PARTICULIERE. Voir la Licence
+Publique Générale GNU pour plus de détails. Vous devriez avoir reçu
 un exemplaire de la Licence Publique Générale GNU avec ce programme.
-Les auteurs déclinent toutes responsabilités quant à l'utilisation 
+Les auteurs déclinent toutes responsabilités quant à l'utilisation
 qui pourrait en être faite.
 
 Documentation
@@ -25,14 +25,14 @@ Prérequis
 ---------
 
 - Vous devez être administrateur du forum que vous souhaitez exporter.
- 
+
 - Le forum doit être hébergé par forumactif, et doit utiliser la
   version phpbb2 du thème. Dans le cas contraire, vous pouvez créer
   un thème temporaire utilisant la version phpbb2 (dans le panneau
   d'administration, onglet "Affichage", "Thèmes temporaires").
-   
-- Le format des dates de votre forum doit-être "jour J mois AAAA - 
-  HH:MM" (par exemple: Lun 1 Jan 2009 - 00:01), vous devez modifier 
+
+- Le format des dates de votre forum doit-être "jour J mois AAAA -
+  HH:MM" (par exemple: Lun 1 Jan 2009 - 00:01), vous devez modifier
   cela dans le profil de l'administrateur.
 
 Exportation
@@ -82,7 +82,7 @@ Installez les dépendances suivantes :
 - `PyQuery <https://bitbucket.org/olauzanne/pyquery/>`_
 - `Requests <http://docs.python-requests.org/en/latest/>`_
 - `Pillow <http://python-pillow.org/>`_
-  
+
 Téléchargez la dernière version du lalf et extrayez l'archive.
 
 Créez le fichier de configuration ``config.cfg`` en vous inspirant du
@@ -122,25 +122,38 @@ Resynchronisation
   identifiants de l'administrateur de votre ancien forum et
   resynchronisez les statistiques, les compteurs de messages et les
   sujets pointés (Onglet Général).
-   
-- Resynchronisez tous les forums/sous-forums (Onglet Forums, Bouton 
+
+- Resynchronisez tous les forums/sous-forums (Onglet Forums, Bouton
   orange "Resynchroniser" à droite de chaque forum).
-   
-- Créez les index de recherche (Onglet Maintenance -> Base de donnée 
-  -> Index de recherche, cliquez sur les deux boutons "Supprimer 
-  l'index de recherche" (s'ils sont présent) puis sur les boutons 
+
+- Créez les index de recherche (Onglet Maintenance -> Base de donnée
+  -> Index de recherche, cliquez sur les deux boutons "Supprimer
+  l'index de recherche" (s'ils sont présent) puis sur les boutons
   "Créer l'index de recherche").
-   
-- Téléchargez le Support Toolkit (et éventuellement la traduction 
-  française) sur http://www.phpbb.com/support/stk/ et extrayez le 
-  dossier stk/stk à la racine de votre forum. Ouvrez ce dossier dans 
-  votre navigateur (http://phpbb/stk) et réanalysez les 
-  BBCodes (onglet Outils pour les administrateurs, cochez "Réanalyser 
-  tous les BBCodes" et cliquez sur Envoyer).
-   
-- Modifiez les permissions de vos forums (par défaut, ils sont 
-  visibles par tous les utilisateurs et les invités), ajoutez les 
+
+- Modifiez les permissions de vos forums (par défaut, ils sont
+  visibles par tous les utilisateurs et les invités), ajoutez les
   modérateurs, co-administrateurs manuellement.
+
+- (Optionnel) Il est possible qu'il y ait eut des erreurs lors de la
+  transcription des messages en bbcodes. Si vous constatez un tel
+  problème (messages incomplets, bbcodes non traités, ...), essayez
+  d'éditer le message en question pour vérifier que le bbcode est
+  correct.
+
+  - Si le bbcode est incorrect, créez un `rapport d'erreur
+    <https://github.com/Roromis/Lalf-Forumactif/issues>`_, en
+    fournissant les codes du message original et du nouveau.
+
+  - Si le bbcode est correct, réenvoyer le message devrait corriger le
+    formatage. Si plusieurs messages sont affecté, il est possible de
+    les corriger tous : téléchargez le Support Toolkit (et
+    éventuellement la traduction française) sur
+    http://www.phpbb.com/support/stk/ et extrayez le dossier stk/stk à
+    la racine de votre forum. Ouvrez ce dossier dans votre navigateur
+    (http://phpbb/stk) et réanalysez les BBCodes (onglet Outils pour
+    les administrateurs, cochez "Réanalyser tous les BBCodes" et
+    cliquez sur Envoyer).
 
 Crédits
 =======
@@ -152,8 +165,9 @@ Programmé en python en utilisant :
 - `Pillow <http://python-pillow.org/>`_
 - `gocr <http://jocr.sourceforge.net/>`_
 
-En s'inspirant des `Crawler Converters <http://www.phpbb.com/community/viewtopic.php?f=65&t=1761395>`_
-de nneonneo.
+En s'inspirant des `Crawler Converters
+<http://www.phpbb.com/community/viewtopic.php?f=65&t=1761395>`_ de
+nneonneo.
 
 Merci aux contributeurices :
 
