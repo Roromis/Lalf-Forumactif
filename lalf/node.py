@@ -46,8 +46,8 @@ class Node(object):
             self.exported = True
         
         if not self.children_exported:
-            for c in self.children:
-                c.export()
+            for child in self.children:
+                child.export()
             self.children_exported = True
 
     def _export_(self):
@@ -78,8 +78,8 @@ class Node(object):
         """
         self._dump_(file)
         
-        for c in self.children:
-            c.dump(file)
+        for child in self.children:
+            child.dump(file)
 
     def _dump_(self, file):
         return

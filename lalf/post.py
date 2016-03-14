@@ -55,7 +55,7 @@ class Post(Node):
         counters.postnumber += 1
 
     def _dump_(self, file):
-        users = self.parent.parent.parent.children[0]
+        users = self.parent.parent.parent.users
 
         post, uid, bitfield, checksum = phpbb.format_post(self.post)
         sql.insert(file, "posts", {

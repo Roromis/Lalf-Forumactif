@@ -120,9 +120,9 @@ class Forum(Node):
             self.children.append(ForumPage(self, self.id, self.newid, self.type, page*topicsperpages))
 
     def get_topics(self):
-        for p in self.children:
-            for c in p.children:
-                yield c
+        for page in self.children:
+            for topic in page.children:
+                yield topic
 
     def _dump_(self, file):
         if self.type == "f":

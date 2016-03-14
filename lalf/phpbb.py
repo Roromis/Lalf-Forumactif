@@ -21,6 +21,8 @@ import base64
 import hashlib
 import random
 
+from lalf.htmltobbcode import htmltobbcode
+
 def email_hash(email):
     return str(crc32(email)&0xffffffff) + str(len(email))
 
@@ -245,6 +247,9 @@ def makebitfield(dat):
     return base64.b64encode(tempstr).decode("utf-8")
 
 def format_post(post):
+    if post:
+        post = htmltobbcode(post)
+
     tags = ['*', 'code', 'quote', 'attachment', 'b', 'i', 'url', 'img', 'size', 'color', 'u', 'list', 'email', 'flash']
     for n in bbcodes:
         tags.append(n["bbcode_tag"])

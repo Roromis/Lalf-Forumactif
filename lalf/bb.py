@@ -79,14 +79,18 @@ class BB(Node):
         
         # Add the children nodes, which respectively handle the
         # exportation of the users, the smileys and the message
-        self.children.append(Smileys(self))
+        self.smileys = Smileys(self)
         if config["use_ocr"]:
             # Use Optical Character Recognition to get the users'
             # emails
-            self.children.append(OcrUsers(self))
+            self.users = OcrUsers(self)
         else:
-            self.children.append(Users(self))
-        self.children.append(Forums(self))
+            self.users = Users(self)
+        self.forums = Forums(self)
+
+        self.children.append(self.smileys)
+        self.children.append(self.users)
+        self.children.append(self.forums)
 
     def __setstate__(self, dict):
         Node.__setstate__(self, dict)
@@ -100,16 +104,13 @@ class BB(Node):
             pickle.dump(self, f)
     
     def get_forums(self):
-        for c in self.children[2].children:
-            yield c
+        return self.forums.children
 
     def get_users(self):
-        return self.children[0].get_users()
+        return self.users.get_users()
             
     def get_smileys(self):
-        for p in self.children[0].children:
-            for c in p.children:
-                yield p
+        return self.smileys.smileys
 
     def _dump_(self, file):
         # Clean tables

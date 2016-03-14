@@ -27,7 +27,6 @@ from lalf.node import Node
 from lalf.post import Post
 from lalf.util import month
 from lalf import session
-from lalf import htmltobbcode
 
 class TopicPage(Node):
 
@@ -55,10 +54,8 @@ class TopicPage(Node):
             logger.debug('Récupération du message %d (sujet %d, page %d)', id, self.id, self.page)
             
             author = e("td span.name").text()
-            htmlpost = e("td div.postbody div").eq(0).html()
-            if htmlpost:
-                post = htmltobbcode.htmltobbcode(htmlpost)
-            else:
+            post = e("td div.postbody div").eq(0).html()
+            if not post:
                 logging.warning('Le message  %d (sujet %d, page %d) semble être vide', id, self.id, self.page)
                 post = ""
 

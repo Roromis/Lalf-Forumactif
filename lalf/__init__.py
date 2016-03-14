@@ -20,9 +20,6 @@ import logging
 logger = logging.getLogger("lalf")
 logger.setLevel(logging.DEBUG)
 
-# Log format
-#formatter = logging.Formatter('%(levelname)-8s : %(message)s')
-
 import sys
 
 from lalf.bb import load, BB
@@ -35,6 +32,10 @@ def main():
     # File output
     filehandler = logging.FileHandler('debug.log')
     filehandler.setLevel(logging.DEBUG)
+
+    formatter = logging.Formatter('%(levelname)-8s : %(message)s')
+    filehandler.setFormatter(formatter)
+
     logger.addHandler(filehandler)
     
     config.read("config.cfg")

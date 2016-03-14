@@ -55,9 +55,9 @@ class Users(Node):
         """
         Returns the list of users
         """
-        for p in self.children:
-            for c in p.children:
-                yield c
+        for page in self.children:
+            for user in page.children:
+                yield user
 
     def get_newid(self, name):
         """

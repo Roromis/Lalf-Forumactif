@@ -70,12 +70,12 @@ class Topic(Node):
         counters.topicnumber += 1
 
     def get_posts(self):
-        for p in self.children:
-            for c in p.children:
-                yield c
+        for page in self.children:
+            for post in page.children:
+                yield post
 
     def _dump_(self, file):
-        users = self.parent.parent.children[0]
+        users = self.parent.parent.users
         posts = list(self.get_posts())
 
         posts[0]

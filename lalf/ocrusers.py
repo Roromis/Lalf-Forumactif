@@ -39,8 +39,3 @@ class OcrUsers(Users):
         
         for page in range(0,pages):
             self.children.append(OcrUsersPage(self.parent, page*usersperpage))
-        
-    def get_users(self):
-        for p in self.children:
-            for c in p.children:
-                yield c
