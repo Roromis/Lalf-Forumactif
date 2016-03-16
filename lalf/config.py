@@ -7,7 +7,7 @@
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Foobar is distributed in the hope that it will be useful,
+# Lalf is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
@@ -15,17 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with Lalf.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-logger = logging.getLogger("lalf")
+"""
+Module handling the configuration
+"""
 
-import os.path
 import configparser
+from lalf.exceptions import InvalidConfigurationFile
 
-from lalf.exceptions import *
-
-"""
-Dictionnary containing the configuration
-"""
+# Dictionnary containing the configuration
+# TODO : do not use globals
 config = {
     "url" : "",
     "admin_name" : "",
@@ -44,14 +42,14 @@ def read(filename):
     dictionnary
     """
     cfg = configparser.ConfigParser()
-    with open(filename, "r") as f:
-        cfg.read_file(f)
+    with open(filename, "r") as fileobj:
+        cfg.read_file(fileobj)
 
     try:
-        for k,v in config.items():
-            if type(v) == bool:
-                config[k] = cfg.getboolean("Configuration", k)
+        for key, value in config.items():
+            if isinstance(value, bool):
+                config[key] = cfg.getboolean("Configuration", key)
             else:
-                config[k] = cfg.get("Configuration", k)
+                config[key] = cfg.get("Configuration", key)
     except (configparser.NoSectionError, configparser.NoOptionError) as e:
         raise InvalidConfigurationFile(filename, e)

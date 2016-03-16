@@ -7,7 +7,7 @@
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Foobar is distributed in the hope that it will be useful,
+# Lalf is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
@@ -20,9 +20,6 @@ Module containing the BB class (the root of the forum)
 """
 
 import logging
-logger = logging.getLogger("lalf")
-
-import re
 import pickle
 from pyquery import PyQuery
 
@@ -40,105 +37,173 @@ from lalf import counters
 class BB(Node):
     """
     The BB node is the root of the tree representing the forum.
+
+    Attributes:
+        nbposts (int) : The total number of posts to be exported
+        nbtopics (int) : The total number of topics to be exported
+        nbusers (int) : The total number of users to be exported
     """
-    
-    """
-    Attributes to save
-    """
+
+    # Attributes to save
     STATE_KEEP = ["nbposts", "nbtopics", "nbusers"]
-    
+
     def __init__(self):
         Node.__init__(self, None)
 
+        self.logger = logging.getLogger("lalf.bb.BB")
+
+        # Statistics
+        self.nbposts = 0
+        self.nbtopics = 0
+        self.nbusers = 0
+
     def _export_(self):
-        # Get stats
-        logger.info('Récupération des statistiques')
-        r = session.get("/statistics")
-        d = PyQuery(r.text)
-    
-        for i in d.find("table.forumline tr"):
-            e = PyQuery(i)
-            
-            try:
-                if e("td.row2 span").eq(0).text() == "Messages":
-                    self.nbposts = int(e("td.row1 span").eq(0).text())
-                elif e("td.row2 span").eq(0).text() == "Nombre de sujets ouvert dans le forum":
-                    self.nbtopics = int(e("td.row1 span").eq(0).text())
-                elif e("td.row2 span").eq(0).text() == "Nombre d'utilisateurs":
-                    self.nbusers = int(e("td.row1 span").eq(0).text())
-            except:
-                continue
-        
-        logger.debug('Messages : %d', self.nbposts)
-        logger.debug('Sujets : %d', self.nbtopics)
-        logger.debug('Membres : %d', self.nbusers)
-        
+        self.logger.info('Récupération des statistiques')
+        response = session.get("/statistics")
+        document = PyQuery(response.text)
+
+        # Go through the table of statistics and save the relevant
+        # ones
+        for element in document.find("table.forumline tr"):
+            e = PyQuery(element)
+
+            if e("td.row2 span").eq(0).text() == "Messages":
+                self.nbposts = int(e("td.row1 span").eq(0).text())
+            elif e("td.row2 span").eq(0).text() == "Nombre de sujets ouvert dans le forum":
+                self.nbtopics = int(e("td.row1 span").eq(0).text())
+            elif e("td.row2 span").eq(0).text() == "Nombre d'utilisateurs":
+                self.nbusers = int(e("td.row1 span").eq(0).text())
+
+        self.logger.debug('Messages : %d', self.nbposts)
+        self.logger.debug('Sujets : %d', self.nbtopics)
+        self.logger.debug('Membres : %d', self.nbusers)
+
+        # Set the global counters used by the UI
+        # TODO : do not use globals
         counters.topictotal = self.nbtopics
         counters.usertotal = self.nbusers
         counters.posttotal = self.nbposts
-        
+
         # Add the children nodes, which respectively handle the
-        # exportation of the users, the smileys and the message
-        self.smileys = Smileys(self)
+        # exportation of the smileys, the users and the message
+        self.children.append(Smileys(self))
+
         if config["use_ocr"]:
             # Use Optical Character Recognition to get the users'
             # emails
-            self.users = OcrUsers(self)
+            self.children.append(OcrUsers(self))
         else:
-            self.users = Users(self)
-        self.forums = Forums(self)
+            self.children.append(Users(self))
 
-        self.children.append(self.smileys)
-        self.children.append(self.users)
-        self.children.append(self.forums)
+        self.children.append(Forums(self))
 
-    def __setstate__(self, dict):
-        Node.__setstate__(self, dict)
+    def _dump_(self, sqlfile):
+        # Clean tables
+        sql.truncate(sqlfile, "forums")
+        sql.truncate(sqlfile, "acl_groups")
+
+        sql.truncate(sqlfile, "topics")
+        sql.truncate(sqlfile, "topics_posted")
+
+        sql.truncate(sqlfile, "posts")
+        sql.truncate(sqlfile, "privmsgs")
+
+        # Add bbcodes tags
+        sql.truncate(sqlfile, "bbcodes")
+        for bbcode in phpbb.bbcodes:
+            sql.insert(sqlfile, "bbcodes", bbcode)
+
+    def __setstate__(self, state):
+        Node.__setstate__(self, state)
+
+        # Set the global counters used by the UI
         counters.topictotal = self.nbtopics
         counters.usertotal = self.nbusers
         counters.posttotal = self.nbposts
 
-        self.smileys = self.children[0]
-        self.users = self.children[1]
-        self.forums = self.children[2]
+        self.logger = logging.getLogger("lalf.bb.BB")
 
     def save(self):
-        logger.info("Sauvegarde de l'état courant.")
-        with open("save.pickle", "wb") as f:
-            pickle.dump(self, f)
-    
+        """
+        Dump the tree representing the forum in a pickle file
+        """
+        self.logger.info("Sauvegarde de l'état courant.")
+        with open("save.pickle", "wb") as fileobj:
+            pickle.dump(self, fileobj)
+
+    @property
+    def smileys(self):
+        """
+        Smileys: The node handling the exportation of the smileys
+        """
+        try:
+            return self.children[0]
+        except IndexError:
+            raise AttributeError("'BB' object has no attribute 'smileys'")
+
+    @property
+    def users(self):
+        """
+        Users: The node handling the exportation of the users
+        """
+        try:
+            return self.children[1]
+        except IndexError:
+            raise AttributeError("'BB' object has no attribute 'users'")
+
+    @property
+    def forums(self):
+        """
+        Forums: The node handling the exportation of the forums
+        """
+        try:
+            return self.children[2]
+        except IndexError:
+            raise AttributeError("'BB' object has no attribute 'forums'")
+
     def get_forums(self):
+        """
+        Returns a list of the forums
+        """
         return self.forums.children
 
+    def get_topics(self):
+        """
+        Iterator on the topics of the forum
+        """
+        for forum in self.get_forums():
+            for topic in forum.get_topics():
+                yield topic
+
+    def get_posts(self):
+        """
+        Iterator on the posts of the forum
+        """
+        for topic in self.get_topics():
+            for post in topic.get_posts():
+                yield post
+
     def get_users(self):
+        """
+        Returns a list of the users
+        """
         return self.users.get_users()
-            
+
     def get_smileys(self):
+        """
+        Returns a dictionnary associating each smiley id to its informations
+        """
         return self.smileys.smileys
-
-    def _dump_(self, file):
-        # Clean tables
-        sql.truncate(file, "forums")
-        sql.truncate(file, "acl_groups")
-
-        sql.truncate(file, "topics")
-        sql.truncate(file, "topics_posted")
-
-        sql.truncate(file, "posts")
-        sql.truncate(file, "privmsgs")
-
-        # Add bbcodes tags
-        sql.truncate(file, "bbcodes")
-        for bbcode in phpbb.bbcodes:
-            sql.insert(file, "bbcodes", bbcode)
 
 def load():
     """
     Returns the BB node contained in the file save.pickle.
     """
+    logger = logging.getLogger("lalf.bb.load")
+
     try:
-        with open("save.pickle", "rb") as f:
-            bb = pickle.load(f)
+        with open("save.pickle", "rb") as fileobj:
+            bb = pickle.load(fileobj)
     except FileNotFoundError:
         bb = BB()
     except EOFError:

@@ -7,7 +7,7 @@
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Foobar is distributed in the hope that it will be useful,
+# Lalf is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
@@ -26,7 +26,7 @@ class Node(object):
     """
     Attributes to save
     """
-    NODE_KEEP = ["children", "parent", "exported", "children_exported"]
+    NODE_KEEP = ["children", "parent", "root", "exported", "children_exported"]
     STATE_KEEP = []
     
     def __init__(self, parent=None):
@@ -34,6 +34,11 @@ class Node(object):
         self.parent = parent
         self.exported = False
         self.children_exported = False
+        
+        if self.parent:
+            self.root = self.parent.root
+        else:
+            self.root = self
         
     def export(self):
         """
