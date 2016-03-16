@@ -33,6 +33,7 @@ from lalf.config import config
 from lalf import about
 from lalf import session
 from lalf import counters
+from lalf import htmltobbcode
 
 def random_password(length=8):
     return ''.join([random.choice(string.ascii_letters + string.digits) for n in range(8)])
@@ -148,7 +149,12 @@ class User(Node):
                 })
 
             # Send a pm to give instructions/ask donation
-            post, uid, bitfield, checksum = phpbb.format_post(about.admin_pm_post)
+            uid = phpbb.uid()
+            parser = htmltobbcode.Parser(self.parent.get_smileys(), uid)
+            parser.feed(about.admin_pm_post)
+            post = parser.output
+            bitfield = parser.get_bitfield()
+            checksum = parser.get_checksum()
                 
             sql.insert(file, "privmsgs", {
             "msg_id"             : 1,

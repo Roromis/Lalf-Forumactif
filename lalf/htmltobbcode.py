@@ -15,234 +15,368 @@
 # You should have received a copy of the GNU General Public License
 # along with Lalf.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+logger = logging.getLogger("lalf")
+
 import re
 from html import escape
 from html.parser import HTMLParser
+import base64
+import hashlib
 
-class HtmltobbcodeParser(HTMLParser):
-    smileys = {}
-    
+from lalf.phpbb import bbcodes
+
+class Handler(object):
+    def start(self, parser, stack, args):
+        return
+
+    def end(self, parser, stack):
+        return
+
+    def startend(self, parser, stack, args):
+        return
+
+class StackHandler(Handler):
     def __init__(self):
+        self.stack = []
+
+    def end(self, parser, stack):
+        parser.append_tag(self.stack.pop())
+
+class Parser(HTMLParser):
+    handlers = {}
+
+    @classmethod
+    def handler(cls, *tags):
+        def class_rebuilder(handler_class):
+            handler = handler_class()
+            for tag in tags:
+                cls.handlers[tag] = handler
+            return handler_class
+        return class_rebuilder
+
+    @classmethod
+    def unsupported(cls, **props):
+        def method_rebuilder(method):
+            def new_method(self, parser, tag, attrs):
+                if tag in props:
+                    for prop in props[tag]:
+                        if prop in attrs:
+                            logger.warning('La propriété "%s" du bbcode [%s] n\'est pas supportée.',
+                                           prop, tag)
+
+                method(self, parser, tag, attrs)
+            return new_method
+        return method_rebuilder
+
+    def __init__(self, smileys, uid):
         HTMLParser.__init__(self)
-        self.bbcode = ""
-        self.quote = False
-        self.author = ""
-        self.span = []
-        self.div = []
-        self.font = []
-        self.table = []
-        self.li = []
-        self.tr = []
-        self.td = []
-        self.dd = []
-        self.a = []
-        self.marquee = []
+
+        self.smileys = smileys
+
+        if uid:
+            self.uid = ":{}".format(uid)
+        else:
+            self.uid = ""
+
+        self.output = ""
+        self.bitfield = [0] * 10
+
+        self.tags = {'code' : 8,
+                'quote' : 0,
+                'attachment' : 12,
+                'b' : 1,
+                'i' : 2,
+                'url' : 3,
+                'img' : 4,
+                'size' : 5,
+                'color' : 6,
+                'u' : 7,
+                'list' : 9,
+                'email' : 10,
+                'flash' : 11}
+        for b in bbcodes:
+            self.tags[b["bbcode_tag"]] = b["bbcode_id"]
+
+        self.capture_data = False
+        self.data = ""
+
+    def get_bitfield(self):
+        tempstr = ''.join([chr(c) for c in self.bitfield]).rstrip('\0').encode("latin-1")
+        return base64.b64encode(tempstr).decode("utf-8")
+
+    def get_checksum(self):
+        return hashlib.md5(self.output.encode("utf8")).hexdigest()
+
+    def append_text(self, text):
+        self.output += text
+
+    def append_tag(self, tag, options=""):
+        if tag:
+            if tag in self.tags:
+                c, d = divmod(self.tags[tag], 8)
+                self.bitfield[c] |= (1 << (7-d))
+            self.append_text("[{}{}{}]".format(tag, options, self.uid))
+
+    def rstrip(self):
+        i = len(self.output)
+        while self.output[i-1] == "\n":
+            i -= 1
+        newlines = self.output[i:]
+        self.output = self.output[:i]
+        return newlines
+
+    def start_capture(self):
+        self.data = ""
+        self.capture_data = True
+
+    def end_capture(self):
+        self.capture_data = False
+        data = self.data
+        self.data = ""
+        return data
 
     def handle_data(self, data):
-        if self.quote:
-            if data[-9:] == " a écrit:":
-                self.author = data[:-9]
-            self.quote = False
+        if self.capture_data:
+            self.data += data
         else:
-            self.bbcode += data
+            self.append_text(data)
 
     def handle_startendtag(self, tag, attrs):
-        attrs = dict(attrs)
-        if tag == 'br':
-            self.bbcode += "\n"
-        elif tag == 'img':
-            if "longdesc" in attrs:
-                if attrs["longdesc"] in HtmltobbcodeParser.smileys:
-                    HtmltobbcodeParser.smileys[attrs["longdesc"]]["used"] = True
-                    self.bbcode += " " + HtmltobbcodeParser.smileys[attrs["longdesc"]]["code"] + " "
-            elif "src" in attrs:
-                self.bbcode += "[img]" + escape(attrs["src"]) + "[/img]"
-        elif tag == 'hr':
-            self.bbcode += "[hr][/hr]"
+        try:
+            handler = self.__class__.handlers[tag]
+        except KeyError:
+            pass
+        else:
+            handler.startend(self, tag, dict(attrs))
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
-        if tag == 'strong':
-            self.bbcode += "[b]"
-        elif tag == 'i':
-            self.bbcode += "[i]"
-        elif tag == 'u':
-            self.bbcode += "[u]"
-        elif tag == "b":
-            self.quote = True
-            self.author = ""
-        elif tag == 'a':
-            if "class" in attrs:
-                if attrs["class"] == "postlink":
-                    if "href" in attrs:
-                        self.bbcode += "[url=" + escape(attrs["href"]) + "]"
-                        self.a.append("[/url]")
-                    else:
-                        self.a.append("")
-                else:
-                    self.a.append("")
-            elif "href" in attrs:
-                if attrs["href"][:7] == "mailto:":
-                    self.bbcode += "[email=" + escape(attrs["href"][7:]) + "]"
-                    self.a.append("[/email]")
-                else:
-                    self.a.append("")
-            else:
-                self.a.append("")
-        elif tag == 'strike':
-            self.bbcode += "[strike]"
-        elif tag == 'font':
-            if "color" in attrs:
-                self.bbcode += "[color=" + attrs["color"] + "]"
-                self.font.append("[/color]")
-            elif "face" in attrs:
-                self.bbcode += "[font=" + attrs["face"] + "]"
-                self.font.append("[/font]")
-            else:
-                self.font.append("")
-        elif tag == 'span':
-            if "style" in attrs:
-                size = re.search('font-size: (\d*)px', attrs["style"])
-                if size:
-                    self.bbcode += "[size=" + str(int(int(size.group(1)) * 100 / 12)) + "]"
-                    self.span.append("[/size]")
-                else:
-                    self.span.append("")
-            else:
-                self.span.append("")
-        elif tag == 'div':
-            if "align" in attrs:
-                self.bbcode += "[" + attrs["align"] + "]"
-                self.div.append("[/" + attrs["align"] + "]\n")
-            elif "style" in attrs:
-                if "text-align:center" in attrs["style"]:
-                    self.bbcode += "[center]"
-                    self.div.append("[/center]\n")
-                else:
-                    self.div.append("")
-            elif "class" in attrs:
-                if attrs["class"] == "spoiler_content hidden":
-                    self.bbcode += "[spoiler]"
-                    self.div.append("[/spoiler]\n")
-                else:
-                    self.div.append("")
-            else:
-                self.div.append("")
-        elif tag == 'ul':
-            self.bbcode += "[list]"
-        elif tag == 'ol' and "type" in attrs:
-            self.bbcode += "[list=" + attrs["type"] + "]"
-        elif tag == 'li':
-            self.bbcode += "[*]"
-            self.li.append("[/*:m]")
-        elif tag == 'table':
-            if not ("cellspacing" in attrs and "cellpadding" in attrs and "border" in attrs and "align" in attrs and "width" in attrs):
-                args = ""
-                if "border" in attrs:
-                    args += " border=" + attrs["border"]
-                if "cellspacing" in attrs:
-                    args += " cellspacing=" + attrs["cellspacing"]
-                if "cellpadding" in attrs:
-                    args += " cellpadding=" + attrs["cellpadding"]
-                self.bbcode += "[table" + args + "]"
-                self.table.append("[/table]\n")
-            else:
-                self.table.append("")
-        elif tag == 'tr':
-            if self.table[len(self.table) - 1].startswith("[/table]"):
-                self.bbcode += "[tr]"
-                self.tr.append("[/tr]")
-            else:
-                self.tr.append("")
-        elif tag == 'dd':
-            if "class" in attrs:
-                if attrs["class"] == "quote":
-                    if self.author != "":
-                        self.bbcode += "[quote=&quot;" + escape(self.author) + "&quot;]"
-                    else:
-                        self.bbcode += "[quote]"
-                    self.dd.append("[/quote]\n")
-                elif attrs["class"] == "code":
-                    self.bbcode += "[code]"
-                    self.dd.append("[/code]\n")
-                else:
-                    self.dd.append("")
-            else:
-                self.dd.append("")
-        elif tag == 'td':
-            if self.table[len(self.table) - 1].startswith("[/table]"):
-                self.bbcode += "[td]"
-                self.td.append("[/td]")
-            else:
-                self.td.append("")
-        elif tag == 'embed':
-            if "width" in attrs and "height" in attrs and "src" in attrs:
-                self.bbcode += "[flash=" + attrs["width"] + "," + attrs["height"] + "]" + escape(attrs["src"]) + "[/flash]"
-        elif tag == 'marquee':
-            if "direction" in attrs:
-                if attrs["direction"] == "up":
-                    self.bbcode += "[updown]"
-                    self.marquee.append("[/updown]")
-                else:
-                    self.bbcode += "[scroll]"
-                    self.marquee.append("[/scroll]")
-            else:
-                self.bbcode += "[scroll]"
-                self.marquee.append("[/scroll]")
-        elif tag == "sub":
-            self.bbcode += "[sub]"
-        elif tag == "sup":
-            self.bbcode += "[sup]"
+        attrs["class"] = attrs.get("class", None)
+        attrs["style"] = attrs.get("style", "")
+
+        try:
+            handler = self.__class__.handlers[tag]
+        except KeyError:
+            pass
+        else:
+            handler.start(self, tag, attrs)
 
     def handle_endtag(self, tag):
-        if tag == 'strong':
-            self.bbcode += "[/b]"
-        elif tag == 'i':
-            self.bbcode += "[/i]"
-        elif tag == 'u':
-            self.bbcode += "[/u]"
-        elif tag == "b":
-            self.quote = False
-        elif tag == 'a':
-            self.bbcode += self.a.pop()
-        elif tag == 'strike':
-            self.bbcode += "[/strike]"
-        elif tag == 'font':
-            self.bbcode += self.font.pop()
-        elif tag == 'span':
-            self.bbcode += self.span.pop()
-        elif tag == 'div':
-            self.bbcode += self.div.pop()
-        elif tag == 'ul':
-            self.bbcode = self.bbcode.rstrip("\n")
-            self.bbcode += "[/list:u]"
-        elif tag == 'ol':
-            self.bbcode = self.bbcode.rstrip("\n")
-            self.bbcode += "[/list:o]"
-        elif tag == 'li':
-            if self.bbcode.endswith("\n"):
-                self.bbcode = self.bbcode.rstrip("\n")
-                self.bbcode += self.li.pop() + "\n"
+        try:
+            handler = self.__class__.handlers[tag]
+        except KeyError:
+            pass
+        else:
+            handler.end(self, tag)
+
+@Parser.handler("i", "u", "strike", "sub", "sup", "tr", "hr", "tr", "td")
+class InlineHandler(Handler):
+    @Parser.unsupported(td=["colspan", "rowspan"])
+    def start(self, parser, tag, attrs):
+        parser.append_tag(tag)
+
+    def end(self, parser, tag):
+        parser.append_tag("/{}".format(tag))
+
+    def startend(self, parser, tag, attrs):
+        parser.append_tag(tag)
+        parser.append_tag("/{}".format(tag))
+
+@Parser.handler("strong")
+class StrongHandler(Handler):
+    def start(self, parser, tag, attrs):
+        parser.append_tag("b")
+
+    def end(self, parser, tag):
+        parser.append_tag("/b")
+
+@Parser.handler("table")
+class TableHandler(Handler):
+    @Parser.unsupported(table=["border", "cellspacing", "cellpadding"])
+    def start(self, parser, tag, attrs):
+        parser.append_tag("table")
+
+    def end(self, parser, tag):
+        parser.append_tag("/table")
+        parser.append_text("\n")
+
+@Parser.handler("br")
+class NewlineHandler(Handler):
+    def startend(self, parser, tag, attrs):
+        parser.append_text("\n")
+
+@Parser.handler("ul", "ol", "li")
+class ListHandler(Handler):
+    def start(self, parser, tag, attrs):
+        if tag == "ul":
+            parser.append_tag("list")
+        elif tag == "ol":
+            parser.append_tag("list", "="+attrs["type"])
+        elif tag == "li":
+            parser.append_tag("*")
+
+    def end(self, parser, tag):
+        if tag == "ul":
+            newlines = parser.rstrip()
+            parser.append_tag("/list:u")
+        elif tag == "ol":
+            newlines = parser.rstrip()
+            parser.append_tag("/list:o")
+        elif tag == "li":
+            newlines = parser.rstrip()
+            parser.append_tag("/*:m")
+            parser.append_text(newlines)
+
+@Parser.handler("dl", "dt", "dd")
+class BoxHandler(Handler):
+    def __init__(self):
+        self.author = ""
+        self.stack = []
+
+    def start(self, parser, tag, attrs):
+        if tag == "dl":
+            if "hidecode" in attrs["class"]:
+                logger.warning("La balise [hide] n'est pas supportée.")
+                self.stack.append(None)
+            elif "spoiler" in attrs["class"]:
+                parser.append_tag("spoiler")
+                self.stack.append("/spoiler")
             else:
-                self.bbcode += self.li.pop()
-        elif tag == 'table':
-            self.bbcode += self.table.pop()
-        elif tag == 'td':
-            self.bbcode += self.td.pop()
-        elif tag == 'dd':
-            self.bbcode += self.dd.pop()
-        elif tag == 'tr':
-            self.bbcode += self.tr.pop()
-        elif tag == 'marquee':
-            self.bbcode += self.marquee.pop()
-        elif tag == "sub":
-            self.bbcode += "[/sub]"
-        elif tag == "sup":
-            self.bbcode += "[/sup]"
+                self.stack.append(None)
+        elif tag == "dt":
+            parser.start_capture()
+        elif tag == "dd":
+            if attrs["class"] == "quote":
+                if self.author:
+                    parser.append_tag("quote", "=&quot;{}&quot;".format(escape(self.author)))
+                    self.author = ""
+                else:
+                    parser.append_tag("quote")
+                self.stack.append("/quote")
+            elif attrs["class"] == "code":
+                parser.append_tag("code")
+                self.stack.append("/code")
+            elif attrs["class"] == "spoiler_closed":
+                parser.start_capture()
+                self.stack.append(None)
+            else:
+                self.stack.append(None)
+
+    def end(self, parser, tag):
+        data = parser.end_capture()
+        if tag == "dt":
+            if data[-9:] == " a écrit:":
+                self.author = data[:-9]
+        else:
+            tag = self.stack.pop()
+            if tag:
+                parser.append_tag(tag)
+                parser.append_text("\n")
+
+@Parser.handler("a")
+class LinkHandler(Handler):
+    def __init__(self):
+        self.stack = []
+
+    def start(self, parser, tag, attrs):
+        if attrs["class"] == "postlink" and "href" in attrs:
+            parser.append_tag("url", "={}".format(escape(attrs["href"])))
+            self.stack.append("/url")
+        elif "href" in attrs and attrs["href"][:7] == "mailto:":
+            parser.append_tag("email", "={}".format(escape(attrs["href"][7:])))
+            self.stack.append("/email")
+        elif "href" in attrs:
+            url = attrs["href"]
+            # TODO : add domain
+            if len(url) <= 55:
+                ellipsized_url = url
+            else:
+                ellipsized_url = "{} ... {}".format(url[:39], url[-10:])
+            parser.append_text('<!-- m --><a class="postlink" href="{}">{}</a><!-- m -->'
+                               .format(url, ellipsized_url))
+            parser.start_capture()
+            self.stack.append(None)
+        else:
+            self.stack.append(None)
+
+    def end(self, parser, tag):
+        parser.end_capture()
+        parser.append_tag(self.stack.pop())
+
+@Parser.handler("font")
+class FontHandler(StackHandler):
+    def start(self, parser, tag, attrs):
+        if "color" in attrs:
+            parser.append_tag("color", "={}".format(attrs["color"]))
+            self.stack.append("/color")
+        elif "face" in attrs:
+            parser.append_tag("font", "={}".format(attrs["face"]))
+            self.stack.append("/font")
+        else:
+            self.stack.append(None)
 
 
-def htmltobbcode(string):
-    p = HtmltobbcodeParser()
-    p.feed(string)
+@Parser.handler("span")
+class SizeHandler(StackHandler):
+    def start(self, parser, tag, attrs):
+        match = re.search('font-size: (\\d+)px', attrs["style"])
+        if match:
+            size = int(int(match.group(1)) * 100 / 12)
+            parser.append_tag("size", "={}".format(size))
+            self.stack.append("/size")
+        else:
+            self.stack.append(None)
 
-    return p.bbcode
+@Parser.handler("div")
+class AlignHandler(StackHandler):
+    def start(self, parser, tag, attrs):
+        if "align" in attrs:
+            parser.append_tag(attrs["align"])
+            self.stack.append("/{}".format(attrs["align"]))
+        elif "text-align:center" in attrs["style"]:
+            parser.append_tag("center")
+            self.stack.append("/center")
+        else:
+            self.stack.append(None)
+
+    def end(self, parser, stack):
+        tag = self.stack.pop()
+        if tag:
+            parser.append_tag(tag)
+            parser.append_text("\n")
+
+@Parser.handler("img")
+class ImageHandler(Handler):
+    def startend(self, parser, tag, attrs):
+        if "longdesc" in attrs:
+            if attrs["longdesc"] in parser.smileys:
+                if parser.smileys[attrs["longdesc"]]["smiley_url"]:
+                    parser.append_text("  <!-- s{code} --><img src=\"{{SMILIES_PATH}}/{smiley_url}\" alt=\"{code}\" title=\"{emotion}\" /><!-- s{code} -->  ".format(**parser.smileys[attrs["longdesc"]]))
+                else:
+                    parser.append_text(" {code} ".format(**parser.smileys[attrs["longdesc"]]))
+        elif "src" in attrs:
+            parser.append_tag("img")
+            parser.append_text(escape(attrs["src"]))
+            parser.append_tag("/img")
+
+@Parser.handler("embed")
+class FlashHandler(Handler):
+    def start(self, parser, tag, attrs):
+        if "width" in attrs and "height" in attrs and "src" in attrs:
+            parser.append_tag("flash", "={},{}".format(attrs["width"], attrs["height"]))
+            parser.append_text(escape(attrs["src"]))
+            parser.append_tag("/flash")
+
+    def end(self, parser, tag):
+        pass
+
+@Parser.handler("marquee")
+class MarqueeHandler(StackHandler):
+    def start(self, parser, tag, attrs):
+        if "direction" in attrs and attrs["direction"] == "up":
+            parser.append_tag("updown")
+            self.stack.append("/updown")
+        else:
+            parser.append_tag("scroll")
+            self.stack.append("/scroll")

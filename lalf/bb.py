@@ -98,6 +98,10 @@ class BB(Node):
         counters.usertotal = self.nbusers
         counters.posttotal = self.nbposts
 
+        self.smileys = self.children[0]
+        self.users = self.children[1]
+        self.forums = self.children[2]
+
     def save(self):
         logger.info("Sauvegarde de l'état courant.")
         with open("save.pickle", "wb") as f:

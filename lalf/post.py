@@ -27,6 +27,7 @@ from lalf.node import Node
 from lalf import ui
 from lalf import sql
 from lalf import phpbb
+from lalf import htmltobbcode
 from lalf import session
 from lalf import counters
 
@@ -56,8 +57,15 @@ class Post(Node):
 
     def _dump_(self, file):
         users = self.parent.parent.parent.users
+        smileys = self.parent.parent.parent.get_smileys()
 
-        post, uid, bitfield, checksum = phpbb.format_post(self.post)
+        uid = phpbb.uid()
+        parser = htmltobbcode.Parser(smileys, uid)
+        parser.feed(self.post)
+        post = parser.output
+        bitfield = parser.get_bitfield()
+        checksum = parser.get_checksum()
+
         sql.insert(file, "posts", {
             "post_id" : self.id,
             "topic_id" : self.parent.id,
