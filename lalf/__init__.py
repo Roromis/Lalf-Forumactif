@@ -44,6 +44,7 @@ def main():
     logger.info("Lalf %s", __version__)
     
     bb = load()
+    ui.bb = bb
 
     try:
         bb.export()

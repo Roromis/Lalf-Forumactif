@@ -32,20 +32,24 @@ from lalf.config import config
 from lalf import phpbb
 from lalf import sql
 from lalf import session
-from lalf import counters
 
 class BB(Node):
     """
     The BB node is the root of the tree representing the forum.
 
     Attributes:
-        nbposts (int) : The total number of posts to be exported
-        nbtopics (int) : The total number of topics to be exported
-        nbusers (int) : The total number of users to be exported
+        total_posts (int) : The total number of posts to be exported
+        total_topics (int) : The total number of topics to be exported
+        total_users (int) : The total number of users to be exported
+
+        current_posts (int) : The number of posts that have been exported
+        current_topics (int) : The number of topics that have been exported
+        current_users (int) : The number of users that have been exported
     """
 
     # Attributes to save
-    STATE_KEEP = ["nbposts", "nbtopics", "nbusers"]
+    STATE_KEEP = ["total_posts", "total_topics", "total_users",
+                  "current_posts", "current_topics", "current_users"]
 
     def __init__(self):
         Node.__init__(self, None)
@@ -53,9 +57,13 @@ class BB(Node):
         self.logger = logging.getLogger("lalf.bb.BB")
 
         # Statistics
-        self.nbposts = 0
-        self.nbtopics = 0
-        self.nbusers = 0
+        self.total_posts = 0
+        self.total_topics = 0
+        self.total_users = 0
+
+        self.current_posts = 0
+        self.current_topics = 0
+        self.current_users = 0
 
     def _export_(self):
         self.logger.info('Récupération des statistiques')
@@ -68,21 +76,15 @@ class BB(Node):
             e = PyQuery(element)
 
             if e("td.row2 span").eq(0).text() == "Messages":
-                self.nbposts = int(e("td.row1 span").eq(0).text())
+                self.total_posts = int(e("td.row1 span").eq(0).text())
             elif e("td.row2 span").eq(0).text() == "Nombre de sujets ouvert dans le forum":
-                self.nbtopics = int(e("td.row1 span").eq(0).text())
+                self.total_topics = int(e("td.row1 span").eq(0).text())
             elif e("td.row2 span").eq(0).text() == "Nombre d'utilisateurs":
-                self.nbusers = int(e("td.row1 span").eq(0).text())
+                self.total_users = int(e("td.row1 span").eq(0).text())
 
-        self.logger.debug('Messages : %d', self.nbposts)
-        self.logger.debug('Sujets : %d', self.nbtopics)
-        self.logger.debug('Membres : %d', self.nbusers)
-
-        # Set the global counters used by the UI
-        # TODO : do not use globals
-        counters.topictotal = self.nbtopics
-        counters.usertotal = self.nbusers
-        counters.posttotal = self.nbposts
+        self.logger.debug('Messages : %d', self.total_posts)
+        self.logger.debug('Sujets : %d', self.total_topics)
+        self.logger.debug('Membres : %d', self.total_users)
 
         # Add the children nodes, which respectively handle the
         # exportation of the smileys, the users and the message
@@ -115,12 +117,6 @@ class BB(Node):
 
     def __setstate__(self, state):
         Node.__setstate__(self, state)
-
-        # Set the global counters used by the UI
-        counters.topictotal = self.nbtopics
-        counters.usertotal = self.nbusers
-        counters.posttotal = self.nbposts
-
         self.logger = logging.getLogger("lalf.bb.BB")
 
     def save(self):

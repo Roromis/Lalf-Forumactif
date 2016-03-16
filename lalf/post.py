@@ -29,7 +29,6 @@ from lalf import sql
 from lalf import phpbb
 from lalf import htmltobbcode
 from lalf import session
-from lalf import counters
 
 class Post(Node):
     STATE_KEEP = ["id", "post", "title", "topic", "timestamp", "author"]
@@ -45,15 +44,11 @@ class Post(Node):
         self.exported = True
         self.children_exported = True
 
-        counters.postnumber += 1
+        self.root.current_posts += 1
         ui.update()
 
     def _export_(self):
         return
-    
-    def __setstate__(self, dict):
-        Node.__setstate__(self, dict)
-        counters.postnumber += 1
 
     def _dump_(self, file):
         users = self.parent.parent.parent.users

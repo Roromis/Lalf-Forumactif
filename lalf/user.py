@@ -32,7 +32,6 @@ from lalf import phpbb
 from lalf.config import config
 from lalf import about
 from lalf import session
-from lalf import counters
 from lalf import htmltobbcode
 
 def random_password(length=8):
@@ -58,12 +57,8 @@ class User(Node):
             self.inc()
 
     def inc(self):
-        counters.usernumber += 1
+        self.root.current_users += 1
         ui.update()
-            
-    def __setstate__(self, dict):
-        Node.__setstate__(self, dict)
-        counters.usernumber += 1
         
     def _export_(self):
         return

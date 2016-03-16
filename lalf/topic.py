@@ -26,7 +26,6 @@ from lalf.topicpage import TopicPage
 from lalf import ui
 from lalf import sql
 from lalf import session
-from lalf import counters
 
 class Topic(Node):
 
@@ -49,7 +48,7 @@ class Topic(Node):
         logger.debug('Récupération du sujet %d', self.id)
 
         # Incrémente le nombre de sujets
-        counters.topicnumber += 1
+        self.root.current_topics += 1
         ui.update()
         
         r = session.get("/t{id}-a".format(id=self.id))
@@ -64,10 +63,6 @@ class Topic(Node):
         
         for page in range(0,pages):
             self.children.append(TopicPage(self, self.id, page*topicsperpage))
-
-    def __setstate__(self, dict):
-        Node.__setstate__(self, dict)
-        counters.topicnumber += 1
 
     def get_posts(self):
         for page in self.children:

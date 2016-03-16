@@ -26,8 +26,8 @@ import platform
 import subprocess
 
 from lalf.config import config
-from lalf import counters
 
+bb = None
 uihandler = None
 exporting = True
 
@@ -50,8 +50,8 @@ def get_terminal_size():
     if tuple_xy is None:
         tuple_xy = (80, 25)      # default value
     return tuple_xy
- 
- 
+
+
 def _get_terminal_size_windows():
     try:
         from ctypes import windll, create_string_buffer
@@ -70,7 +70,7 @@ def _get_terminal_size_windows():
             return sizex, sizey
     except:
         pass
- 
+
 
 def _get_terminal_size_tput():
     # get terminal width
@@ -81,8 +81,8 @@ def _get_terminal_size_tput():
         return (cols, rows)
     except:
         pass
- 
- 
+
+
 def _get_terminal_size_linux():
     def ioctl_GWINSZ(fd):
         try:
@@ -111,48 +111,52 @@ def _get_terminal_size_linux():
 def disp(l):
     global uihandler
     w, h = get_terminal_size()
-    
-    namewidth = max([len(i[0]) for i in l])
-    numwidth = max([len(str(i[2])) for i in l])
-    barwidth = w - namewidth - 2*numwidth - 5
 
     if uihandler:
         uihandler.display(h)
-    
-    if barwidth < 0:
-        for e in l:
-            if e[2] > 0:
-                print(e[0], end="")
-                print(" "*(namewidth-len(e[0])+1), end="")
-                print(" "*(numwidth-len(str(e[1]))+1), end="")
-                print(e[1], end="")
-                print("/", end="")
-                print(e[2])
-    else:
-        for e in l:
-            if e[2] > 0:
-                fullbar = min(barwidth, int((e[1]*barwidth)/e[2]))
-            
-                print(e[0], end="")
-                print(" "*(namewidth-len(e[0])+1), end="")
-                print("[", end="")
-                print("#"*fullbar, end="")
-                print(" "*(barwidth-fullbar), end="")
-                print("]", end="")
-                print(" "*(numwidth-len(str(e[1]))+1), end="")
-                print(e[1], end="")
-                print("/", end="")
-                print(e[2])
+
+    if l:
+        namewidth = max([len(i[0]) for i in l])
+        numwidth = max([len(str(i[2])) for i in l])
+        barwidth = w - namewidth - 2*numwidth - 5
+
+        if barwidth < 0:
+            for e in l:
+                if e[2] > 0:
+                    print(e[0], end="")
+                    print(" "*(namewidth-len(e[0])+1), end="")
+                    print(" "*(numwidth-len(str(e[1]))+1), end="")
+                    print(e[1], end="")
+                    print("/", end="")
+                    print(e[2])
+        else:
+            for e in l:
+                if e[2] > 0:
+                    fullbar = min(barwidth, int((e[1]*barwidth)/e[2]))
+
+                    print(e[0], end="")
+                    print(" "*(namewidth-len(e[0])+1), end="")
+                    print("[", end="")
+                    print("#"*fullbar, end="")
+                    print(" "*(barwidth-fullbar), end="")
+                    print("]", end="")
+                    print(" "*(numwidth-len(str(e[1]))+1), end="")
+                    print(e[1], end="")
+                    print("/", end="")
+                    print(e[2])
 
 def update():
     """
     Update the progress bars
     """
-    disp([
-        ("Membres", counters.usernumber, counters.usertotal),
-        ("Sujets", counters.topicnumber, counters.topictotal),
-        ("Messages", counters.postnumber, counters.posttotal)
-    ])
+    if bb:
+        disp([
+            ("Membres", bb.current_users, bb.total_users),
+            ("Sujets", bb.current_topics, bb.total_topics),
+            ("Messages", bb.current_posts, bb.total_posts)
+        ])
+    else:
+        disp([])
 
 class UiLoggingHandler(logging.Handler):
     """
