@@ -15,9 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Lalf.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-logger = logging.getLogger("lalf")
-
 import os
 import unicodedata
 import re
@@ -31,10 +28,7 @@ from lalf import sql
 from lalf import session
 
 class Forum(Node):
-
-    """
-    Attributes to save
-    """
+    # Attributes to save
     STATE_KEEP = ["id", "newid", "type", "parentid", "title", "description", "icon", "left_id", "right_id"]
     
     def __init__(self, parent, id, newid, left_id, type, parentid, title):
@@ -59,7 +53,7 @@ class Forum(Node):
         self.icon = ""
 
     def _export_(self):
-        logger.debug('Récupération du forum %s%s', self.type, self.id)
+        self.logger.debug('Récupération du forum %s%s', self.type, self.id)
         
         params = {
             "part" : "general",
@@ -85,13 +79,13 @@ class Forum(Node):
                 self.icon = i.text
 
         if self.icon:
-            logger.debug("Téléchargement de l'icône du forum %s%s", self.type, self.id)
+            self.logger.debug("Téléchargement de l'icône du forum %s%s", self.type, self.id)
             r = session.session.get(self.icon)
 
             # Try to recognize the file format
             ext = imghdr.what(r.content)
             if ext is None:
-                logger.warning("Le format de l'icône du forum %s%s est inconnu, utilisation de l'extension par défaut", self.type, self.id)
+                self.logger.warning("Le format de l'icône du forum %s%s est inconnu, utilisation de l'extension par défaut", self.type, self.id)
                 ext = os.path.splitext(self.icon)[1]
             else:
                 ext = "."+ext

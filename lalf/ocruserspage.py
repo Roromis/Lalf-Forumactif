@@ -25,7 +25,6 @@ import urllib.parse
 
 from lalf.userspage import UsersPage
 from lalf.ocruser import OcrUser
-from lalf.exceptions import *
 from lalf.util import month
 from lalf import phpbb
 from lalf import session

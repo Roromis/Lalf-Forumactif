@@ -23,7 +23,6 @@ from pyquery import PyQuery
 
 from lalf.node import Node
 from lalf.userspage import UsersPage
-from lalf.exceptions import *
 from lalf import sql
 from lalf import phpbb
 from lalf import session

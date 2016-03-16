@@ -54,8 +54,6 @@ class BB(Node):
     def __init__(self):
         Node.__init__(self, None)
 
-        self.logger = logging.getLogger("lalf.bb.BB")
-
         # Statistics
         self.total_posts = 0
         self.total_topics = 0
@@ -117,7 +115,6 @@ class BB(Node):
 
     def __setstate__(self, state):
         Node.__setstate__(self, state)
-        self.logger = logging.getLogger("lalf.bb.BB")
 
     def save(self):
         """

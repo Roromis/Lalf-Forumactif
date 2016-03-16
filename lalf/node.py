@@ -15,12 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with Lalf.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 class Node(object):
     """
     Node of the forum.
 
     It has the following attributes :
-    children -- 
+    children --
     """
 
     """
@@ -28,18 +30,20 @@ class Node(object):
     """
     NODE_KEEP = ["children", "parent", "root", "exported", "children_exported"]
     STATE_KEEP = []
-    
+
     def __init__(self, parent=None):
+        self.logger = logging.getLogger("{}.{}".format(self.__class__.__module__, self.__class__.__name__))
+
         self.children = []
         self.parent = parent
         self.exported = False
         self.children_exported = False
-        
+
         if self.parent:
             self.root = self.parent.root
         else:
             self.root = self
-        
+
     def export(self):
         """
         Export the node and its children (this method calls the _export_
@@ -49,7 +53,7 @@ class Node(object):
             self.children = []
             self._export_()
             self.exported = True
-        
+
         if not self.children_exported:
             for child in self.children:
                 child.export()
@@ -64,25 +68,26 @@ class Node(object):
         export the children.
         """
         raise NotImplementedError("_export_ is a virtual method of Node and should be implemented by its subclasses.")
-            
+
     def __getstate__(self):
         odict = self.__dict__.copy()
 
         for k in self.__dict__:
             if not (k in self.NODE_KEEP or k in self.STATE_KEEP):
                 del odict[k]
-        
+
         return odict
 
     def __setstate__(self, dict):
         self.__dict__.update(dict)
+        self.logger = logging.getLogger("{}.{}".format(self.__class__.__module__, self.__class__.__name__))
 
     def dump(self, file):
         """
         Write a SQL dump of the node in file
         """
         self._dump_(file)
-        
+
         for child in self.children:
             child.dump(file)
 

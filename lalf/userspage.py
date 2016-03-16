@@ -25,11 +25,28 @@ import urllib.parse
 
 from lalf.node import Node
 from lalf.user import User
-from lalf.exceptions import *
 from lalf.util import month
 from lalf import phpbb
 from lalf import session
     
+class MemberPageBlocked(Exception):
+    """
+    Exception raised when the member page is blocked
+    """
+
+    def __str__(self):
+        return (
+            "Vous avez été bloqué par forumactif. Attendez d'être débloqué avant de relancer le "
+            "script (environ 24h).\n\n"
+
+            "Pour savoir si vous êtes bloqué, essayez d'accéder à la deuxième page de la gestion "
+            "des utilisateurs dans votre panneau d'administration (Utilisateurs & Groupes > "
+            "Gestion des utilisateurs). Si vous êtes bloqué, vous allez être redirigé vers la page "
+            "d'accueil de votre panneau d'administration.\n\n"
+
+            "Pour ne pas avoir à attendre, utilisez l'otion use_ocr."
+        )
+
 class UsersPage(Node):
     STATE_KEEP = ["page"]
 

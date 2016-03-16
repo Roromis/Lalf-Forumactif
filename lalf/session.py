@@ -26,7 +26,14 @@ import time
 from pyquery import PyQuery
 
 from lalf.config import config
-from lalf.exceptions import *
+
+class UnableToConnect(Exception):
+    """
+    Exception raised when the script failed to connect to the forum
+    """
+
+    def __str__(self):
+        return "Impossible de se connecter. Vérifiez les identifiants de l'administrateur"
 
 session = requests.Session()
 sid = None

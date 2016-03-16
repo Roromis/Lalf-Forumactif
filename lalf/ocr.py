@@ -18,8 +18,18 @@
 import subprocess
 from PIL import Image
 
-from lalf.exceptions import *
 from lalf.config import config
+
+class GocrNotInstalled(Exception):
+    """
+    Exception raised when the gocr executable cannot be found
+    """
+
+    def __str__(self):
+        return (
+            "L'exécutable de gocr ({exe}) n'existe pas. Vérifiez que gocr est bien installé et "
+            "que le chemin est correctement configuré dans le fichier config.cfg."
+        ).format(exe=config["gocr"])
 
 def toolong(img):
     """

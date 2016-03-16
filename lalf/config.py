@@ -20,7 +20,53 @@ Module handling the configuration
 """
 
 import configparser
-from lalf.exceptions import InvalidConfigurationFile
+import os.path
+
+class NoConfigurationFile(Exception):
+    """
+    Exception raised when the configuration file does not exist
+    """
+
+    def __init__(self, filename):
+        """
+        Args:
+            filename (str): The path of the configuration file that could not be found
+        """
+        Exception.__init__(self)
+
+        self.filename = filename
+
+    def __str__(self):
+        root, ext = os.path.splitext(self.filename)
+        examplefilename = "{root}.example{ext}".format(root=root, ext=ext)
+        return (
+            "Le fichier de configuration ({filename}) n'existe pas.\n"
+            "Créez-le en vous inspirant du fichier {example} et placez le dans le dossier courant."
+        ).format(filename=self.filename, example=examplefilename)
+
+class InvalidConfigurationFile(Exception):
+    """
+    Exception raised when the configuration file is invalid
+    """
+
+    def __init__(self, filename, exception):
+        """
+        Args:
+            filename (str): The path of the configuration file
+            exception (str): The exception raised by the parser
+        """
+        Exception.__init__(self)
+
+        self.filename = filename
+        self.exception = exception
+
+    def __str__(self):
+        root, ext = os.path.splitext(self.filename)
+        examplefilename = "{root}.example{ext}".format(root=root, ext=ext)
+        return (
+            "Le fichier de configuration ({filename}) est invalide.\n"
+            "Modifiez-le en vous inspirant du fichier {example}."
+        ).format(filename=self.filename, example=examplefilename)
 
 # Dictionnary containing the configuration
 # TODO : do not use globals
@@ -41,6 +87,9 @@ def read(filename):
     Read the configuration from filename and write it in the config
     dictionnary
     """
+    if not os.path.isfile(filename):
+        raise NoConfigurationFile()
+
     cfg = configparser.ConfigParser()
     with open(filename, "r") as fileobj:
         cfg.read_file(fileobj)
