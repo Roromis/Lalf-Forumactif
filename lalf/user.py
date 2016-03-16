@@ -145,7 +145,7 @@ class User(Node):
 
             # Send a pm to give instructions/ask donation
             uid = phpbb.uid()
-            parser = htmltobbcode.Parser(self.parent.get_smileys(), uid)
+            parser = htmltobbcode.Parser(self.root.get_smilies(), uid)
             parser.feed(about.admin_pm_post)
             post = parser.output
             bitfield = parser.get_bitfield()

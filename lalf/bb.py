@@ -27,7 +27,7 @@ from lalf.node import Node
 from lalf.forums import Forums
 from lalf.users import Users
 from lalf.ocrusers import OcrUsers
-from lalf.smileys import Smileys
+from lalf.smilies import Smilies
 from lalf.config import config
 from lalf import phpbb
 from lalf import sql
@@ -85,8 +85,8 @@ class BB(Node):
         self.logger.debug('Membres : %d', self.total_users)
 
         # Add the children nodes, which respectively handle the
-        # exportation of the smileys, the users and the message
-        self.children.append(Smileys(self))
+        # exportation of the smilies, the users and the message
+        self.children.append(Smilies(self))
 
         if config["use_ocr"]:
             # Use Optical Character Recognition to get the users'
@@ -125,14 +125,14 @@ class BB(Node):
             pickle.dump(self, fileobj)
 
     @property
-    def smileys(self):
+    def smilies(self):
         """
-        Smileys: The node handling the exportation of the smileys
+        Smilies: The node handling the exportation of the smilies
         """
         try:
             return self.children[0]
         except IndexError:
-            raise AttributeError("'BB' object has no attribute 'smileys'")
+            raise AttributeError("'BB' object has no attribute 'smilies'")
 
     @property
     def users(self):
@@ -182,11 +182,11 @@ class BB(Node):
         """
         return self.users.get_users()
 
-    def get_smileys(self):
+    def get_smilies(self):
         """
         Returns a dictionnary associating each smiley id to its informations
         """
-        return self.smileys.smileys
+        return self.smilies.smilies
 
 def load():
     """

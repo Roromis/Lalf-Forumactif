@@ -69,10 +69,10 @@ class Parser(HTMLParser):
             return new_method
         return method_rebuilder
 
-    def __init__(self, smileys, uid):
+    def __init__(self, smilies, uid):
         HTMLParser.__init__(self)
 
-        self.smileys = smileys
+        self.smilies = smilies
 
         if uid:
             self.uid = ":{}".format(uid)
@@ -350,11 +350,11 @@ class AlignHandler(StackHandler):
 class ImageHandler(Handler):
     def startend(self, parser, tag, attrs):
         if "longdesc" in attrs:
-            if attrs["longdesc"] in parser.smileys:
-                if parser.smileys[attrs["longdesc"]]["smiley_url"]:
-                    parser.append_text("  <!-- s{code} --><img src=\"{{SMILIES_PATH}}/{smiley_url}\" alt=\"{code}\" title=\"{emotion}\" /><!-- s{code} -->  ".format(**parser.smileys[attrs["longdesc"]]))
+            if attrs["longdesc"] in parser.smilies:
+                if parser.smilies[attrs["longdesc"]]["smiley_url"]:
+                    parser.append_text("  <!-- s{code} --><img src=\"{{SMILIES_PATH}}/{smiley_url}\" alt=\"{code}\" title=\"{emotion}\" /><!-- s{code} -->  ".format(**parser.smilies[attrs["longdesc"]]))
                 else:
-                    parser.append_text(" {code} ".format(**parser.smileys[attrs["longdesc"]]))
+                    parser.append_text(" {code} ".format(**parser.smilies[attrs["longdesc"]]))
         elif "src" in attrs:
             parser.append_tag("img")
             parser.append_text(escape(attrs["src"]))

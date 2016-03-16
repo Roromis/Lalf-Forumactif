@@ -51,11 +51,8 @@ class Post(Node):
         return
 
     def _dump_(self, file):
-        users = self.parent.parent.parent.users
-        smileys = self.parent.parent.parent.get_smileys()
-
         uid = phpbb.uid()
-        parser = htmltobbcode.Parser(smileys, uid)
+        parser = htmltobbcode.Parser(self.root.get_smilies(), uid)
         parser.feed(self.post)
         post = parser.output
         bitfield = parser.get_bitfield()
@@ -65,7 +62,7 @@ class Post(Node):
             "post_id" : self.id,
             "topic_id" : self.parent.id,
             "forum_id" : self.parent.parent.newid,
-            "poster_id" : users.get_newid(self.author),
+            "poster_id" : self.root.users.get_newid(self.author),
             "post_time" : self.timestamp,
             "poster_ip" : "127.0.0.1",
             "post_username" : self.author,
