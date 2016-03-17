@@ -42,6 +42,11 @@ def main():
     ui.init()
 
     logger.info("Lalf %s", __version__)
+
+    if not config.config["use_ocr"]:
+        logger.warning(
+            "Il est vivement conseillé d'utiliser la reconaissance de caractère "
+            "pour récupérer les adresse email des utilisateurs.")
     
     bb = load()
     ui.bb = bb

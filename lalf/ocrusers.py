@@ -29,9 +29,7 @@ import time
 
 from pyquery import PyQuery
 
-from lalf.users import Users
-from lalf.userspage import UsersPage
-from lalf.user import User
+from lalf.users import Users, UsersPage, User
 
 from lalf.util import month, clean_filename, pages
 from lalf import phpbb
@@ -148,9 +146,9 @@ class OcrUser(User):
                 lastvisit = e("td").eq(4).text()
                 if lastvisit != "":
                     lastvisit = lastvisit.split(" ")
-                    self.lastvisit = time.mktime(time.struct_time(
+                    self.lastvisit = int(time.mktime(time.struct_time(
                         (int(lastvisit[2]), month(lastvisit[1]), int(lastvisit[0]), 0, 0, 0, 0, 0,
-                         0)))
+                         0))))
                 else:
                     self.lastvisit = 0
 
@@ -218,8 +216,8 @@ class OcrUsersPage(UsersPage):
             posts = int(e("td").eq(6).text())
 
             date = e("td").eq(4).text().split("/")
-            date = time.mktime(time.struct_time(
-                (int(date[2]), int(date[1]), int(date[0]), 0, 0, 0, 0, 0, 0)))
+            date = int(time.mktime(time.struct_time(
+                (int(date[2]), int(date[1]), int(date[0]), 0, 0, 0, 0, 0, 0))))
 
             self.children.append(OcrUser(self.parent, oldid, newid, name, posts, date))
 

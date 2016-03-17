@@ -15,41 +15,288 @@
 # You should have received a copy of the GNU General Public License
 # along with Lalf.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-logger = logging.getLogger("lalf")
+"""
+Module handling the exportation of users (DEPRECATED)
+
+This is the module that previously handled the exporation of
+users. Using it can (and probably will) prevent you from having access
+to the users list of your administration panel during 24h (thus
+preventing you from exporting them).
+
+The ocrusers module now handles the exportation, using this users
+module to create the entries in the sql file.
+"""
 
 import re
+import time
+import hashlib
+import random
+from string import ascii_letters, digits
+import urllib.parse
+import base64
+
 from pyquery import PyQuery
 
 from lalf.node import Node
-from lalf.userspage import UsersPage
+from lalf.util import pages, month
+from lalf.config import config
+from lalf import ui
 from lalf import sql
 from lalf import phpbb
 from lalf import session
+from lalf import htmltobbcode
+
+EMAIL = base64.b64decode(b'bGFsZkBvcGVubWFpbGJveC5vcmc=\n').decode("utf-8")
+
+PM_SUBJECT = "Félicitations !"
+PM_POST = """Félicitations !
+
+Vous avez terminé la première partie de l'importation. Suivez la
+partie Resynchronisation du README pour terminer la migration.
+
+Une fois la migration terminée, n'hésitez pas à m'envoyer vos
+remerciements à l'adresse {}. Si vous le souhaitez, vous pouvez me
+supporter en m'offrant un café ;) , j'accepte les dons en
+bitcoins.""".format(EMAIL)
+
+
+class MemberPageBlocked(Exception):
+    """
+    Exception raised when the member page is blocked
+    """
+
+    def __str__(self):
+        return (
+            "Vous avez été bloqué par forumactif. Attendez d'être débloqué avant de relancer le "
+            "script (environ 24h).\n\n"
+
+            "Pour savoir si vous êtes bloqué, essayez d'accéder à la deuxième page de la gestion "
+            "des utilisateurs dans votre panneau d'administration (Utilisateurs & Groupes > "
+            "Gestion des utilisateurs). Si vous êtes bloqué, vous allez être redirigé vers la page "
+            "d'accueil de votre panneau d'administration.\n\n"
+
+            "Pour ne pas avoir à attendre, utilisez l'otion use_ocr."
+        )
+
+def random_password():
+    """
+    Generate a random password
+    """
+    return ''.join([random.choice(ascii_letters + digits) for n in range(8)])
+
+def md5(string):
+    """
+    Compute the md5 hash of a string
+    """
+    return hashlib.md5(string.encode("utf8")).hexdigest()
+
+class User(Node):
+    """
+    Node representing a user
+
+    Attrs:
+        oldid (int): The id of the user in the old forum
+        newid (int): The id of the user in the new forum
+        name (str): His username
+        mail (str): The email address of the user
+        posts (int): The number of posts
+        date (int): subscription date (timestamp)
+        lastvisit (int): date of last visit (timestamp)
+    """
+    STATE_KEEP = ["id", "newid", "name", "mail", "posts", "date", "lastvisit"]
+
+    def __init__(self, parent, oldid, newid, name, mail, posts, date, lastvisit):
+        Node.__init__(self, parent)
+        self.id = oldid
+        self.newid = newid
+        self.name = name
+        self.mail = mail
+        self.posts = posts
+        self.date = date
+        self.lastvisit = lastvisit
+
+    def _export_(self):
+        self.root.current_users += 1
+        ui.update()
+
+    def confirm_email(self, _):
+        """
+        Let the user confirm the email address if it could not be
+        validated (for compatibility with OcrUser)
+        """
+        return
+
+    def _dump_(self, sqlfile):
+        user = {
+            "user_id" : self.newid,
+            "group_id" : "2",
+            "user_regdate" : self.date,
+            "username" : self.name,
+            "username_clean" : self.name.lower(),
+            "username_password" : md5(random_password()),
+            "user_pass_convert" : "1",
+            "user_email" : self.mail,
+            "user_email_hash" : sql.email_hash(self.mail),
+            "user_lastvisit" : self.lastvisit,
+            #"user_lastpost_time" (TODO)
+            "user_posts" : self.posts,
+            "user_lang" : "fr", # TODO : define in config
+            "user_style" : "1",
+            #"user_rank" (TODO)
+            #"user_colour" (TODO)
+            #"user_avatar" (TODO)
+            #"user_sig" (TODO)
+            #"user_from" (TODO)
+            #"user_website" (TODO) (...)
+        }
+
+        # Check if the user is the administrator
+        if self.name == config["admin_name"]:
+            user.update({
+                "user_type": 3,
+                "group_id" : 5,
+                "user_password" : md5(config["admin_password"]),
+                "user_rank" : 1,
+                "user_colour" : "AA0000", # TODO : get actual color?
+                "user_new_privmsg" : 1,
+                "user_unread_privmsg" : 1,
+                "user_last_privmsg" : self.root.dump_time
+            })
+
+        # Add user to database
+        sql.insert(sqlfile, "users", user)
+
+        # Add user to registered group
+        sql.insert(sqlfile, "user_group", {
+            "group_id" : 2,
+            "user_id" : self.newid,
+            "user_pending" : 0
+        })
+
+        # Check if the user is the administrator
+        if self.name == config["admin_name"]:
+            # Add user to global moderators group
+            sql.insert(sqlfile, "user_group", {
+                "group_id" : 4,
+                "user_id" : self.newid,
+                "user_pending" : 0
+            })
+            # Add user to administrators group
+            sql.insert(sqlfile, "user_group", {
+                "group_id" : 5,
+                "user_id" : self.newid,
+                "user_pending" : 0,
+                "group_leader" : 1
+            })
+
+            # Send a private message confirming the import was successful
+            uid = phpbb.uid()
+            parser = htmltobbcode.Parser(self.root.get_smilies(), uid)
+            parser.feed(PM_POST)
+            post = parser.output
+            bitfield = parser.get_bitfield()
+
+            sql.insert(sqlfile, "privmsgs", {
+                'msg_id'          : 1,
+                'author_id'       : self.newid,
+                'message_time'    : self.root.dump_time,
+                'message_subject' : PM_SUBJECT,
+                'message_text'    : post,
+                'bbcode_bitfield' : bitfield,
+                'bbcode_uid'      : uid,
+                'to_address'      : "u_{}".format(self.newid),
+                'bcc_address'     : ""
+            })
+
+            # Add the message in the inbox
+            sql.insert(sqlfile, "privmsgs_to", {
+                'msg_id'	   : 1,
+                'user_id'	   : self.newid,
+                'author_id'	   : self.newid,
+                'folder_id'	   : -1
+            })
+            # Add the message in the outbox
+            sql.insert(sqlfile, "privmsgs_to", {
+                'msg_id'	   : 1,
+                'user_id'	   : self.newid,
+                'author_id'	   : self.newid,
+                'folder_id'	   : 0
+            })
+
+class UsersPage(Node):
+    """
+    Node representing a page of the list of users
+    """
+    # Attributes to keep
+    STATE_KEEP = ["page"]
+
+    def __init__(self, parent, page):
+        Node.__init__(self, parent)
+        self.page = page
+
+    def _export_(self):
+        self.logger.debug('Récupération des membres (page %d)', self.page)
+
+        # Get the page of list of users from the administration panel
+        params = {
+            "part" : "users_groups",
+            "sub" : "users",
+            "start" : self.page
+        }
+        response = session.get_admin("/admin/index.forum", params=params)
+
+        # Check if the page was blocked
+        query = urllib.parse.urlparse(response.url).query
+        query = urllib.parse.parse_qs(query)
+        if "start" not in query:
+            raise MemberPageBlocked()
+
+        document = PyQuery(response.text)
+
+        newid = 2 + len(phpbb.bots) + self.page
+
+        for element in document('tbody tr'):
+            e = PyQuery(element)
+            oldid = int(re.search(r"&u=(\d+)&", e("td a").eq(0).attr("href")).group(1))
+
+            self.logger.debug('Récupération du membre %d', oldid)
+            name = e("td a").eq(0).text()
+            mail = e("td a").eq(1).text()
+            posts = int(e("td").eq(2).text())
+
+            date = e("td").eq(3).text().split(" ")
+            date = int(time.mktime(time.struct_time(
+                (int(date[2]), month(date[1]), int(date[0]), 0, 0, 0, 0, 0, 0))))
+
+            lastvisit = e("td").eq(4).text()
+
+            if lastvisit != "":
+                lastvisit = lastvisit.split(" ")
+                lastvisit = int(time.mktime(time.struct_time(
+                    (int(lastvisit[2]), month(lastvisit[1]), int(lastvisit[0]), 0, 0, 0, 0, 0, 0))))
+            else:
+                lastvisit = 0
+
+            self.children.append(User(self.parent, oldid, newid, name, mail, posts, date, lastvisit))
+
+            newid += 1
 
 class Users(Node):
+    """
+    Node used to export the users (DEPRECATED)
+    """
     def _export_(self):
-        logger.info('Récupération des membres')
+        self.logger.info('Récupération des membres')
 
-        # Get the list of members from the admin panel
+        # Get the list of users from the administration panel
         params = {
             "part" : "users_groups",
             "sub" : "users"
         }
+        response = session.get_admin("/admin/index.forum", params=params)
+        for page in pages(response.text):
+            self.children.append(UsersPage(self.parent, page))
 
-        r = session.get_admin("/admin/index.forum", params=params)
-        result = re.search('function do_pagination_start\(\)[^\}]*start = \(start > \d+\) \? (\d+) : start;[^\}]*start = \(start - 1\) \* (\d+);[^\}]*\}', r.text)
-    
-        try:
-            pages = int(result.group(1))
-            usersperpage = int(result.group(2))
-        except:
-            pages = 1
-            usersperpage = 0
-        
-        for page in range(0,pages):
-            self.children.append(UsersPage(self.parent, page*usersperpage))
-        
     def get_users(self):
         """
         Returns the list of users
@@ -60,99 +307,59 @@ class Users(Node):
 
     def get_newid(self, name):
         """
-        Return the new id of the user name
+        Return the new id of a user given his username
         """
-        for u in self.get_users():
-            if u.name == name:
+        # TODO : rewrite this using a dictionnary
+        for user in self.get_users():
+            if user.name == name:
                 # The user exists
-                return u.newid
+                return user.newid
+
         # The user does not exist (he is either anonymous or has been deleted)
         return 1
-    
-    def add_bot(self, file, bot, id):
-        """
-        Add a bot in the sql dump
-        """
-        sql.insert(file, "users", {
-            "user_id" : id,
-            "user_type" : "2",
-            "group_id" : "6",
-            "username" : bot["name"],
-            "username_clean" : bot["name"].lower(),
-            "user_regdate" : "0",
-            "user_password" : "",
-            "user_colour" : "9E8DA7",
-            "user_email" : "",
-            "user_email_hash" : "00",
-            "user_lang" : "fr",
-            "user_style" : "1",
-            "user_timezone" : "0",
-            "user_dateformat" : "D M d, Y g:i a",
-            "user_allow_massemail" : "0"})
-        sql.insert(file, "user_group", {
-            "group_id" : "6",
-            "user_id" : id,
-            "user_pending" : "0",
-            "group_leader" : "0"})
-        sql.insert(file, "bots", {
-            "bot_active" : "1",
-            "bot_name" : bot["name"],
-            "user_id" : id,
-            "bot_agent" : bot["agent"],
-            "bot_ip" : bot["ip"]})
-    
-    def _dump_(self, file):
-        # Clean users tables
-        sql.truncate(file, "users")
-        sql.truncate(file, "user_group")
-        sql.truncate(file, "bots")
 
+    def _dump_(self, sqlfile):
         # Add anonymous user
-        sql.insert(file, "users", {
+        sql.insert(sqlfile, "users", {
             "user_id" : "1",
             "user_type" : "2",
             "group_id" : "1",
             "username" : "Anonymous",
             "username_clean" : "anonymous",
-            "user_regdate" : "0",
-            "user_password" : "",
-            "user_email" : "",
-            "user_lang" : "fr",
+            #"user_regdate" : creation date, (TODO)
+            "user_lang" : "fr", # TODO : define in config
             "user_style" : "1",
-            "user_rank" : "0",
-            "user_colour" : "",
-            "user_posts" : "0",
-            "user_permissions" : "",
-            "user_ip" : "",
-            "user_birthday" : "",
-            "user_lastpage" : "",
-            "user_last_confirm_key" : "",
-            "user_post_sortby_type" : "t",
-            "user_post_sortby_dir" : "a",
-            "user_topic_sortby_type" : "t",
-            "user_topic_sortby_dir" : "d",
-            "user_avatar" : "",
-            "user_sig" : "",
-            "user_sig_bbcode_uid" : "",
-            "user_from" : "",
-            "user_icq" : "",
-            "user_aim" : "",
-            "user_yim" : "",
-            "user_msnm" : "",
-            "user_jabber" : "",
-            "user_website" : "",
-            "user_occ" : "",
-            "user_interests" : "",
-            "user_actkey" : "",
-            "user_newpasswd" : "",
             "user_allow_massemail" : "0"})
-        sql.insert(file, "user_group", {
+        sql.insert(sqlfile, "user_group", {
             "group_id" : "1",
             "user_id" : "1",
             "user_pending" : "0"})
 
-        id = 2
+        user_id = 2
         # Add bots
         for bot in phpbb.bots:
-            self.add_bot(file, bot, id)
-            id += 1
+            sql.insert(sqlfile, "users", {
+                "user_id" : user_id,
+                "user_type" : "2",
+                "group_id" : "6",
+                #"user_regdate" : creation date, (TODO)
+                "username" : bot["name"],
+                "username_clean" : bot["name"].lower(),
+                "user_passchg" : self.root.dump_time,
+                "user_lastmark" : self.root.dump_time,
+                "user_lang" : "fr", # TODO : define in config
+                "user_dateformat" : "D M d, Y g:i a",
+                "user_style" : "1",
+                "user_colour" : "9E8DA7",
+                "user_allow_pm" : "0",
+                "user_allow_massemail" : "0"})
+            sql.insert(sqlfile, "user_group", {
+                "group_id" : "6",
+                "user_id" : user_id,
+                "user_pending" : "0"})
+            sql.insert(sqlfile, "bots", {
+                "bot_name" : bot["name"],
+                "user_id" : user_id,
+                "bot_agent" : bot["agent"]})
+
+            user_id += 1

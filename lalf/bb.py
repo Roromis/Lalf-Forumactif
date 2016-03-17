@@ -21,6 +21,8 @@ Module containing the BB class (the root of the forum)
 
 import logging
 import pickle
+import time
+
 from pyquery import PyQuery
 
 from lalf.node import Node
@@ -45,6 +47,8 @@ class BB(Node):
         current_posts (int) : The number of posts that have been exported
         current_topics (int) : The number of topics that have been exported
         current_users (int) : The number of users that have been exported
+
+        dump_time (int): The time at the beginning of the dump
     """
 
     # Attributes to save
@@ -62,6 +66,8 @@ class BB(Node):
         self.current_posts = 0
         self.current_topics = 0
         self.current_users = 0
+
+        self.dump_time = 0
 
     def _export_(self):
         self.logger.info('Récupération des statistiques')
@@ -98,7 +104,13 @@ class BB(Node):
         self.children.append(Forums(self))
 
     def _dump_(self, sqlfile):
+        self.dump_time = int(time.time())
+
         # Clean tables
+        sql.truncate(sqlfile, "users")
+        sql.truncate(sqlfile, "user_group")
+        sql.truncate(sqlfile, "bots")
+
         sql.truncate(sqlfile, "forums")
         sql.truncate(sqlfile, "acl_groups")
 
@@ -107,9 +119,11 @@ class BB(Node):
 
         sql.truncate(sqlfile, "posts")
         sql.truncate(sqlfile, "privmsgs")
+        sql.truncate(sqlfile, "privmsgs_to")
+
+        sql.truncate(sqlfile, "bbcodes")
 
         # Add bbcodes tags
-        sql.truncate(sqlfile, "bbcodes")
         for bbcode in phpbb.bbcodes:
             sql.insert(sqlfile, "bbcodes", bbcode)
 
