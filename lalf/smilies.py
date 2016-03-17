@@ -19,7 +19,6 @@
 Module handling the exportation of the smilies
 """
 
-import re
 import os
 from io import BytesIO
 
@@ -28,6 +27,7 @@ from PIL import Image
 
 from lalf.config import config
 from lalf.node import Node
+from lalf.util import pages
 from lalf import session
 from lalf import sql
 
@@ -226,7 +226,6 @@ class Smiley(Node):
         width (int): The width of the image
         height (int): The height of the image
         order (int): The position of the smiley in the interface
-
     """
 
     # Attributes to save
@@ -322,7 +321,7 @@ class SmiliesPage(Node):
                 emotion = e("td").eq(3).text()
 
                 if code in DEFAULT_SMILIES:
-                    self.logger.debug("L'émoticone \"{}\" existe déjà dans phpbb.".format(code))
+                    self.logger.debug("L'émoticone \"%s\" existe déjà dans phpbb.", code)
                     self.parent.smilies[smiley_id] = DEFAULT_SMILIES[code]
                 else:
                     child = Smiley(self, smiley_id, code, url, emotion)
@@ -354,17 +353,5 @@ class Smilies(Node):
             "mode" : "smilies"
         }
         response = session.get_admin("/admin/index.forum", params=params)
-        result = re.search(
-            r'function do_pagination_start\(\)[^\}]*'
-            r'start = \(start > \d+\) \? (\d+) : start;[^\}]*'
-            r'start = \(start - 1\) \* (\d+);[^\}]*\}', response.text)
-
-        if result:
-            pages = int(result.group(1))
-            smiliesperpage = int(result.group(2))
-        else:
-            pages = 1
-            smiliesperpage = 0
-
-        for page in range(0, pages):
-            self.children.append(SmiliesPage(self, page*smiliesperpage))
+        for page in pages(response.text):
+            self.children.append(SmiliesPage(self, page))

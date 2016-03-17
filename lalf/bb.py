@@ -115,6 +115,7 @@ class BB(Node):
 
     def __setstate__(self, state):
         Node.__setstate__(self, state)
+        # TODO : recompute current counts
 
     def save(self):
         """

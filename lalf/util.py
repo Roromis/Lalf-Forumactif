@@ -15,44 +15,65 @@
 # You should have received a copy of the GNU General Public License
 # along with Lalf.  If not, see <http://www.gnu.org/licenses/>.
 
-def month(s):
+"""
+Module containing some utility functions
+"""
+
+import re
+
+MONTHS = {
+    "Ja": 1,
+    "F": 2,
+    "Mar": 3,
+    "Av": 4,
+    "Mai": 5,
+    "Juin": 6,
+    "Juil": 7,
+    "Ao": 8,
+    "S": 9,
+    "O": 10,
+    "N": 11,
+    "D": 12
+}
+
+ILLEGAL_CHARS = ['?', '<', '>', '|', '*', '/', '\\', '"', ":", ";"]
+
+def month(string):
     """
     Converts an abbreviated french month name to an int
     """
-    if s.startswith("Ja"):
-        return 1 
-    elif s.startswith("F"):
-        return 2
-    elif s.startswith("Mar"):
-        return 3
-    elif s.startswith("Av"):
-        return 4
-    elif s.startswith("Mai"):
-        return 5
-    elif s.startswith("Juin"):
-        return 6
-    elif s.startswith("Juil"):
-        return 7
-    elif s.startswith("Ao"):
-        return 8
-    elif s.startswith("S"):
-        return 9
-    elif s.startswith("O"):
-        return 10
-    elif s.startswith("N"):
-        return 11
-    elif s.startswith("D"):
-        return 12
+    for key, value in MONTHS.items():
+        if string.startswith(key):
+            return value
 
 def clean_filename(filename):
     """
-    Returns filename, with the illegal characers (?<>|*/":;) removed
+    Remove the illegal characters (?<>|*/\":;) from a filename
     """
-    chars = [
-        (['?', '<', '>', '|', '*', '/', '"'], ''),
-        ([':', ';'], ',')
-    ]
-    for c,c2 in chars:
-        for c1 in c:
-            filename = filename.replace(c1, c2)
+    for char in ILLEGAL_CHARS:
+        filename = filename.replace(char, '')
+
     return filename
+
+def pages(text):
+    """
+    Iterator on the page numbers
+
+    Args:
+        text (str): The content of the first page (of a forum, topic, ...)
+    """
+    # Search for the pagination code
+    match = re.search(
+        r'function do_pagination_start\(\)[^\}]*'
+        r'start = \(start > \d+\) \? (\d+) : start;[^\}]*'
+        r'start = \(start - 1\) \* (\d+);[^\}]*\}', text)
+
+    if match:
+        number = int(match.group(1))
+        itemsperpage = int(match.group(2))
+    else:
+        number = 1
+        itemsperpage = 0
+
+    for page in range(0, number):
+        yield page*itemsperpage

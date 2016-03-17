@@ -43,7 +43,7 @@ def md5(str):
 class User(Node):
     STATE_KEEP = ["id", "newid", "name", "mail", "posts", "date", "lastvisit"]
 
-    def __init__(self, parent, id, newid, name, mail, posts, date, lastvisit, incuser=True):
+    def __init__(self, parent, id, newid, name, mail, posts, date, lastvisit):
         Node.__init__(self, parent)
         self.id = id
         self.newid = newid
@@ -52,16 +52,10 @@ class User(Node):
         self.posts = posts
         self.date = date
         self.lastvisit = lastvisit
-
-        if incuser:
-            self.inc()
-
-    def inc(self):
-        self.root.current_users += 1
-        ui.update()
         
     def _export_(self):
-        return
+        self.root.current_users += 1
+        ui.update()
 
     def confirm_email(self, r):
         return
