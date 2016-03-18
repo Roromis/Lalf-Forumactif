@@ -76,17 +76,20 @@ class Smiley(Node):
 
             # Download the image and get its dimensions and format
             response = session.get_image(self.url)
-            with Image.open(BytesIO(response.content)) as image:
-                self.smiley_url = "icon_exported_{}.{}".format(self.smiley_id, image.format.lower())
-                self.width = image.width
-                self.height = image.height
+            try:
+                with Image.open(BytesIO(response.content)) as image:
+                    self.smiley_url = "icon_exported_{}.{}".format(self.smiley_id, image.format.lower())
+                    self.width = image.width
+                    self.height = image.height
+            except IOError:
+                self.logger.warning("Le format de l'émoticone %s est inconnu", self.code)
+            else:
+                # Save the image
+                with open(os.path.join(dirname, self.smiley_url), "wb") as fileobj:
+                    fileobj.write(response.content)
 
-            # Save the image
-            with open(os.path.join(dirname, self.smiley_url), "wb") as fileobj:
-                fileobj.write(response.content)
-
-            self.parent.parent.count += 1
-            self.order = self.parent.parent.count
+                self.parent.parent.count += 1
+                self.order = self.parent.parent.count
 
         # Add the smiley to the smilies dictionnary
         self.parent.parent.smilies[self.smiley_id] = {

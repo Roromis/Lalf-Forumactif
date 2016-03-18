@@ -34,7 +34,7 @@ class ForumPage(Node):
     """
     STATE_KEEP = ["id", "newid", "type", "page"]
     
-    def __init__(self, parent, id, newid, type, page):
+    def __init__(self, parent, oldid, newid, page):
         """
         id -- id in the old forum
         newid -- id in the new forum
@@ -42,9 +42,8 @@ class ForumPage(Node):
         page -- offset
         """
         Node.__init__(self, parent)
-        self.id = id
+        self.oldid = oldid
         self.newid = newid
-        self.type = type
         self.page = page
 
     def _export_(self):
@@ -53,10 +52,10 @@ class ForumPage(Node):
                     'Annonce:': 2,
                     'Annonce globale:': 3}
 
-        logger.debug('Récupération du forum %s%s (page %d)', self.type, self.id, self.page)
+        logger.debug('Récupération du forum %s (page %d)', self.oldid, self.page)
 
         # Get the page
-        r = session.get("/{type}{id}p{page}-a".format(type=self.type, id=self.id, page=self.page))
+        r = session.get("/{}p{}-a".format(self.oldid, self.page))
         d = PyQuery(r.text)
 
         # Get the topics
