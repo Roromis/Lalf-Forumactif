@@ -20,6 +20,8 @@ Module containing some utility functions
 """
 
 import re
+import random
+from string import ascii_letters, digits
 
 MONTHS = {
     "Ja": 1,
@@ -77,3 +79,9 @@ def pages(text):
 
     for page in range(0, number):
         yield page*itemsperpage
+
+def random_string():
+    """
+    Generate a random string of length 8
+    """
+    return ''.join([random.choice(ascii_letters + digits) for n in range(8)])

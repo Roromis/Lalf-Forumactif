@@ -30,19 +30,17 @@ module to create the entries in the sql file.
 import re
 import time
 import hashlib
-import random
-from string import ascii_letters, digits
 import urllib.parse
 import base64
 
 from pyquery import PyQuery
 
 from lalf.node import Node
-from lalf.util import pages, month
+from lalf.util import pages, month, random_string
 from lalf.config import config
+from lalf.phpbb import BOTS
 from lalf import ui
 from lalf import sql
-from lalf import phpbb
 from lalf import session
 from lalf import htmltobbcode
 
@@ -78,12 +76,6 @@ class MemberPageBlocked(Exception):
             "Pour ne pas avoir à attendre, utilisez l'otion use_ocr."
         )
 
-def random_password():
-    """
-    Generate a random password
-    """
-    return ''.join([random.choice(ascii_letters + digits) for n in range(8)])
-
 def md5(string):
     """
     Compute the md5 hash of a string
@@ -96,24 +88,30 @@ class User(Node):
 
     Attrs:
         oldid (int): The id of the user in the old forum
-        newid (int): The id of the user in the new forum
         name (str): His username
         mail (str): The email address of the user
         posts (int): The number of posts
         date (int): subscription date (timestamp)
         lastvisit (int): date of last visit (timestamp)
-    """
-    STATE_KEEP = ["id", "newid", "name", "mail", "posts", "date", "lastvisit"]
 
-    def __init__(self, parent, oldid, newid, name, mail, posts, date, lastvisit):
+        newid (int): The id of the user in the new forum
+    """
+    STATE_KEEP = ["oldid", "newid", "name", "mail", "posts", "date", "lastvisit"]
+
+    def __init__(self, parent, oldid, name, mail, posts, date, lastvisit):
         Node.__init__(self, parent)
-        self.id = oldid
-        self.newid = newid
+        self.oldid = oldid
         self.name = name
         self.mail = mail
         self.posts = posts
         self.date = date
         self.lastvisit = lastvisit
+
+        if self.name == config["admin_name"]:
+            self.newid = 2
+        else:
+            self.newid = self.parent.parent.count
+            self.parent.parent.count += 1
 
     def _export_(self):
         self.root.current_users += 1
@@ -133,7 +131,7 @@ class User(Node):
             "user_regdate" : self.date,
             "username" : self.name,
             "username_clean" : self.name.lower(),
-            "username_password" : md5(random_password()),
+            "username_password" : md5(random_string()),
             "user_pass_convert" : "1",
             "user_email" : self.mail,
             "user_email_hash" : sql.email_hash(self.mail),
@@ -190,7 +188,7 @@ class User(Node):
             })
 
             # Send a private message confirming the import was successful
-            uid = phpbb.uid()
+            uid = random_string()
             parser = htmltobbcode.Parser(self.root.get_smilies(), uid)
             parser.feed(PM_POST)
             post = parser.output
@@ -253,8 +251,6 @@ class UsersPage(Node):
 
         document = PyQuery(response.text)
 
-        newid = 2 + len(phpbb.bots) + self.page
-
         for element in document('tbody tr'):
             e = PyQuery(element)
             oldid = int(re.search(r"&u=(\d+)&", e("td a").eq(0).attr("href")).group(1))
@@ -277,14 +273,22 @@ class UsersPage(Node):
             else:
                 lastvisit = 0
 
-            self.children.append(User(self.parent, oldid, newid, name, mail, posts, date, lastvisit))
-
-            newid += 1
+            self.children.append(User(self, oldid, name, mail, posts, date, lastvisit))
 
 class Users(Node):
     """
     Node used to export the users (DEPRECATED)
     """
+
+    # Attributes to save
+    STATE_KEEP = ["count"]
+
+    def __init__(self, parent):
+        Node.__init__(self, parent)
+        # User ids start at one, the first one is the anonymous user,
+        # and the second one is the administrator
+        self.count = len(BOTS) + 3
+
     def _export_(self):
         self.logger.info('Récupération des membres')
 
@@ -295,7 +299,7 @@ class Users(Node):
         }
         response = session.get_admin("/admin/index.forum", params=params)
         for page in pages(response.text):
-            self.children.append(UsersPage(self.parent, page))
+            self.children.append(UsersPage(self, page))
 
     def get_users(self):
         """
@@ -335,9 +339,9 @@ class Users(Node):
             "user_id" : "1",
             "user_pending" : "0"})
 
-        user_id = 2
+        user_id = 3
         # Add bots
-        for bot in phpbb.bots:
+        for bot in BOTS:
             sql.insert(sqlfile, "users", {
                 "user_id" : user_id,
                 "user_type" : "2",

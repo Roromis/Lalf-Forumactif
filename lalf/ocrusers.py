@@ -43,12 +43,12 @@ class OcrUser(User):
 
     Attrs:
         oldid (int): The id of the user in the old forum
-        newid (int): The id of the user in the new forum
         name (str): His username
         mail (str): The email address of the user
         posts (int): The number of posts
         date (int): subscription date (timestamp)
         lastvisit (int): date of last visit (timestamp)
+        newid (int): The id of the user in the new forum
         trust (int): level of trust in the email address
             - 3 if the email has been verified to be correct
             - 2 if the email could not be verified
@@ -57,10 +57,10 @@ class OcrUser(User):
         img (str): The path of the image containing the email
     """
     # Attributes to save
-    STATE_KEEP = ["id", "newid", "name", "mail", "posts", "date", "lastvisit", "trust", "img"]
+    STATE_KEEP = User.STATE_KEEP + ["trust", "img"]
 
-    def __init__(self, parent, oldid, newid, name, posts, date):
-        User.__init__(self, parent, oldid, newid, name, None, posts, date, 0)
+    def __init__(self, parent, oldid, name, posts, date):
+        User.__init__(self, parent, oldid, name, None, posts, date, 0)
         self.trust = 0
         self.img = os.path.join("usermails", "{}.png".format(clean_filename(self.name)))
 
@@ -90,7 +90,7 @@ class OcrUser(User):
         return False
 
     def _export_(self):
-        self.logger.debug('Récupération du membre %d', self.id)
+        self.logger.debug('Récupération du membre %d', self.oldid)
 
         if not self.exported:
             self.root.current_users += 1
@@ -198,8 +198,6 @@ class OcrUsersPage(UsersPage):
         response = session.get("/memberlist", params=params)
         document = PyQuery(response.text)
 
-        newid = 2 + len(phpbb.bots) + self.page
-
         table = PyQuery(document("form[action=\"/memberlist\"]").next_all("table.forumline").eq(0))
 
         first = True
@@ -219,9 +217,7 @@ class OcrUsersPage(UsersPage):
             date = int(time.mktime(time.struct_time(
                 (int(date[2]), int(date[1]), int(date[0]), 0, 0, 0, 0, 0, 0))))
 
-            self.children.append(OcrUser(self.parent, oldid, newid, name, posts, date))
-
-            newid += 1
+            self.children.append(OcrUser(self, oldid, name, posts, date))
 
     def __setstate__(self, state):
         UsersPage.__setstate__(self, state)
@@ -237,4 +233,4 @@ class OcrUsers(Users):
 
         response = session.get("/memberlist")
         for page in pages(response.text):
-            self.children.append(OcrUsersPage(self.parent, page))
+            self.children.append(OcrUsersPage(self, page))
