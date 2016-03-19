@@ -27,7 +27,7 @@ from pyquery import PyQuery
 from PIL import Image
 
 from lalf.node import Node
-from lalf.forumpage import ForumPage
+from lalf.topics import ForumPage
 from lalf.util import pages
 from lalf import phpbb
 from lalf import sql
@@ -36,27 +36,30 @@ from lalf import session
 class Forum(Node):
     """
     Node representing a forum
+
+    Attrs:
+        oldid (str): The id in the old forum
+        newid (int): The id in the new forum
+        left_id (int): Left id of the forum in the nested set model (see
+                       https://en.wikipedia.org/wiki/Nested_set_model)
+        right_id (int): Right id of the forum in the nested set model
+        parent_id (int): The id of the parent forum (0 if it is a category)
+        title (str): The title of the forum
+
+        description (str): The description of the forum
+        icon (str): The url of the forum icon
     """
     # Attributes to save
-    STATE_KEEP = ["oldid", "newid", "parentid", "title", "description", "icon", "left_id",
+    STATE_KEEP = ["oldid", "newid", "parent_id", "title", "description", "icon", "left_id",
                   "right_id"]
 
-    def __init__(self, parent, oldid, newid, left_id, parentid, title):
-        """
-        oldid -- id in the old forum
-        newid -- id in the new forum
-        type -- c if the forum is a category, else f
-        parentid -- parent forum (0 if it is a category)
-        title -- title of the forum
-        description -- description of the forum
-        icon -- url of the forum icon
-        """
+    def __init__(self, parent, oldid, newid, left_id, parent_id, title):
         Node.__init__(self, parent)
         self.oldid = oldid
         self.newid = newid
         self.left_id = left_id
         self.right_id = 0
-        self.parentid = parentid
+        self.parent_id = parent_id
         self.title = title
         self.description = ""
         self.icon = ""
@@ -104,10 +107,9 @@ class Forum(Node):
         else:
             self.icon = ""
 
-        # Pages
         response = session.get("/{}-a".format(self.oldid))
         for page in pages(response.text):
-            self.children.append(ForumPage(self, self.oldid, self.newid, page))
+            self.children.append(ForumPage(self, page))
 
     def get_topics(self):
         """
@@ -126,7 +128,7 @@ class Forum(Node):
         # TODO : add statistics
         sql.insert(sqlfile, "forums", {
             "forum_id" : self.newid,
-            "parent_id" : self.parentid,
+            "parent_id" : self.parent_id,
             "left_id" : self.left_id,
             "right_id" : self.right_id,
             "forum_name" : self.title,
@@ -179,17 +181,17 @@ class Forums(Node):
 
                 if depth <= 0:
                     parent = None
-                    parentid = 0
+                    parent_id = 0
                 else:
                     parent = depths[depth-1]
-                    parentid = parent.newid
+                    parent_id = parent.newid
 
                 for _ in range(depth, len(depths)):
                     forum = depths.pop()
                     forum.right_id = nested_id
                     nested_id += 1
 
-                forum = Forum(self.parent, forum_id, newid, nested_id, parentid, title)
+                forum = Forum(self.parent, forum_id, newid, nested_id, parent_id, title)
                 depths.append(forum)
                 self.children.append(forum)
                 newid += 1
