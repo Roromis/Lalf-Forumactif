@@ -131,7 +131,7 @@ class User(Node):
             "user_regdate" : self.date,
             "username" : self.name,
             "username_clean" : self.name.lower(),
-            "username_password" : md5(random_string()),
+            "user_password" : md5(random_string()),
             "user_pass_convert" : "1",
             "user_email" : self.mail,
             "user_email_hash" : sql.email_hash(self.mail),

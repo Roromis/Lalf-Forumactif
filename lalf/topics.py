@@ -19,7 +19,7 @@ import re
 from pyquery import PyQuery
 
 from lalf.node import Node
-from lalf.topicpage import TopicPage
+from lalf.posts import TopicPage
 from lalf.util import pages
 from lalf import ui
 from lalf import sql
@@ -68,7 +68,7 @@ class Topic(Node):
 
         response = session.get("/t{}-a".format(self.topic_id))
         for page in pages(response.text):
-            self.children.append(TopicPage(self, self.topic_id, page))
+            self.children.append(TopicPage(self, page))
 
     def get_posts(self):
         """
@@ -81,28 +81,28 @@ class Topic(Node):
     def _dump_(self, sqlfile):
         first_post = self.children[0].children[0]
         last_post = self.children[-1].children[-1]
-        replies = len(self.get_posts()) - 1
+        replies = sum(1 for _ in self.get_posts()) - 1
 
         sql.insert(sqlfile, "topics", {
             "topic_id" : self.topic_id,
             "forum_id" : self.parent.parent.newid,
             "topic_title" : self.title,
             "topic_poster" : self.root.users.get_newid(first_post.author),
-            "topic_time" : first_post.timestamp,
+            "topic_time" : first_post.time,
             "topic_views" : self.views,
             "topic_replies" : replies,
             "topic_replies_real" : replies,
             "topic_status" : self.locked,
             "topic_type" : self.topic_type,
-            "topic_first_post_id" : first_post.id,
+            "topic_first_post_id" : first_post.post_id,
             "topic_first_poster_name" : first_post.author,
             #"topic_first_post_colour" (TODO)
-            "topic_last_post_id" : last_post.id,
+            "topic_last_post_id" : last_post.post_id,
             "topic_last_poster_id" : self.root.users.get_newid(last_post.author),
             "topic_last_poster_name" : last_post.author,
             #"topic_last_poster_colour" (TODO)
             "topic_last_post_subject" : last_post.title,
-            "topic_last_post_time" : last_post.timestamp
+            "topic_last_post_time" : last_post.time
         })
 
         for username in set(post.author for post in self.get_posts()):
@@ -154,4 +154,4 @@ class ForumPage(Node):
     def __setstate__(self, state):
         Node.__setstate__(self, state)
         for topic in self.children:
-            topicids.append(topic.id)
+            topicids.append(topic.topic_id)

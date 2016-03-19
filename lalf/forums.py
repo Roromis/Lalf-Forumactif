@@ -180,7 +180,7 @@ class Forums(Node):
                 depth = len(re.findall('(\\||\xa0)\xa0\xa0\xa0', element.text))
 
                 if depth <= 0:
-                    parent = None
+                    parent = self
                     parent_id = 0
                 else:
                     parent = depths[depth-1]
@@ -191,7 +191,7 @@ class Forums(Node):
                     forum.right_id = nested_id
                     nested_id += 1
 
-                forum = Forum(self.parent, forum_id, newid, nested_id, parent_id, title)
+                forum = Forum(self, forum_id, newid, nested_id, parent_id, title)
                 depths.append(forum)
                 self.children.append(forum)
                 newid += 1
