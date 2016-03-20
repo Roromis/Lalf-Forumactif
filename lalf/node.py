@@ -31,18 +31,72 @@ class Node(object):
     NODE_KEEP = ["children", "parent", "root", "exported", "children_exported"]
     STATE_KEEP = []
 
+    EXPOSE = []
+
+    @staticmethod
+    def expose(*args, **kwargs):
+        """
+        Decorator allowing to make some node attributes visible to its descendants
+
+        Attrs:
+            - attr (str) : make the attribute visible to the node's descendants
+            - attr=name : make the attribute visible to the node's descendants with another name
+                          if attr is "self", make the node visible to its descendant
+
+        Example:
+            >>> @Node.expose("list", self="root", id="root_id")
+            ... class Root(Node):
+            ...     def __init__(self):
+            ...         self.list = []
+            ...         self.id = 0
+            >>> r = Root()
+            >>> c = Node()
+            >>> r.add_child(c)
+            >>> c.root == r
+            True
+            >>> c.root_id == r.id
+            True
+            >>> c.list.append(1)
+            >>> r.list
+            [1]
+
+            The result would be the same if c was not a direct descendant of r
+        """
+        def decorator(cls):
+            cls.EXPOSE = [(attr, attr) for attr in args] + list(kwargs.items())
+            return cls
+        return decorator
+
     def __init__(self, parent=None):
         self.logger = logging.getLogger("{}.{}".format(self.__class__.__module__, self.__class__.__name__))
 
         self.children = []
+        self.exposed_attrs = {}
+
         self.parent = parent
         self.exported = False
         self.children_exported = False
 
-        if self.parent:
-            self.root = self.parent.root
+    def __getattr__(self, name):
+        if name == "exposed_attrs" or name not in self.exposed_attrs:
+            raise AttributeError(
+                "'{}' object has no attribute '{}'".format(self.__class__.__name__, name))
+
+        obj, attr = self.exposed_attrs[name]
+        if attr == "self":
+            return obj
         else:
-            self.root = self
+            return getattr(obj, attr)
+
+    def add_child(self, child):
+        """
+        Add a child to the node
+        """
+        self.children.append(child)
+
+        child.exposed_attrs.update(self.exposed_attrs)
+        for attr, name in self.__class__.EXPOSE:
+            child.exposed_attrs[name] = (self, attr)
 
     def export(self):
         """

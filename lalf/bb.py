@@ -35,6 +35,7 @@ from lalf import phpbb
 from lalf import sql
 from lalf import session
 
+@Node.expose(self="root")
 class BB(Node):
     """
     The BB node is the root of the tree representing the forum.
@@ -92,16 +93,16 @@ class BB(Node):
 
         # Add the children nodes, which respectively handle the
         # exportation of the smilies, the users and the message
-        self.children.append(Smilies(self))
+        self.add_child(Smilies(self))
 
         if config["use_ocr"]:
             # Use Optical Character Recognition to get the users'
             # emails
-            self.children.append(OcrUsers(self))
+            self.add_child(OcrUsers(self))
         else:
-            self.children.append(Users(self))
+            self.add_child(Users(self))
 
-        self.children.append(Forums(self))
+        self.add_child(Forums(self))
 
     def _dump_(self, sqlfile):
         self.dump_time = int(time.time())

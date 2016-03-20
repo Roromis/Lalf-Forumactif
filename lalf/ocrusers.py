@@ -217,7 +217,7 @@ class OcrUsersPage(UsersPage):
             date = int(time.mktime(time.struct_time(
                 (int(date[2]), int(date[1]), int(date[0]), 0, 0, 0, 0, 0, 0))))
 
-            self.children.append(OcrUser(self, oldid, name, posts, date))
+            self.add_child(OcrUser(self, oldid, name, posts, date))
 
     def __setstate__(self, state):
         UsersPage.__setstate__(self, state)
@@ -233,4 +233,4 @@ class OcrUsers(Users):
 
         response = session.get("/memberlist")
         for page in pages(response.text):
-            self.children.append(OcrUsersPage(self, page))
+            self.add_child(OcrUsersPage(self, page))

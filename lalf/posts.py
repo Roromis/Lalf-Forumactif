@@ -134,4 +134,4 @@ class TopicPage(Node):
 
             timestamp = int(mktime(datetime.combine(post_date, post_time).timetuple()))
 
-            self.children.append(Post(self, post_id, post, title, timestamp, author))
+            self.add_child(Post(self, post_id, post, title, timestamp, author))

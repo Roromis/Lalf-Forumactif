@@ -109,7 +109,7 @@ class Forum(Node):
 
         response = session.get("/{}-a".format(self.oldid))
         for page in pages(response.text):
-            self.children.append(ForumPage(self, page))
+            self.add_child(ForumPage(self, page))
 
     def get_topics(self):
         """
@@ -193,7 +193,7 @@ class Forums(Node):
 
                 forum = Forum(self, forum_id, newid, nested_id, parent_id, title)
                 depths.append(forum)
-                self.children.append(forum)
+                self.add_child(forum)
                 newid += 1
                 nested_id += 1
 

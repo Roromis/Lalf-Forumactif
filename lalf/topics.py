@@ -68,7 +68,7 @@ class Topic(Node):
 
         response = session.get("/t{}-a".format(self.topic_id))
         for page in pages(response.text):
-            self.children.append(TopicPage(self, page))
+            self.add_child(TopicPage(self, page))
 
     def get_posts(self):
         """
@@ -145,7 +145,7 @@ class ForumPage(Node):
                 topic_type = TOPIC_TYPES.get(e("strong").text(), 0)
                 title = e("a").text()
 
-                self.children.append(Topic(self, topic_id, topic_type, title, locked, views))
+                self.add_child(Topic(self, topic_id, topic_type, title, locked, views))
                 topicids.append(topic_id)
             else:
                 # Topic has already been exported (it's a global announcement)

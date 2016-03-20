@@ -273,7 +273,7 @@ class UsersPage(Node):
             else:
                 lastvisit = 0
 
-            self.children.append(User(self, oldid, name, mail, posts, date, lastvisit))
+            self.add_child(User(self, oldid, name, mail, posts, date, lastvisit))
 
 class Users(Node):
     """
@@ -299,7 +299,7 @@ class Users(Node):
         }
         response = session.get_admin("/admin/index.forum", params=params)
         for page in pages(response.text):
-            self.children.append(UsersPage(self, page))
+            self.add_child(UsersPage(self, page))
 
     def get_users(self):
         """

@@ -149,7 +149,7 @@ class SmiliesPage(Node):
                     self.parent.smilies[smiley_id] = DEFAULT_SMILIES[code]
                 else:
                     child = Smiley(self, smiley_id, code, url, emotion)
-                    self.children.append(child)
+                    self.add_child(child)
 
 class Smilies(Node):
     """
@@ -178,4 +178,4 @@ class Smilies(Node):
         }
         response = session.get_admin("/admin/index.forum", params=params)
         for page in pages(response.text):
-            self.children.append(SmiliesPage(self, page))
+            self.add_child(SmiliesPage(self, page))
