@@ -26,15 +26,44 @@ optical character recognition to export them anyway.
 import os
 import re
 import time
+import subprocess
 
+from PIL import Image
 from pyquery import PyQuery
 
 from lalf.users import Users, UsersPage, User
 
 from lalf.util import month, clean_filename, pages
-from lalf import phpbb
-from lalf import ocr
 from lalf import ui
+
+class GocrNotInstalled(Exception):
+    """
+    Exception raised when the gocr executable cannot be found
+    """
+    def __init__(self, ocrpath):
+        Exception.__init__(self)
+        self.ocrpath = ocrpath
+
+    def __str__(self):
+        return (
+            "L'exécutable de gocr ({exe}) n'existe pas. Vérifiez que gocr est bien installé et "
+            "que le chemin est correctement configuré dans le fichier config.cfg."
+        ).format(exe=self.ocrpath)
+
+def toolong(path):
+    """
+    Returns true if the email displayed in the image file is too long to
+    be displayed entirely
+    """
+    with Image.open(path) as image:
+        width, height = image.size
+
+        for i in range(width-6, width):
+            for j in range(0, height):
+                if image.getpixel((i, j)) != (255, 255, 255):
+                    return True
+
+    return False
 
 class OcrUser(User):
     """
@@ -128,8 +157,13 @@ class OcrUser(User):
                         fileobj.write(response.content)
 
                     # Use the OCR on it
-                    self.mail = ocr.totext(self.img)
-                    if ocr.toolong(self.img):
+                    try:
+                        self.mail = subprocess.check_output([self.config["gocr"], "-i", self.img],
+                                                            universal_newlines=True).strip()
+                    except FileNotFoundError:
+                        raise GocrNotInstalled(self.config["gocr"])
+
+                    if toolong(self.img):
                         # The image seems to be too small for the
                         # email, the user will have to confirm it
                         self.trust = 1
