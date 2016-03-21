@@ -17,9 +17,6 @@
 # along with Lalf.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-logger = logging.getLogger("lalf")
-logger.setLevel(logging.DEBUG)
-
 import sys
 
 from lalf.bb import load
@@ -30,6 +27,9 @@ from lalf import session
 from lalf.__version__ import __version__
 
 def main():
+    logger = logging.getLogger("lalf")
+    logger.setLevel(logging.DEBUG)
+
     # File output
     filehandler = logging.FileHandler('debug.log')
     filehandler.setLevel(logging.DEBUG)
@@ -38,7 +38,7 @@ def main():
     filehandler.setFormatter(formatter)
 
     logger.addHandler(filehandler)
-    
+
     config = read_config("config.cfg")
     ui.init()
 
@@ -48,7 +48,7 @@ def main():
         logger.warning(
             "Il est vivement conseillé d'utiliser la reconaissance de caractère "
             "pour récupérer les adresse email des utilisateurs.")
-    
+
     bb = load(config)
     ui.bb = bb
 
@@ -56,8 +56,11 @@ def main():
         bb.export()
     except BaseException as e:
         bb.save()
-        logger.exception("""Une erreur est survenue. Essayez de relancer le script. Si vous rencontrez la même erreur ("{exception}"), créez un rapport de bug à l'adresse suivante SI ELLE N'A PAS ENCORE ÉTÉ SIGNALÉE :
-https://github.com/Roromis/Lalf-Forumactif/issues""".format(exception=repr(e)))
+        logger.exception(
+            "Une erreur est survenue. Essayez de relancer le script. "
+            "Si vous rencontrez la même erreur (%s), créez un rapport "
+            "de bug à l'adresse suivante SI ELLE N'A PAS ENCORE ÉTÉ SIGNALÉE :\n"
+            "https://github.com/Roromis/Lalf-Forumactif/issues", repr(e))
         sys.exit()
 
     ui.update()
@@ -73,6 +76,6 @@ https://github.com/Roromis/Lalf-Forumactif/issues""".format(exception=repr(e)))
 
     logging.info("L'exportation a été effectuée avec succés.")
 
-        
+
 if __name__ == "__main__":
     main()

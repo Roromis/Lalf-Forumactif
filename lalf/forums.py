@@ -29,7 +29,24 @@ from PIL import Image
 from lalf.node import Node
 from lalf.topics import ForumPage
 from lalf.util import pages
-from lalf import phpbb
+
+def default_forum_acl(forumid):
+    for gid, perm in ((1, 17), # guests: readonly
+                      (2, 21), # registered: standard w/ polls
+                      (3, 21), # registered+COPPA: standard w/ polls
+                      (4, 14), # global mods: full access
+                      (4, 11), # global mods: standard moderation
+                      (5, 14), # admins: full access
+                      (5, 10), # admins: full moderation
+                      (6, 19), # bots: bot access
+                     ):
+        yield {
+            "group_id" : gid,
+            "forum_id" : forumid,
+            "auth_option_id" : 0,
+            "auth_role_id" : perm,
+            "auth_setting" : 0
+        }
 
 @Node.expose(self="forum")
 class Forum(Node):
@@ -138,7 +155,7 @@ class Forum(Node):
             "forum_image" : self.icon
         })
 
-        for acl in phpbb.default_forum_acl(self.newid):
+        for acl in default_forum_acl(self.newid):
             sqlfile.insert("acl_groups", acl)
 
 class Forums(Node):

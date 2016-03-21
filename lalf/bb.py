@@ -38,7 +38,7 @@ class BB(Node):
     """
     The BB node is the root of the tree representing the forum.
 
-    Attributes:
+    Attrs:
         total_posts (int) : The total number of posts to be exported
         total_topics (int) : The total number of topics to be exported
         total_users (int) : The total number of users to be exported
@@ -126,13 +126,11 @@ class BB(Node):
         sqlfile.truncate("bbcodes")
 
         # Add bbcodes tags
-        for bbcode in phpbb.bbcodes:
+        for bbcode in phpbb.BBCODES:
             sqlfile.insert("bbcodes", bbcode)
 
     def __setstate__(self, state):
         Node.__setstate__(self, state)
-
-        self.session = Session(self.config)
 
         # TODO : recompute current counts
 
@@ -142,7 +140,7 @@ class BB(Node):
         """
         self.logger.info("Sauvegarde de l'état courant.")
         with open("save.pickle", "wb") as fileobj:
-            pickle.dump(self, fileobj)
+            pickle.dump(self, fileobj, 2)
 
     @property
     def smilies(self):
@@ -218,6 +216,7 @@ def load(config):
         with open("save.pickle", "rb") as fileobj:
             bb = pickle.load(fileobj)
             bb.config = config
+            bb.session = Session(config)
     except FileNotFoundError:
         bb = BB(config)
     except EOFError:

@@ -32,12 +32,13 @@ import time
 import hashlib
 import urllib.parse
 import base64
+from binascii import crc32
 
 from pyquery import PyQuery
 
 from lalf.node import Node
 from lalf.util import pages, month, random_string
-from lalf.phpbb import BOTS, email_hash
+from lalf.phpbb import BOTS
 from lalf import ui
 from lalf import htmltobbcode
 
@@ -54,6 +55,11 @@ remerciements à l'adresse {}. Si vous le souhaitez, vous pouvez me
 supporter en m'offrant un café ;) , j'accepte les dons en
 bitcoins.""".format(EMAIL)
 
+def email_hash(email):
+    """
+    Email hash function used by phpbb
+    """
+    return str(crc32(email.encode("utf-8"))&0xffffffff) + str(len(email))
 
 class MemberPageBlocked(Exception):
     """
@@ -103,6 +109,8 @@ class User(Node):
         self.posts = posts
         self.date = date
         self.lastvisit = lastvisit
+
+        self.newid = None
 
     def _export_(self):
         if self.name == self.config["admin_name"]:

@@ -15,39 +15,67 @@
 # You should have received a copy of the GNU General Public License
 # along with Lalf.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-logger = logging.getLogger("lalf")
+"""
+Module handling the conversion of html to bbcode (as stored in the phpbb database)
+"""
 
+import logging
 import re
 from html import escape
 from html.parser import HTMLParser
 import base64
 import hashlib
 
-from lalf.phpbb import bbcodes
+from lalf.phpbb import BBCODES
 
 class Handler(object):
-    def start(self, parser, stack, args):
+    """
+    Abstract tag handler
+    """
+    def start(self, parser, tag, args):
+        """
+        Method called by the parser to handle the start of a tag
+        """
         return
 
-    def end(self, parser, stack):
+    def end(self, parser, tag):
+        """
+        Method called by the parser to handle the end of a tag
+        """
         return
 
-    def startend(self, parser, stack, args):
+    def startend(self, parser, tag, args):
+        """
+        Method called by the parser to handle an empty tag ("<... />")
+        """
         return
 
 class StackHandler(Handler):
+    """
+    Abstract tag handler allowing to define the closing bbcode tag in
+    the start method
+    """
     def __init__(self):
         self.stack = []
 
-    def end(self, parser, stack):
+    def end(self, parser, tag):
         parser.append_tag(self.stack.pop())
 
 class Parser(HTMLParser):
+    """
+    Object used to parse html and generate bbcode
+    """
+    logger = logging.getLogger("lalf.htmltobbcode.Parser")
     handlers = {}
 
     @classmethod
     def handler(cls, *tags):
+        """
+        Decorator adding a handler to the Parser class
+
+        Attrs:
+            *tags: The tags handled by the handler
+        """
         def class_rebuilder(handler_class):
             handler = handler_class()
             for tag in tags:
@@ -57,13 +85,20 @@ class Parser(HTMLParser):
 
     @classmethod
     def unsupported(cls, **props):
+        """
+        Decorator used to show warning when an attribute is not supported by a
+        handler
+
+        Attrs:
+            **props: Dictionnary containing the unsupported attributes
+        """
         def method_rebuilder(method):
             def new_method(self, parser, tag, attrs):
                 if tag in props:
                     for prop in props[tag]:
                         if prop in attrs:
-                            logger.warning('La propriété "%s" du bbcode [%s] n\'est pas supportée.',
-                                           prop, tag)
+                            Parser.logger.warning(
+                                'La propriété "%s" du bbcode [%s] n\'est pas supportée.', prop, tag)
 
                 method(self, parser, tag, attrs)
             return new_method
@@ -82,36 +117,49 @@ class Parser(HTMLParser):
         self.output = ""
         self.bitfield = [0] * 10
 
-        self.tags = {'code' : 8,
-                'quote' : 0,
-                'attachment' : 12,
-                'b' : 1,
-                'i' : 2,
-                'url' : 3,
-                'img' : 4,
-                'size' : 5,
-                'color' : 6,
-                'u' : 7,
-                'list' : 9,
-                'email' : 10,
-                'flash' : 11}
-        for b in bbcodes:
-            self.tags[b["bbcode_tag"]] = b["bbcode_id"]
+        self.tags = {
+            'code' : 8,
+            'quote' : 0,
+            'attachment' : 12,
+            'b' : 1,
+            'i' : 2,
+            'url' : 3,
+            'img' : 4,
+            'size' : 5,
+            'color' : 6,
+            'u' : 7,
+            'list' : 9,
+            'email' : 10,
+            'flash' : 11}
+        for bbcode in BBCODES:
+            self.tags[bbcode["bbcode_tag"]] = bbcode["bbcode_id"]
 
         self.capture_data = False
         self.data = ""
 
     def get_bitfield(self):
+        """
+        Returns the bitfield of the text (a string indicating which bbcodes a used)
+        """
         tempstr = ''.join([chr(c) for c in self.bitfield]).rstrip('\0').encode("latin-1")
         return base64.b64encode(tempstr).decode("utf-8")
 
     def get_checksum(self):
+        """
+        Returns the checksum of the text
+        """
         return hashlib.md5(self.output.encode("utf8")).hexdigest()
 
     def append_text(self, text):
+        """
+        Add text at the end of the output
+        """
         self.output += text
 
     def append_tag(self, tag, options=""):
+        """
+        Add a tag at the end of the output
+        """
         if tag:
             if tag in self.tags:
                 c, d = divmod(self.tags[tag], 8)
@@ -119,6 +167,9 @@ class Parser(HTMLParser):
             self.append_text("[{}{}{}]".format(tag, options, self.uid))
 
     def rstrip(self):
+        """
+        Remove the newlines at the end of the output and return them.
+        """
         i = len(self.output)
         while self.output[i-1] == "\n":
             i -= 1
@@ -127,16 +178,30 @@ class Parser(HTMLParser):
         return newlines
 
     def start_capture(self):
+        """
+        Start capturing data
+
+        When capturing, the text nodes are saved instead of being added to the output.
+        """
         self.data = ""
         self.capture_data = True
 
     def end_capture(self):
+        """
+        End the capture and return the data
+        """
         self.capture_data = False
         data = self.data
         self.data = ""
         return data
 
     def handle_data(self, data):
+        """
+        Handle the text nodes
+
+        In normal mode, add the data to the output.
+        In capture mode, save the data.
+        """
         if self.capture_data:
             self.data += data
         else:
@@ -172,6 +237,9 @@ class Parser(HTMLParser):
 
 @Parser.handler("i", "u", "strike", "sub", "sup", "tr", "hr", "tr", "td")
 class InlineHandler(Handler):
+    """
+    Handles inline tags that do not need to be renamed
+    """
     @Parser.unsupported(td=["colspan", "rowspan"])
     def start(self, parser, tag, attrs):
         parser.append_tag(tag)
@@ -185,6 +253,9 @@ class InlineHandler(Handler):
 
 @Parser.handler("strong")
 class StrongHandler(Handler):
+    """
+    Handles [b] tag
+    """
     def start(self, parser, tag, attrs):
         parser.append_tag("b")
 
@@ -193,6 +264,9 @@ class StrongHandler(Handler):
 
 @Parser.handler("table")
 class TableHandler(Handler):
+    """
+    Handles [table] tag
+    """
     @Parser.unsupported(table=["border", "cellspacing", "cellpadding"])
     def start(self, parser, tag, attrs):
         parser.append_tag("table")
@@ -203,11 +277,17 @@ class TableHandler(Handler):
 
 @Parser.handler("br")
 class NewlineHandler(Handler):
+    """
+    Handles newlines
+    """
     def startend(self, parser, tag, attrs):
         parser.append_text("\n")
 
 @Parser.handler("ul", "ol", "li")
 class ListHandler(Handler):
+    """
+    Handles [list] and [*] tags
+    """
     def start(self, parser, tag, attrs):
         if tag == "ul":
             parser.append_tag("list")
@@ -230,6 +310,9 @@ class ListHandler(Handler):
 
 @Parser.handler("dl", "dt", "dd")
 class BoxHandler(Handler):
+    """
+    Handles [spoiler], [quote] and [code] tags
+    """
     def __init__(self):
         self.author = ""
         self.stack = []
@@ -237,7 +320,7 @@ class BoxHandler(Handler):
     def start(self, parser, tag, attrs):
         if tag == "dl":
             if "hidecode" in attrs["class"]:
-                logger.warning("La balise [hide] n'est pas supportée.")
+                Parser.logger.warning("La balise [hide] n'est pas supportée.")
                 self.stack.append(None)
             elif "spoiler" in attrs["class"]:
                 parser.append_tag("spoiler")
@@ -275,10 +358,10 @@ class BoxHandler(Handler):
                 parser.append_text("\n")
 
 @Parser.handler("a")
-class LinkHandler(Handler):
-    def __init__(self):
-        self.stack = []
-
+class LinkHandler(StackHandler):
+    """
+    Handles [url] and [email] tags and inline links
+    """
     def start(self, parser, tag, attrs):
         if attrs["class"] == "postlink" and "href" in attrs:
             parser.append_tag("url", "={}".format(escape(attrs["href"])))
@@ -306,6 +389,9 @@ class LinkHandler(Handler):
 
 @Parser.handler("font")
 class FontHandler(StackHandler):
+    """
+    Handles [color] and [font] tags
+    """
     def start(self, parser, tag, attrs):
         if "color" in attrs:
             parser.append_tag("color", "={}".format(attrs["color"]))
@@ -316,9 +402,11 @@ class FontHandler(StackHandler):
         else:
             self.stack.append(None)
 
-
 @Parser.handler("span")
 class SizeHandler(StackHandler):
+    """
+    Handles [size] tags
+    """
     def start(self, parser, tag, attrs):
         match = re.search('font-size: (\\d+)px', attrs["style"])
         if match:
@@ -330,6 +418,9 @@ class SizeHandler(StackHandler):
 
 @Parser.handler("div")
 class AlignHandler(StackHandler):
+    """
+    Handles [left], [center] and [right] tags
+    """
     def start(self, parser, tag, attrs):
         if "align" in attrs:
             parser.append_tag(attrs["align"])
@@ -348,13 +439,23 @@ class AlignHandler(StackHandler):
 
 @Parser.handler("img")
 class ImageHandler(Handler):
+    """
+    Handles [img] tags and smilies
+    """
     def startend(self, parser, tag, attrs):
-        if "longdesc" in attrs:
-            if attrs["longdesc"] in parser.smilies:
-                if parser.smilies[attrs["longdesc"]]["smiley_url"]:
-                    parser.append_text("  <!-- s{code} --><img src=\"{{SMILIES_PATH}}/{smiley_url}\" alt=\"{code}\" title=\"{emotion}\" /><!-- s{code} -->  ".format(**parser.smilies[attrs["longdesc"]]))
-                else:
-                    parser.append_text(" {code} ".format(**parser.smilies[attrs["longdesc"]]))
+        if "longdesc" in attrs and attrs["longdesc"] in parser.smilies:
+            smiley = parser.smilies[attrs["longdesc"]]
+            if smiley["smiley_url"]:
+                parser.append_text((
+                    "  <!-- s{code} -->"
+                    "<img src=\"{{SMILIES_PATH}}/{url}\" alt=\"{code}\" title=\"{title}\" />"
+                    "<!-- s{code} -->  "
+                ).format(
+                    url=smiley["smiley_url"],
+                    code=smiley["code"],
+                    title=smiley["emotion"]))
+            else:
+                parser.append_text(" {code} ".format(**parser.smilies[attrs["longdesc"]]))
         elif "src" in attrs:
             parser.append_tag("img")
             parser.append_text(escape(attrs["src"]))
@@ -362,6 +463,9 @@ class ImageHandler(Handler):
 
 @Parser.handler("embed")
 class FlashHandler(Handler):
+    """
+    Handles [flash] tags
+    """
     def start(self, parser, tag, attrs):
         if "width" in attrs and "height" in attrs and "src" in attrs:
             parser.append_tag("flash", "={},{}".format(attrs["width"], attrs["height"]))
@@ -373,6 +477,9 @@ class FlashHandler(Handler):
 
 @Parser.handler("marquee")
 class MarqueeHandler(StackHandler):
+    """
+    Handles [updown] and [scroll] tags
+    """
     def start(self, parser, tag, attrs):
         if "direction" in attrs and attrs["direction"] == "up":
             parser.append_tag("updown")

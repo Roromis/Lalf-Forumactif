@@ -75,7 +75,8 @@ class Smiley(Node):
             response = self.session.get_image(self.url)
             try:
                 with Image.open(BytesIO(response.content)) as image:
-                    self.smiley_url = "icon_exported_{}.{}".format(self.smiley_id, image.format.lower())
+                    self.smiley_url = "icon_exported_{}.{}".format(self.smiley_id,
+                                                                   image.format.lower())
                     self.width = image.width
                     self.height = image.height
             except IOError:

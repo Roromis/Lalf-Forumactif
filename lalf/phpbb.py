@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=line-too-long
 #
 # This file is part of Lalf.
 #
@@ -15,42 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with Lalf.  If not, see <http://www.gnu.org/licenses/>.
 
-import re
-from binascii import crc32
-import base64
-import hashlib
-import random
+"""
+Module defining some phpbb-related constants
+"""
 
-def uid():
-    return ''.join([random.choice('abcdefghijklmnopqrstuvwxyz0123456789') for i in range(8)])
-
-def email_hash(email):
-    return str(crc32(email.encode("utf-8"))&0xffffffff) + str(len(email))
-
-def escape_var(i):
-    if isinstance(i,(str,unicode)):
-        return i.replace("\\","\\\\").replace("'","\\'")
-    return i
-
-def default_forum_acl(forumid):
-    for gid, perm in ((1, 17), # guests: readonly
-                      (2, 21), # registered: standard w/ polls
-                      (3, 21), # registered+COPPA: standard w/ polls
-                      (4, 14), # global mods: full access
-                      (4, 11), # global mods: standard moderation
-                      (5, 14), # admins: full access
-                      (5, 10), # admins: full moderation
-                      (6, 19), # bots: bot access
-                     ):
-        yield {
-            "group_id" : gid,
-            "forum_id" : forumid,
-            "auth_option_id" : 0,
-            "auth_role_id" : perm,
-            "auth_setting" : 0
-        }
-
-bbcodes = [
+BBCODES = [
     {"bbcode_id" : 13,
      "bbcode_tag" : "strike",
      "bbcode_helpline" : "Texte barré",
@@ -217,57 +187,109 @@ bbcodes = [
      "second_pass_match" : "!\\[spoiler:$uid\\](.*?)\\[/spoiler:$uid\\]!s",
      "second_pass_replace" : "<dl class=\"codebox\"><dt>Spoiler: <a href=\"#\" onclick=\"var content = this.parentNode.parentNode.getElementsByTagName('dd')[0]; if (content.style.display != '') { content.style.display = ''; this.innerText = 'Cacher'; this.value = 'Hide'; } else { content.style.display = 'none'; this.innerText = 'Afficher'; }; return false;\">Afficher</a></dt><dd style=\"display: none;\">${1}</dd></dl>"}]
 
-BOTS = [{'name': 'AdsBot [Google]'			, 'agent': 'AdsBot-Google'},
-		{'name': 'Alexa [Bot]'				, 'agent': 'ia_archiver'},
-		{'name': 'Alta Vista [Bot]'         , 'agent': 'Scooter/'},
-        {'name': 'Ask Jeeves [Bot]'         , 'agent': 'Ask Jeeves'},
-        {'name': 'Baidu [Spider]'           , 'agent': 'Baiduspider+('},
-        {'name': 'Bing [Bot]'               , 'agent': 'bingbot/'},
-        {'name': 'Exabot [Bot]'             , 'agent': 'Exabot/'},
-        {'name': 'FAST Enterprise [Crawler]', 'agent': 'FAST Enterprise Crawler'},
-        {'name': 'FAST WebCrawler [Crawler]', 'agent': 'FAST-WebCrawler/'},
-        {'name': 'Francis [Bot]'            , 'agent': 'http://www.neomo.de/'},
-        {'name': 'Gigabot [Bot]'            , 'agent': 'Gigabot/'},
-        {'name': 'Google Adsense [Bot]'     , 'agent': 'Mediapartners-Google'},
-        {'name': 'Google Desktop'           , 'agent': 'Google Desktop'},
-        {'name': 'Google Feedfetcher'       , 'agent': 'Feedfetcher-Google'},
-        {'name': 'Google [Bot]'             , 'agent': 'Googlebot'},
-        {'name': 'Heise IT-Markt [Crawler]' , 'agent': 'heise-IT-Markt-Crawler'},
-        {'name': 'Heritrix [Crawler]'       , 'agent': 'heritrix/1.'},
-        {'name': 'IBM Research [Bot]'       , 'agent': 'ibm.com/cs/crawler'},
-        {'name': 'ICCrawler - ICjobs'       , 'agent': 'ICCrawler - ICjobs'},
-        {'name': 'ichiro [Crawler]'         , 'agent': 'ichiro/'},
-        {'name': 'Majestic-12 [Bot]'        , 'agent': 'MJ12bot/'},
-        {'name': 'Metager [Bot]'            , 'agent': 'MetagerBot/'},
-        {'name': 'MSN NewsBlogs'            , 'agent': 'msnbot-NewsBlogs/'},
-        {'name': 'MSN [Bot]'                , 'agent': 'msnbot/'},
-        {'name': 'MSNbot Media'             , 'agent': 'msnbot-media/'},
-        {'name': 'NG-Search [Bot]'          , 'agent': 'NG-Search/'},
-        {'name': 'Nutch [Bot]'              , 'agent': 'http://lucene.apache.org/nutch/'},
-        {'name': 'Nutch/CVS [Bot]'          , 'agent': 'NutchCVS/'},
-        {'name': 'OmniExplorer [Bot]'       , 'agent': 'OmniExplorer_Bot/'},
-        {'name': 'Online link [Validator]'  , 'agent': 'online link validator'},
-        {'name': 'psbot [Picsearch]'        , 'agent': 'psbot/0'},
-        {'name': 'Seekport [Bot]'           , 'agent': 'Seekbot/'},
-        {'name': 'Sensis [Crawler]'         , 'agent': 'Sensis Web Crawler'},
-        {'name': 'SEO Crawler'              , 'agent': 'SEO search Crawler/'},
-        {'name': 'Seoma [Crawler]'          , 'agent': 'Seoma [SEO Crawler]'},
-        {'name': 'SEOSearch [Crawler]'      , 'agent': 'SEOsearch/'},
-        {'name': 'Snappy [Bot]'             , 'agent': 'Snappy/1.1 ( http://www.urltrends.com/ )'},
-        {'name': 'Steeler [Crawler]'        , 'agent': 'http://www.tkl.iis.u-tokyo.ac.jp/~crawler/'},
-        {'name': 'Synoo [Bot]'              , 'agent': 'SynooBot/'},
-        {'name': 'Telekom [Bot]'            , 'agent': 'crawleradmin.t-info@telekom.de'},
-        {'name': 'TurnitinBot [Bot]'        , 'agent': 'TurnitinBot/'},
-        {'name': 'Voyager [Bot]'            , 'agent': 'voyager/1.0'},
-        {'name': 'W3 [Sitesearch]'          , 'agent': 'W3 SiteSearch Crawler'},
-        {'name': 'W3C [Linkcheck]'          , 'agent': 'W3C-checklink/'},
-        {'name': 'W3C [Validator]'          , 'agent': 'W3C_*Validator'},
-        {'name': 'WiseNut [Bot]'            , 'agent': 'http://www.WISEnutbot.com'},
-        {'name': 'YaCy [Bot]'               , 'agent': 'yacybot'},
-        {'name': 'Yahoo MMCrawler [Bot]'    , 'agent': 'Yahoo-MMCrawler/'},
-        {'name': 'Yahoo Slurp [Bot]'        , 'agent': 'Yahoo! DE Slurp'},
-        {'name': 'Yahoo [Bot]'              , 'agent': 'Yahoo! Slurp'},
-        {'name': 'YahooSeeker [Bot]'        , 'agent': 'YahooSeeker/'}]
+BOTS = [
+    {'name': 'AdsBot [Google]',
+     'agent': 'AdsBot-Google'},
+    {'name': 'Alexa [Bot]',
+     'agent': 'ia_archiver'},
+    {'name': 'Alta Vista [Bot]',
+     'agent': 'Scooter/'},
+    {'name': 'Ask Jeeves [Bot]',
+     'agent': 'Ask Jeeves'},
+    {'name': 'Baidu [Spider]',
+     'agent': 'Baiduspider+('},
+    {'name': 'Bing [Bot]',
+     'agent': 'bingbot/'},
+    {'name': 'Exabot [Bot]',
+     'agent': 'Exabot/'},
+    {'name': 'FAST Enterprise [Crawler]',
+     'agent': 'FAST Enterprise Crawler'},
+    {'name': 'FAST WebCrawler [Crawler]',
+     'agent': 'FAST-WebCrawler/'},
+    {'name': 'Francis [Bot]',
+     'agent': 'http://www.neomo.de/'},
+    {'name': 'Gigabot [Bot]',
+     'agent': 'Gigabot/'},
+    {'name': 'Google Adsense [Bot]',
+     'agent': 'Mediapartners-Google'},
+    {'name': 'Google Desktop',
+     'agent': 'Google Desktop'},
+    {'name': 'Google Feedfetcher',
+     'agent': 'Feedfetcher-Google'},
+    {'name': 'Google [Bot]',
+     'agent': 'Googlebot'},
+    {'name': 'Heise IT-Markt [Crawler]',
+     'agent': 'heise-IT-Markt-Crawler'},
+    {'name': 'Heritrix [Crawler]',
+     'agent': 'heritrix/1.'},
+    {'name': 'IBM Research [Bot]',
+     'agent': 'ibm.com/cs/crawler'},
+    {'name': 'ICCrawler - ICjobs',
+     'agent': 'ICCrawler - ICjobs'},
+    {'name': 'ichiro [Crawler]',
+     'agent': 'ichiro/'},
+    {'name': 'Majestic-12 [Bot]',
+     'agent': 'MJ12bot/'},
+    {'name': 'Metager [Bot]',
+     'agent': 'MetagerBot/'},
+    {'name': 'MSN NewsBlogs',
+     'agent': 'msnbot-NewsBlogs/'},
+    {'name': 'MSN [Bot]',
+     'agent': 'msnbot/'},
+    {'name': 'MSNbot Media',
+     'agent': 'msnbot-media/'},
+    {'name': 'NG-Search [Bot]',
+     'agent': 'NG-Search/'},
+    {'name': 'Nutch [Bot]',
+     'agent': 'http://lucene.apache.org/nutch/'},
+    {'name': 'Nutch/CVS [Bot]',
+     'agent': 'NutchCVS/'},
+    {'name': 'OmniExplorer [Bot]',
+     'agent': 'OmniExplorer_Bot/'},
+    {'name': 'Online link [Validator]',
+     'agent': 'online link validator'},
+    {'name': 'psbot [Picsearch]',
+     'agent': 'psbot/0'},
+    {'name': 'Seekport [Bot]',
+     'agent': 'Seekbot/'},
+    {'name': 'Sensis [Crawler]',
+     'agent': 'Sensis Web Crawler'},
+    {'name': 'SEO Crawler',
+     'agent': 'SEO search Crawler/'},
+    {'name': 'Seoma [Crawler]',
+     'agent': 'Seoma [SEO Crawler]'},
+    {'name': 'SEOSearch [Crawler]',
+     'agent': 'SEOsearch/'},
+    {'name': 'Snappy [Bot]',
+     'agent': 'Snappy/1.1 ( http://www.urltrends.com/ )'},
+    {'name': 'Steeler [Crawler]',
+     'agent': 'http://www.tkl.iis.u-tokyo.ac.jp/~crawler/'},
+    {'name': 'Synoo [Bot]',
+     'agent': 'SynooBot/'},
+    {'name': 'Telekom [Bot]',
+     'agent': 'crawleradmin.t-info@telekom.de'},
+    {'name': 'TurnitinBot [Bot]',
+     'agent': 'TurnitinBot/'},
+    {'name': 'Voyager [Bot]',
+     'agent': 'voyager/1.0'},
+    {'name': 'W3 [Sitesearch]',
+     'agent': 'W3 SiteSearch Crawler'},
+    {'name': 'W3C [Linkcheck]',
+     'agent': 'W3C-checklink/'},
+    {'name': 'W3C [Validator]',
+     'agent': 'W3C_*Validator'},
+    {'name': 'WiseNut [Bot]',
+     'agent': 'http://www.WISEnutbot.com'},
+    {'name': 'YaCy [Bot]',
+     'agent': 'yacybot'},
+    {'name': 'Yahoo MMCrawler [Bot]',
+     'agent': 'Yahoo-MMCrawler/'},
+    {'name': 'Yahoo Slurp [Bot]',
+     'agent': 'Yahoo! DE Slurp'},
+    {'name': 'Yahoo [Bot]',
+     'agent': 'Yahoo! Slurp'},
+    {'name': 'YahooSeeker [Bot]',
+     'agent': 'YahooSeeker/'}]
 
 DEFAULT_SMILIES = {
     ":D" : {
@@ -448,4 +470,3 @@ DEFAULT_SMILIES = {
         "smiley_order" : "43",
         "display_on_posting" : "0"}
 }
-

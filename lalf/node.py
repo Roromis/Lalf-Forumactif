@@ -25,8 +25,12 @@ class Node(object):
     """
     Node of the forum.
 
-    It has the following attributes :
-    children --
+    Attrs:
+       children (List[Node]): The children of the node
+       exposed_attrs (Dict(str, (Node, str))): Dictionnary containing the attributes
+           exposed by parent nodes. This should not be used directly, see @Node.expose.
+       exported (bool): True if the node has been exported
+       children_exported (bool): True if the node's children have been exported
     """
 
     # Attributes to save
@@ -42,9 +46,8 @@ class Node(object):
         Decorator allowing to make some node attributes visible to its descendants
 
         Attrs:
-            - attr (str) : make the attribute visible to the node's descendants
-            - attr=name : make the attribute visible to the node's descendants with another name
-                          if attr is "self", make the node visible to its descendant
+            *args: Names of attributes that will be visible to the node's descendants
+            **kwargs: Associate the names of attributes that will be exposed to their new name
 
         Example:
             >>> @Node.expose("list", self="root", id="root_id")

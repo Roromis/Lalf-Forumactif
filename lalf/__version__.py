@@ -15,4 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Lalf.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Module containing the version of the script
+"""
+
 __version__ = "3.0a0"

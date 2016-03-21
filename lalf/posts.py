@@ -25,9 +25,8 @@ from datetime import time, date, datetime, timedelta
 from pyquery import PyQuery
 
 from lalf.node import Node
-from lalf.util import month
+from lalf.util import month, random_string
 from lalf import ui
-from lalf import phpbb
 from lalf import htmltobbcode
 
 class Post(Node):
@@ -56,7 +55,7 @@ class Post(Node):
         ui.update()
 
     def _dump_(self, sqlfile):
-        uid = phpbb.uid()
+        uid = random_string()
         parser = htmltobbcode.Parser(self.root.get_smilies(), uid)
         parser.feed(self.text)
         text = parser.output

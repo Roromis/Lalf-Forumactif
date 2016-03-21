@@ -78,7 +78,7 @@ def read(filename):
     dictionnary
     """
     if not os.path.isfile(filename):
-        raise NoConfigurationFile()
+        raise NoConfigurationFile(filename)
 
     cfg = configparser.ConfigParser()
     with open(filename, "r") as fileobj:
