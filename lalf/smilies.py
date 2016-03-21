@@ -52,8 +52,8 @@ class Smiley(Node):
     # Attributes to save
     STATE_KEEP = ["id", "code", "url", "emotion", "smiley_url", "width", "height", "order"]
 
-    def __init__(self, parent, smiley_id, code, url, emotion):
-        Node.__init__(self, parent)
+    def __init__(self, smiley_id, code, url, emotion):
+        Node.__init__(self)
 
         self.smiley_id = smiley_id
         self.code = code
@@ -88,11 +88,11 @@ class Smiley(Node):
                 with open(os.path.join(dirname, self.smiley_url), "wb") as fileobj:
                     fileobj.write(response.content)
 
-                self.parent.parent.count += 1
-                self.order = self.parent.parent.count
+                self.smilies.count += 1
+                self.order = self.smilies.count
 
         # Add the smiley to the smilies dictionnary
-        self.parent.parent.smilies[self.smiley_id] = {
+        self.smilies.smilies[self.smiley_id] = {
             "code" : self.code,
             "emotion" : self.emotion,
             "smiley_url" : self.smiley_url}
@@ -119,8 +119,8 @@ class SmiliesPage(Node):
     # Attributes to save
     STATE_KEEP = ["page"]
 
-    def __init__(self, parent, page):
-        Node.__init__(self, parent)
+    def __init__(self, page):
+        Node.__init__(self)
         self.page = page
 
     def _export_(self):
@@ -146,11 +146,12 @@ class SmiliesPage(Node):
 
                 if code in DEFAULT_SMILIES:
                     self.logger.debug("L'émoticone \"%s\" existe déjà dans phpbb.", code)
-                    self.parent.smilies[smiley_id] = DEFAULT_SMILIES[code]
+                    self.smilies.smilies[smiley_id] = DEFAULT_SMILIES[code]
                 else:
-                    child = Smiley(self, smiley_id, code, url, emotion)
+                    child = Smiley(smiley_id, code, url, emotion)
                     self.add_child(child)
 
+@Node.expose(self="smilies")
 class Smilies(Node):
     """
     Node used to export the smilies
@@ -163,8 +164,8 @@ class Smilies(Node):
     # Attributes to save
     STATE_KEEP = ["smilies", "order", "count"]
 
-    def __init__(self, parent):
-        Node.__init__(self, parent)
+    def __init__(self):
+        Node.__init__(self)
         self.smilies = {}
         self.count = len(DEFAULT_SMILIES)
 
@@ -178,4 +179,4 @@ class Smilies(Node):
         }
         response = session.get_admin("/admin/index.forum", params=params)
         for page in pages(response.text):
-            self.add_child(SmiliesPage(self, page))
+            self.add_child(SmiliesPage(page))

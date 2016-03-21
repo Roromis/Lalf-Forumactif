@@ -15,6 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Lalf.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Module defining the Node base class
+"""
+
 import logging
 
 class Node(object):
@@ -25,12 +29,11 @@ class Node(object):
     children --
     """
 
-    """
-    Attributes to save
-    """
-    NODE_KEEP = ["children", "parent", "root", "exported", "children_exported"]
+    # Attributes to save
+    NODE_KEEP = ["children", "exposed_attrs", "exported", "children_exported"]
     STATE_KEEP = []
 
+    # Attributes exposed to the node's children (used by @Node.expose decorator)
     EXPOSE = []
 
     @staticmethod
@@ -67,13 +70,13 @@ class Node(object):
             return cls
         return decorator
 
-    def __init__(self, parent=None):
-        self.logger = logging.getLogger("{}.{}".format(self.__class__.__module__, self.__class__.__name__))
+    def __init__(self):
+        self.logger = logging.getLogger("{}.{}".format(self.__class__.__module__,
+                                                       self.__class__.__name__))
 
         self.children = []
         self.exposed_attrs = {}
 
-        self.parent = parent
         self.exported = False
         self.children_exported = False
 
@@ -121,7 +124,8 @@ class Node(object):
         children (and put them in the children list). It should not
         export the children.
         """
-        raise NotImplementedError("_export_ is a virtual method of Node and should be implemented by its subclasses.")
+        raise NotImplementedError("_export_ is a virtual method of Node and "
+                                  "should be implemented by its subclasses.")
 
     def __getstate__(self):
         odict = self.__dict__.copy()
@@ -132,18 +136,19 @@ class Node(object):
 
         return odict
 
-    def __setstate__(self, dict):
-        self.__dict__.update(dict)
-        self.logger = logging.getLogger("{}.{}".format(self.__class__.__module__, self.__class__.__name__))
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.logger = logging.getLogger("{}.{}".format(self.__class__.__module__,
+                                                       self.__class__.__name__))
 
-    def dump(self, file):
+    def dump(self, sqlfile):
         """
         Write a SQL dump of the node in file
         """
-        self._dump_(file)
+        self._dump_(sqlfile)
 
         for child in self.children:
-            child.dump(file)
+            child.dump(sqlfile)
 
-    def _dump_(self, file):
+    def _dump_(self, sqlfile):
         return

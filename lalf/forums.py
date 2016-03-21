@@ -33,6 +33,7 @@ from lalf import phpbb
 from lalf import sql
 from lalf import session
 
+@Node.expose(self="forum")
 class Forum(Node):
     """
     Node representing a forum
@@ -53,8 +54,8 @@ class Forum(Node):
     STATE_KEEP = ["oldid", "newid", "parent_id", "title", "description", "icon", "left_id",
                   "right_id"]
 
-    def __init__(self, parent, oldid, newid, left_id, parent_id, title):
-        Node.__init__(self, parent)
+    def __init__(self, oldid, newid, left_id, parent_id, title):
+        Node.__init__(self)
         self.oldid = oldid
         self.newid = newid
         self.left_id = left_id
@@ -109,7 +110,7 @@ class Forum(Node):
 
         response = session.get("/{}-a".format(self.oldid))
         for page in pages(response.text):
-            self.add_child(ForumPage(self, page))
+            self.add_child(ForumPage(page))
 
     def get_topics(self):
         """
@@ -180,18 +181,16 @@ class Forums(Node):
                 depth = len(re.findall('(\\||\xa0)\xa0\xa0\xa0', element.text))
 
                 if depth <= 0:
-                    parent = self
                     parent_id = 0
                 else:
-                    parent = depths[depth-1]
-                    parent_id = parent.newid
+                    parent_id = depths[depth-1].newid
 
                 for _ in range(depth, len(depths)):
                     forum = depths.pop()
                     forum.right_id = nested_id
                     nested_id += 1
 
-                forum = Forum(self, forum_id, newid, nested_id, parent_id, title)
+                forum = Forum(forum_id, newid, nested_id, parent_id, title)
                 depths.append(forum)
                 self.add_child(forum)
                 newid += 1

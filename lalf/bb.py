@@ -57,7 +57,7 @@ class BB(Node):
                   "current_posts", "current_topics", "current_users"]
 
     def __init__(self):
-        Node.__init__(self, None)
+        Node.__init__(self)
 
         # Statistics
         self.total_posts = 0
@@ -93,16 +93,16 @@ class BB(Node):
 
         # Add the children nodes, which respectively handle the
         # exportation of the smilies, the users and the message
-        self.add_child(Smilies(self))
+        self.add_child(Smilies())
 
         if config["use_ocr"]:
             # Use Optical Character Recognition to get the users'
             # emails
-            self.add_child(OcrUsers(self))
+            self.add_child(OcrUsers())
         else:
-            self.add_child(Users(self))
+            self.add_child(Users())
 
-        self.add_child(Forums(self))
+        self.add_child(Forums())
 
     def _dump_(self, sqlfile):
         self.dump_time = int(time.time())

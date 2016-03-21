@@ -45,19 +45,17 @@ class Post(Node):
     """
     STATE_KEEP = ["post_id", "text", "title", "time", "author"]
 
-    def __init__(self, parent, post_id, text, title, post_time, author):
-        Node.__init__(self, parent)
+    def __init__(self, post_id, text, title, post_time, author):
+        Node.__init__(self)
         self.post_id = post_id
         self.text = text
         self.title = title
         self.time = post_time
         self.author = author
 
+    def _export_(self):
         self.root.current_posts += 1
         ui.update()
-
-    def _export_(self):
-        return
 
     def _dump_(self, sqlfile):
         uid = phpbb.uid()
@@ -69,8 +67,8 @@ class Post(Node):
 
         sql.insert(sqlfile, "posts", {
             "post_id" : self.post_id,
-            "topic_id" : self.parent.parent.topic_id,
-            "forum_id" : self.parent.parent.parent.parent.newid,
+            "topic_id" : self.topic.topic_id,
+            "forum_id" : self.forum.newid,
             "poster_id" : self.root.users.get_newid(self.author),
             "post_time" : self.time,
             "poster_ip" : "::1",
@@ -88,15 +86,15 @@ class TopicPage(Node):
     # Attributes to save
     STATE_KEEP = ["page"]
 
-    def __init__(self, parent, page):
-        Node.__init__(self, parent)
+    def __init__(self, page):
+        Node.__init__(self)
         self.page = page
 
     def _export_(self):
         self.logger.debug('Récupération des messages du sujet %d (page %d)',
-                          self.parent.topic_id, self.page)
+                          self.topic.topic_id, self.page)
 
-        response = session.get("/t{}p{}-a".format(self.parent.topic_id, self.page))
+        response = session.get("/t{}p{}-a".format(self.topic.topic_id, self.page))
         document = PyQuery(response.text)
 
         for element in document.find('tr.post'):
@@ -105,13 +103,13 @@ class TopicPage(Node):
             post_id = int(e("td span.name a").attr("name"))
 
             self.logger.debug('Récupération du message %d (sujet %d, page %d)',
-                              post_id, self.parent.topic_id, self.page)
+                              post_id, self.topic.topic_id, self.page)
 
             author = e("td span.name").text()
             post = e("td div.postbody div").eq(0).html()
             if not post:
                 self.logger.warning('Le message  %d (sujet %d, page %d) semble être vide',
-                                    post_id, self.parent.topic_id, self.page)
+                                    post_id, self.topic.topic_id, self.page)
                 post = ""
 
             # Get title
@@ -134,4 +132,4 @@ class TopicPage(Node):
 
             timestamp = int(mktime(datetime.combine(post_date, post_time).timetuple()))
 
-            self.add_child(Post(self, post_id, post, title, timestamp, author))
+            self.add_child(Post(post_id, post, title, timestamp, author))

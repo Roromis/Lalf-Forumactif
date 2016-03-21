@@ -98,8 +98,8 @@ class User(Node):
     """
     STATE_KEEP = ["oldid", "newid", "name", "mail", "posts", "date", "lastvisit"]
 
-    def __init__(self, parent, oldid, name, mail, posts, date, lastvisit):
-        Node.__init__(self, parent)
+    def __init__(self, oldid, name, mail, posts, date, lastvisit):
+        Node.__init__(self)
         self.oldid = oldid
         self.name = name
         self.mail = mail
@@ -107,13 +107,13 @@ class User(Node):
         self.date = date
         self.lastvisit = lastvisit
 
+    def _export_(self):
         if self.name == config["admin_name"]:
             self.newid = 2
         else:
-            self.newid = self.parent.parent.count
-            self.parent.parent.count += 1
+            self.newid = self.users.count
+            self.users.count += 1
 
-    def _export_(self):
         self.root.current_users += 1
         ui.update()
 
@@ -228,8 +228,8 @@ class UsersPage(Node):
     # Attributes to keep
     STATE_KEEP = ["page"]
 
-    def __init__(self, parent, page):
-        Node.__init__(self, parent)
+    def __init__(self, page):
+        Node.__init__(self)
         self.page = page
 
     def _export_(self):
@@ -273,8 +273,9 @@ class UsersPage(Node):
             else:
                 lastvisit = 0
 
-            self.add_child(User(self, oldid, name, mail, posts, date, lastvisit))
+            self.add_child(User(oldid, name, mail, posts, date, lastvisit))
 
+@Node.expose(self="users")
 class Users(Node):
     """
     Node used to export the users (DEPRECATED)
@@ -283,8 +284,8 @@ class Users(Node):
     # Attributes to save
     STATE_KEEP = ["count"]
 
-    def __init__(self, parent):
-        Node.__init__(self, parent)
+    def __init__(self):
+        Node.__init__(self)
         # User ids start at one, the first one is the anonymous user,
         # and the second one is the administrator
         self.count = len(BOTS) + 3
@@ -299,7 +300,7 @@ class Users(Node):
         }
         response = session.get_admin("/admin/index.forum", params=params)
         for page in pages(response.text):
-            self.add_child(UsersPage(self, page))
+            self.add_child(UsersPage(page))
 
     def get_users(self):
         """

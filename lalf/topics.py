@@ -34,6 +34,7 @@ TOPIC_TYPES = {
     'Annonce globale:': 3
 }
 
+@Node.expose(self="topic")
 class Topic(Node):
     """
     Node representing a topic
@@ -52,8 +53,8 @@ class Topic(Node):
     # Attributes to save
     STATE_KEEP = ["topic_id", "topic_type", "title", "locked", "views"]
 
-    def __init__(self, parent, topic_id, topic_type, title, locked, views):
-        Node.__init__(self, parent)
+    def __init__(self, topic_id, topic_type, title, locked, views):
+        Node.__init__(self)
         self.topic_id = topic_id
         self.topic_type = topic_type
         self.title = title
@@ -68,7 +69,7 @@ class Topic(Node):
 
         response = session.get("/t{}-a".format(self.topic_id))
         for page in pages(response.text):
-            self.add_child(TopicPage(self, page))
+            self.add_child(TopicPage(page))
 
     def get_posts(self):
         """
@@ -85,7 +86,7 @@ class Topic(Node):
 
         sql.insert(sqlfile, "topics", {
             "topic_id" : self.topic_id,
-            "forum_id" : self.parent.parent.newid,
+            "forum_id" : self.forum.newid,
             "topic_title" : self.title,
             "topic_poster" : self.root.users.get_newid(first_post.author),
             "topic_time" : first_post.time,
@@ -122,15 +123,15 @@ class ForumPage(Node):
     # Attributes to save
     STATE_KEEP = ["page"]
 
-    def __init__(self, parent, page):
-        Node.__init__(self, parent)
+    def __init__(self, page):
+        Node.__init__(self)
         self.page = page
 
     def _export_(self):
-        self.logger.debug('Récupération du forum %s (page %d)', self.parent.oldid, self.page)
+        self.logger.debug('Récupération du forum %s (page %d)', self.forum.oldid, self.page)
 
         # Download the page
-        response = session.get("/{}p{}-a".format(self.parent.oldid, self.page))
+        response = session.get("/{}p{}-a".format(self.forum.oldid, self.page))
         document = PyQuery(response.text)
 
         # Get the topics
@@ -145,7 +146,7 @@ class ForumPage(Node):
                 topic_type = TOPIC_TYPES.get(e("strong").text(), 0)
                 title = e("a").text()
 
-                self.add_child(Topic(self, topic_id, topic_type, title, locked, views))
+                self.add_child(Topic(topic_id, topic_type, title, locked, views))
                 topicids.append(topic_id)
             else:
                 # Topic has already been exported (it's a global announcement)

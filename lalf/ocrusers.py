@@ -59,8 +59,8 @@ class OcrUser(User):
     # Attributes to save
     STATE_KEEP = User.STATE_KEEP + ["trust", "img"]
 
-    def __init__(self, parent, oldid, name, posts, date):
-        User.__init__(self, parent, oldid, name, None, posts, date, 0)
+    def __init__(self, oldid, name, posts, date):
+        User.__init__(self, oldid, name, None, posts, date, 0)
         self.trust = 0
         self.img = os.path.join("usermails", "{}.png".format(clean_filename(self.name)))
 
@@ -91,6 +91,8 @@ class OcrUser(User):
 
     def _export_(self):
         self.logger.debug('Récupération du membre %d', self.oldid)
+
+        User._export_(self)
 
         if not self.exported:
             self.root.current_users += 1
@@ -217,7 +219,7 @@ class OcrUsersPage(UsersPage):
             date = int(time.mktime(time.struct_time(
                 (int(date[2]), int(date[1]), int(date[0]), 0, 0, 0, 0, 0, 0))))
 
-            self.add_child(OcrUser(self, oldid, name, posts, date))
+            self.add_child(OcrUser(oldid, name, posts, date))
 
     def __setstate__(self, state):
         UsersPage.__setstate__(self, state)
@@ -233,4 +235,4 @@ class OcrUsers(Users):
 
         response = session.get("/memberlist")
         for page in pages(response.text):
-            self.add_child(OcrUsersPage(self, page))
+            self.add_child(OcrUsersPage(page))
