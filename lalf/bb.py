@@ -30,11 +30,10 @@ from lalf.forums import Forums
 from lalf.users import Users
 from lalf.ocrusers import OcrUsers
 from lalf.smilies import Smilies
-from lalf.config import config
 from lalf import phpbb
 from lalf.session import Session
 
-@Node.expose("session", self="root")
+@Node.expose("config", "session", self="root")
 class BB(Node):
     """
     The BB node is the root of the tree representing the forum.
@@ -55,10 +54,11 @@ class BB(Node):
     STATE_KEEP = ["total_posts", "total_topics", "total_users",
                   "current_posts", "current_topics", "current_users"]
 
-    def __init__(self):
+    def __init__(self, config):
         Node.__init__(self)
 
-        self.session = Session(config)
+        self.config = config
+        self.session = Session(self.config)
 
         # Statistics
         self.total_posts = 0
@@ -96,7 +96,7 @@ class BB(Node):
         # exportation of the smilies, the users and the message
         self.add_child(Smilies())
 
-        if config["use_ocr"]:
+        if self.config["use_ocr"]:
             # Use Optical Character Recognition to get the users'
             # emails
             self.add_child(OcrUsers())
@@ -132,7 +132,7 @@ class BB(Node):
     def __setstate__(self, state):
         Node.__setstate__(self, state)
 
-        self.session = Session(config)
+        self.session = Session(self.config)
 
         # TODO : recompute current counts
 
@@ -208,7 +208,7 @@ class BB(Node):
         """
         return self.smilies.smilies
 
-def load():
+def load(config):
     """
     Returns the BB node contained in the file save.pickle.
     """
@@ -217,9 +217,10 @@ def load():
     try:
         with open("save.pickle", "rb") as fileobj:
             bb = pickle.load(fileobj)
+            bb.config = config
     except FileNotFoundError:
-        bb = BB()
+        bb = BB(config)
     except EOFError:
         logger.warning("Erreur lors du chargement de la sauvegarde. Réinitialisation.")
-        bb = BB()
+        bb = BB(config)
     return bb

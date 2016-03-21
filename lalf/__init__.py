@@ -24,7 +24,7 @@ import sys
 
 from lalf.bb import load
 from lalf.sql import SqlFile
-from lalf import config
+from lalf.config import read as read_config
 from lalf import ui
 from lalf import session
 from lalf.__version__ import __version__
@@ -39,17 +39,17 @@ def main():
 
     logger.addHandler(filehandler)
     
-    config.read("config.cfg")
+    config = read_config("config.cfg")
     ui.init()
 
     logger.info("Lalf %s", __version__)
 
-    if not config.config["use_ocr"]:
+    if not config["use_ocr"]:
         logger.warning(
             "Il est vivement conseillé d'utiliser la reconaissance de caractère "
             "pour récupérer les adresse email des utilisateurs.")
     
-    bb = load()
+    bb = load(config)
     ui.bb = bb
 
     try:
@@ -68,7 +68,7 @@ https://github.com/Roromis/Lalf-Forumactif/issues""".format(exception=repr(e)))
     bb.save()
 
     logging.info("Génération du fichier SQL")
-    with SqlFile("phpbb.sql", config.config["table_prefix"]) as sqlfile:
+    with SqlFile("phpbb.sql", config["table_prefix"]) as sqlfile:
         bb.dump(sqlfile)
 
     logging.info("L'exportation a été effectuée avec succés.")

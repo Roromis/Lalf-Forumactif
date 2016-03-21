@@ -22,6 +22,10 @@ Module handling the configuration
 import configparser
 import os.path
 
+# Options defined in the config file
+STRINGS = ["url", "admin_name", "admin_password", "table_prefix", "gocr", "temporary_theme"]
+BOOLEANS = ["use_ocr", "export_smilies"]
+
 class NoConfigurationFile(Exception):
     """
     Exception raised when the configuration file does not exist
@@ -68,19 +72,6 @@ class InvalidConfigurationFile(Exception):
             "Modifiez-le en vous inspirant du fichier {example}."
         ).format(filename=self.filename, example=examplefilename)
 
-# Dictionnary containing the configuration
-# TODO : do not use globals
-config = {
-    "url" : "",
-    "admin_name" : "",
-    "admin_password" : "",
-    "table_prefix" : "",
-    "use_ocr" : True,
-    "gocr" : "",
-    "temporary_theme": "",
-    "export_smilies": True
-}
-
 def read(filename):
     """
     Read the configuration from filename and write it in the config
@@ -93,11 +84,15 @@ def read(filename):
     with open(filename, "r") as fileobj:
         cfg.read_file(fileobj)
 
+    config = {}
+
     try:
-        for key, value in config.items():
-            if isinstance(value, bool):
-                config[key] = cfg.getboolean("Configuration", key)
-            else:
-                config[key] = cfg.get("Configuration", key)
+        for option in STRINGS:
+            config[option] = cfg.get("Configuration", option)
+
+        for option in BOOLEANS:
+            config[option] = cfg.getboolean("Configuration", option)
     except (configparser.NoSectionError, configparser.NoOptionError) as e:
         raise InvalidConfigurationFile(filename, e)
+
+    return config

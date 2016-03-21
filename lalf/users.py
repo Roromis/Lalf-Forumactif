@@ -37,7 +37,6 @@ from pyquery import PyQuery
 
 from lalf.node import Node
 from lalf.util import pages, month, random_string
-from lalf.config import config
 from lalf.phpbb import BOTS, email_hash
 from lalf import ui
 from lalf import htmltobbcode
@@ -106,7 +105,7 @@ class User(Node):
         self.lastvisit = lastvisit
 
     def _export_(self):
-        if self.name == config["admin_name"]:
+        if self.name == self.config["admin_name"]:
             self.newid = 2
         else:
             self.newid = self.users.count
@@ -147,11 +146,11 @@ class User(Node):
         }
 
         # Check if the user is the administrator
-        if self.name == config["admin_name"]:
+        if self.name == self.config["admin_name"]:
             user.update({
                 "user_type": 3,
                 "group_id" : 5,
-                "user_password" : md5(config["admin_password"]),
+                "user_password" : md5(self.config["admin_password"]),
                 "user_rank" : 1,
                 "user_colour" : "AA0000", # TODO : get actual color?
                 "user_new_privmsg" : 1,
@@ -170,7 +169,7 @@ class User(Node):
         })
 
         # Check if the user is the administrator
-        if self.name == config["admin_name"]:
+        if self.name == self.config["admin_name"]:
             # Add user to global moderators group
             sqlfile.insert("user_group", {
                 "group_id" : 4,

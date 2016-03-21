@@ -24,8 +24,6 @@ import struct
 import platform
 import subprocess
 
-from lalf.config import config
-
 bb = None
 uihandler = None
 exporting = True

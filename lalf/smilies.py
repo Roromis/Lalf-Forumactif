@@ -25,7 +25,6 @@ from io import BytesIO
 from pyquery import PyQuery
 from PIL import Image
 
-from lalf.config import config
 from lalf.node import Node
 from lalf.util import pages
 from lalf.phpbb import DEFAULT_SMILIES
@@ -64,7 +63,7 @@ class Smiley(Node):
         self.order = None
 
     def _export_(self):
-        if config["export_smilies"]:
+        if self.config["export_smilies"]:
             self.logger.debug("Téléchargement de l'émoticone \"%s\"", self.code)
 
             # Create the smilies directory if necessary
