@@ -109,12 +109,8 @@ def init():
     global uihandler
     uihandler = UiLoggingHandler()
 
-    if config["verbose"]:
-        formatter = logging.Formatter('%(levelname)-8s : %(message)s')
-        uihandler.setLevel(logging.DEBUG)
-    else:
-        formatter = logging.Formatter('%(message)s')
-        uihandler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(levelname)-8s : %(message)s')
+    uihandler.setLevel(logging.DEBUG)
 
     uihandler.setFormatter(formatter)
     logger = logging.getLogger("lalf")
