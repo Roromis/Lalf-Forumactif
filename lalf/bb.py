@@ -32,9 +32,9 @@ from lalf.ocrusers import OcrUsers
 from lalf.smilies import Smilies
 from lalf.config import config
 from lalf import phpbb
-from lalf import session
+from lalf.session import Session
 
-@Node.expose(self="root")
+@Node.expose("session", self="root")
 class BB(Node):
     """
     The BB node is the root of the tree representing the forum.
@@ -58,6 +58,8 @@ class BB(Node):
     def __init__(self):
         Node.__init__(self)
 
+        self.session = Session(config)
+
         # Statistics
         self.total_posts = 0
         self.total_topics = 0
@@ -71,7 +73,7 @@ class BB(Node):
 
     def _export_(self):
         self.logger.info('Récupération des statistiques')
-        response = session.get("/statistics")
+        response = self.session.get("/statistics")
         document = PyQuery(response.text)
 
         # Go through the table of statistics and save the relevant
@@ -129,6 +131,9 @@ class BB(Node):
 
     def __setstate__(self, state):
         Node.__setstate__(self, state)
+
+        self.session = Session(config)
+
         # TODO : recompute current counts
 
     def save(self):

@@ -22,7 +22,6 @@ from lalf.node import Node
 from lalf.posts import TopicPage
 from lalf.util import pages
 from lalf import ui
-from lalf import session
 
 # TODO : do not use globals
 topicids = []
@@ -66,7 +65,7 @@ class Topic(Node):
         self.root.current_topics += 1
         ui.update()
 
-        response = session.get("/t{}-a".format(self.topic_id))
+        response = self.session.get("/t{}-a".format(self.topic_id))
         for page in pages(response.text):
             self.add_child(TopicPage(page))
 
@@ -130,7 +129,7 @@ class ForumPage(Node):
         self.logger.debug('Récupération du forum %s (page %d)', self.forum.oldid, self.page)
 
         # Download the page
-        response = session.get("/{}p{}-a".format(self.forum.oldid, self.page))
+        response = self.session.get("/{}p{}-a".format(self.forum.oldid, self.page))
         document = PyQuery(response.text)
 
         # Get the topics

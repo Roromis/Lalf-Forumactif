@@ -40,7 +40,6 @@ from lalf.util import pages, month, random_string
 from lalf.config import config
 from lalf.phpbb import BOTS, email_hash
 from lalf import ui
-from lalf import session
 from lalf import htmltobbcode
 
 EMAIL = base64.b64decode(b'bGFsZkBvcGVubWFpbGJveC5vcmc=\n').decode("utf-8")
@@ -240,7 +239,7 @@ class UsersPage(Node):
             "sub" : "users",
             "start" : self.page
         }
-        response = session.get_admin("/admin/index.forum", params=params)
+        response = self.session.get_admin("/admin/index.forum", params=params)
 
         # Check if the page was blocked
         query = urllib.parse.urlparse(response.url).query
@@ -297,7 +296,7 @@ class Users(Node):
             "part" : "users_groups",
             "sub" : "users"
         }
-        response = session.get_admin("/admin/index.forum", params=params)
+        response = self.session.get_admin("/admin/index.forum", params=params)
         for page in pages(response.text):
             self.add_child(UsersPage(page))
 

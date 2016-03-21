@@ -33,7 +33,6 @@ from lalf.users import Users, UsersPage, User
 
 from lalf.util import month, clean_filename, pages
 from lalf import phpbb
-from lalf import session
 from lalf import ocr
 from lalf import ui
 
@@ -77,7 +76,7 @@ class OcrUser(User):
             "sort" : "user_id",
             "order" : "ASC"
         }
-        response = session.get_admin("/admin/index.forum", params=params)
+        response = self.session.get_admin("/admin/index.forum", params=params)
 
         # Check if this user is one of them
         document = PyQuery(response.text)
@@ -112,7 +111,7 @@ class OcrUser(User):
             "sort" : "user_id",
             "order" : "ASC"
         }
-        response = session.get_admin("/admin/index.forum", params=params)
+        response = self.session.get_admin("/admin/index.forum", params=params)
 
         document = PyQuery(response.text)
         for element in document('tbody tr'):
@@ -124,7 +123,7 @@ class OcrUser(User):
                 if self.mail == "" and e("td a").eq(0).is_('img'):
                     # The administration panel has been blocked, the
                     # email is replaced by an image, download it
-                    response = session.get(e("td a img").eq(0).attr("src"))
+                    response = self.session.get(e("td a img").eq(0).attr("src"))
                     with open(self.img, "wb") as fileobj:
                         fileobj.write(response.content)
 
@@ -197,7 +196,7 @@ class OcrUsersPage(UsersPage):
             "start" : self.page,
             "username" : ""
         }
-        response = session.get("/memberlist", params=params)
+        response = self.session.get("/memberlist", params=params)
         document = PyQuery(response.text)
 
         table = PyQuery(document("form[action=\"/memberlist\"]").next_all("table.forumline").eq(0))
@@ -233,6 +232,6 @@ class OcrUsers(Users):
     def _export_(self):
         self.logger.info('Récupération des membres')
 
-        response = session.get("/memberlist")
+        response = self.session.get("/memberlist")
         for page in pages(response.text):
             self.add_child(OcrUsersPage(page))

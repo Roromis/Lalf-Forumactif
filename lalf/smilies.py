@@ -29,7 +29,6 @@ from lalf.config import config
 from lalf.node import Node
 from lalf.util import pages
 from lalf.phpbb import DEFAULT_SMILIES
-from lalf import session
 
 class Smiley(Node):
     """
@@ -49,7 +48,7 @@ class Smiley(Node):
     """
 
     # Attributes to save
-    STATE_KEEP = ["id", "code", "url", "emotion", "smiley_url", "width", "height", "order"]
+    STATE_KEEP = ["smiley_id", "code", "url", "emotion", "smiley_url", "width", "height", "order"]
 
     def __init__(self, smiley_id, code, url, emotion):
         Node.__init__(self)
@@ -74,7 +73,7 @@ class Smiley(Node):
                 os.makedirs(dirname)
 
             # Download the image and get its dimensions and format
-            response = session.get_image(self.url)
+            response = self.session.get_image(self.url)
             try:
                 with Image.open(BytesIO(response.content)) as image:
                     self.smiley_url = "icon_exported_{}.{}".format(self.smiley_id, image.format.lower())
@@ -132,7 +131,7 @@ class SmiliesPage(Node):
             "mode" : "smilies",
             "start" : self.page
         }
-        response = session.get_admin("/admin/index.forum", params=params)
+        response = self.session.get_admin("/admin/index.forum", params=params)
         document = PyQuery(response.text)
 
         for element in document('table tr'):
@@ -176,6 +175,6 @@ class Smilies(Node):
             "sub" : "avatars",
             "mode" : "smilies"
         }
-        response = session.get_admin("/admin/index.forum", params=params)
+        response = self.session.get_admin("/admin/index.forum", params=params)
         for page in pages(response.text):
             self.add_child(SmiliesPage(page))

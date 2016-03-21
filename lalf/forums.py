@@ -30,7 +30,6 @@ from lalf.node import Node
 from lalf.topics import ForumPage
 from lalf.util import pages
 from lalf import phpbb
-from lalf import session
 
 @Node.expose(self="forum")
 class Forum(Node):
@@ -74,7 +73,7 @@ class Forum(Node):
             "mode" : "edit",
             "fid" : self.oldid
         }
-        response = session.get_admin("/admin/index.forum", params=params)
+        response = self.session.get_admin("/admin/index.forum", params=params)
         document = PyQuery(response.text)
 
         # Get the description
@@ -89,7 +88,7 @@ class Forum(Node):
 
         if self.icon:
             self.logger.debug("Téléchargement de l'icône du forum %s", self.oldid)
-            response = session.get_image(self.icon)
+            response = self.session.get_image(self.icon)
 
             # Get the image's format
             try:
@@ -107,7 +106,7 @@ class Forum(Node):
         else:
             self.icon = ""
 
-        response = session.get("/{}-a".format(self.oldid))
+        response = self.session.get("/{}-a".format(self.oldid))
         for page in pages(response.text):
             self.add_child(ForumPage(page))
 
@@ -151,7 +150,7 @@ class Forums(Node):
 
         # Get the first forum
         # TODO : what if it does not exist?
-        response = session.get("/a-f1/")
+        response = self.session.get("/a-f1/")
         document = PyQuery(response.text)
 
         # Get the forums hierarchy by parsing the content of the jumpbox

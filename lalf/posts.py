@@ -29,7 +29,6 @@ from lalf.util import month
 from lalf import ui
 from lalf import phpbb
 from lalf import htmltobbcode
-from lalf import session
 
 class Post(Node):
     """
@@ -93,7 +92,7 @@ class TopicPage(Node):
         self.logger.debug('Récupération des messages du sujet %d (page %d)',
                           self.topic.topic_id, self.page)
 
-        response = session.get("/t{}p{}-a".format(self.topic.topic_id, self.page))
+        response = self.session.get("/t{}p{}-a".format(self.topic.topic_id, self.page))
         document = PyQuery(response.text)
 
         for element in document.find('tr.post'):
