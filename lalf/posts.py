@@ -27,7 +27,6 @@ from pyquery import PyQuery
 from lalf.node import Node
 from lalf.util import month
 from lalf import ui
-from lalf import sql
 from lalf import phpbb
 from lalf import htmltobbcode
 from lalf import session
@@ -65,7 +64,7 @@ class Post(Node):
         bitfield = parser.get_bitfield()
         checksum = parser.get_checksum()
 
-        sql.insert(sqlfile, "posts", {
+        sqlfile.insert("posts", {
             "post_id" : self.post_id,
             "topic_id" : self.topic.topic_id,
             "forum_id" : self.forum.newid,

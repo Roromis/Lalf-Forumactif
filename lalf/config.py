@@ -78,8 +78,7 @@ config = {
     "use_ocr" : True,
     "gocr" : "",
     "temporary_theme": "",
-    "export_smilies": True,
-    "verbose" : False
+    "export_smilies": True
 }
 
 def read(filename):

@@ -38,9 +38,8 @@ from pyquery import PyQuery
 from lalf.node import Node
 from lalf.util import pages, month, random_string
 from lalf.config import config
-from lalf.phpbb import BOTS
+from lalf.phpbb import BOTS, email_hash
 from lalf import ui
-from lalf import sql
 from lalf import session
 from lalf import htmltobbcode
 
@@ -134,7 +133,7 @@ class User(Node):
             "user_password" : md5(random_string()),
             "user_pass_convert" : "1",
             "user_email" : self.mail,
-            "user_email_hash" : sql.email_hash(self.mail),
+            "user_email_hash" : email_hash(self.mail),
             "user_lastvisit" : self.lastvisit,
             #"user_lastpost_time" (TODO)
             "user_posts" : self.posts,
@@ -162,10 +161,10 @@ class User(Node):
             })
 
         # Add user to database
-        sql.insert(sqlfile, "users", user)
+        sqlfile.insert("users", user)
 
         # Add user to registered group
-        sql.insert(sqlfile, "user_group", {
+        sqlfile.insert("user_group", {
             "group_id" : 2,
             "user_id" : self.newid,
             "user_pending" : 0
@@ -174,13 +173,13 @@ class User(Node):
         # Check if the user is the administrator
         if self.name == config["admin_name"]:
             # Add user to global moderators group
-            sql.insert(sqlfile, "user_group", {
+            sqlfile.insert("user_group", {
                 "group_id" : 4,
                 "user_id" : self.newid,
                 "user_pending" : 0
             })
             # Add user to administrators group
-            sql.insert(sqlfile, "user_group", {
+            sqlfile.insert("user_group", {
                 "group_id" : 5,
                 "user_id" : self.newid,
                 "user_pending" : 0,
@@ -194,7 +193,7 @@ class User(Node):
             post = parser.output
             bitfield = parser.get_bitfield()
 
-            sql.insert(sqlfile, "privmsgs", {
+            sqlfile.insert("privmsgs", {
                 'msg_id'          : 1,
                 'author_id'       : self.newid,
                 'message_time'    : self.root.dump_time,
@@ -207,14 +206,14 @@ class User(Node):
             })
 
             # Add the message in the inbox
-            sql.insert(sqlfile, "privmsgs_to", {
+            sqlfile.insert("privmsgs_to", {
                 'msg_id'	   : 1,
                 'user_id'	   : self.newid,
                 'author_id'	   : self.newid,
                 'folder_id'	   : -1
             })
             # Add the message in the outbox
-            sql.insert(sqlfile, "privmsgs_to", {
+            sqlfile.insert("privmsgs_to", {
                 'msg_id'	   : 1,
                 'user_id'	   : self.newid,
                 'author_id'	   : self.newid,
@@ -325,7 +324,7 @@ class Users(Node):
 
     def _dump_(self, sqlfile):
         # Add anonymous user
-        sql.insert(sqlfile, "users", {
+        sqlfile.insert("users", {
             "user_id" : "1",
             "user_type" : "2",
             "group_id" : "1",
@@ -335,7 +334,7 @@ class Users(Node):
             "user_lang" : "fr", # TODO : define in config
             "user_style" : "1",
             "user_allow_massemail" : "0"})
-        sql.insert(sqlfile, "user_group", {
+        sqlfile.insert("user_group", {
             "group_id" : "1",
             "user_id" : "1",
             "user_pending" : "0"})
@@ -343,7 +342,7 @@ class Users(Node):
         user_id = 3
         # Add bots
         for bot in BOTS:
-            sql.insert(sqlfile, "users", {
+            sqlfile.insert("users", {
                 "user_id" : user_id,
                 "user_type" : "2",
                 "group_id" : "6",
@@ -358,11 +357,11 @@ class Users(Node):
                 "user_colour" : "9E8DA7",
                 "user_allow_pm" : "0",
                 "user_allow_massemail" : "0"})
-            sql.insert(sqlfile, "user_group", {
+            sqlfile.insert("user_group", {
                 "group_id" : "6",
                 "user_id" : user_id,
                 "user_pending" : "0"})
-            sql.insert(sqlfile, "bots", {
+            sqlfile.insert("bots", {
                 "bot_name" : bot["name"],
                 "user_id" : user_id,
                 "bot_agent" : bot["agent"]})

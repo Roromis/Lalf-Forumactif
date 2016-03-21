@@ -25,7 +25,7 @@ def uid():
     return ''.join([random.choice('abcdefghijklmnopqrstuvwxyz0123456789') for i in range(8)])
 
 def email_hash(email):
-    return str(crc32(email)&0xffffffff) + str(len(email))
+    return str(crc32(email.encode("utf-8"))&0xffffffff) + str(len(email))
 
 def escape_var(i):
     if isinstance(i,(str,unicode)):

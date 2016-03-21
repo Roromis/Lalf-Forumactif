@@ -22,7 +22,8 @@ logger.setLevel(logging.DEBUG)
 
 import sys
 
-from lalf.bb import load, BB
+from lalf.bb import load
+from lalf.sql import SqlFile
 from lalf import config
 from lalf import ui
 from lalf import session
@@ -67,8 +68,8 @@ https://github.com/Roromis/Lalf-Forumactif/issues""".format(exception=repr(e)))
     bb.save()
 
     logging.info("Génération du fichier SQL")
-    with open("phpbb.sql", "w") as f:
-        bb.dump(f)
+    with SqlFile("phpbb.sql", config.config["table_prefix"]) as sqlfile:
+        bb.dump(sqlfile)
 
     logging.info("L'exportation a été effectuée avec succés.")
 

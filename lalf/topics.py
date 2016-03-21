@@ -22,7 +22,6 @@ from lalf.node import Node
 from lalf.posts import TopicPage
 from lalf.util import pages
 from lalf import ui
-from lalf import sql
 from lalf import session
 
 # TODO : do not use globals
@@ -84,7 +83,7 @@ class Topic(Node):
         last_post = self.children[-1].children[-1]
         replies = sum(1 for _ in self.get_posts()) - 1
 
-        sql.insert(sqlfile, "topics", {
+        sqlfile.insert("topics", {
             "topic_id" : self.topic_id,
             "forum_id" : self.forum.newid,
             "topic_title" : self.title,
@@ -107,7 +106,7 @@ class Topic(Node):
         })
 
         for username in set(post.author for post in self.get_posts()):
-            sql.insert(sqlfile, "topics_posted", {
+            sqlfile.insert("topics_posted", {
                 "user_id" : self.root.users.get_newid(username),
                 "topic_id" : self.topic_id,
                 "topic_posted" : 1

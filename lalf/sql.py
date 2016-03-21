@@ -15,31 +15,67 @@
 # You should have received a copy of the GNU General Public License
 # along with Lalf.  If not, see <http://www.gnu.org/licenses/>.
 
-from binascii import crc32
+"""
+Module handling the writing of the sql dump file
+"""
 
-from lalf.config import config
+def escape(string):
+    """
+    Escapes special characters in a string for use in an SQL statement
+    """
+    return string.replace("\\", "\\\\").replace("'", "''")
 
-def escape(str):
-    return str.replace("\\", "\\\\").replace("'", "''")
+class SqlFile(object):
+    """
+    Object used to save sql queries in an sql file
 
-def email_hash(email):
-	return str(crc32(email.encode("utf-8"))&0xffffffff) + str(len(email))
+    Attrs:
+        path (str): The path of the sql dump file
+        prefix (str): A prefix that will be added before the table names
 
-def insert(file, table, d, ignore_keys=[]):
-    keys = []
-    values = []
-    for k,v in d.items():
-        if k not in ignore_keys:
-            keys.append(k)
-            values.append("'"+escape(str(v))+"'")
+    Example:
+        >>> with SqlFile("phpbb.sql", "phpbb_"):
+        ...     sqlfile.truncate("posts")
+        ...     sqlfile.insert("posts", {
+        ...         "post_id": 1,
+        ...         "post_subject": "Subject",
+        ...         # ...
+        ...     })
+    """
+    def __init__(self, path, prefix=""):
+        self.fileobj = open(path, "w")
+        self.prefix = prefix
 
-    file.write('INSERT INTO {prefix}{table} ({keys}) VALUES ({values});\n'.format(
-        prefix=config["table_prefix"],
-        table=table,
-        keys=", ".join(keys),
-        values=", ".join(values)))
+    def __enter__(self):
+        return self
 
-def truncate(file, table):
-    file.write('TRUNCATE TABLE {prefix}{table};\n'.format(
-        prefix=config["table_prefix"],
-        table=table))
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.fileobj.close()
+
+    def insert(self, table, entry):
+        """
+        Add an insert statement to the dump file
+
+        Attrs:
+            table (str):
+            entry (dict): Dictionnary associating column names to their values
+        """
+        columns = []
+        values = []
+        for column, value in entry.items():
+            columns.append(column)
+            values.append("'{}'".format(escape(str(value))))
+
+        self.fileobj.write('INSERT INTO {prefix}{table} ({columns}) VALUES ({values});\n'.format(
+            prefix=self.prefix,
+            table=table,
+            columns=", ".join(columns),
+            values=", ".join(values)))
+
+    def truncate(self, table):
+        """
+        Add truncate statement to the dump file
+        """
+        self.fileobj.write('TRUNCATE TABLE {prefix}{table};\n'.format(
+            prefix=self.prefix,
+            table=table))

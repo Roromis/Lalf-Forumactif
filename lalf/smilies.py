@@ -30,7 +30,6 @@ from lalf.node import Node
 from lalf.util import pages
 from lalf.phpbb import DEFAULT_SMILIES
 from lalf import session
-from lalf import sql
 
 class Smiley(Node):
     """
@@ -97,8 +96,8 @@ class Smiley(Node):
             "emotion" : self.emotion,
             "smiley_url" : self.smiley_url}
 
-    def _dump_(self, file):
-        sql.insert(file, "smilies", {
+    def _dump_(self, sqlfile):
+        sqlfile.insert("smilies", {
             "code" : self.code,
             "emotion" : self.emotion,
             "smiley_url" : self.smiley_url,

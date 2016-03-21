@@ -32,7 +32,6 @@ from lalf.ocrusers import OcrUsers
 from lalf.smilies import Smilies
 from lalf.config import config
 from lalf import phpbb
-from lalf import sql
 from lalf import session
 
 @Node.expose(self="root")
@@ -108,25 +107,25 @@ class BB(Node):
         self.dump_time = int(time.time())
 
         # Clean tables
-        sql.truncate(sqlfile, "users")
-        sql.truncate(sqlfile, "user_group")
-        sql.truncate(sqlfile, "bots")
+        sqlfile.truncate("users")
+        sqlfile.truncate("user_group")
+        sqlfile.truncate("bots")
 
-        sql.truncate(sqlfile, "forums")
-        sql.truncate(sqlfile, "acl_groups")
+        sqlfile.truncate("forums")
+        sqlfile.truncate("acl_groups")
 
-        sql.truncate(sqlfile, "topics")
-        sql.truncate(sqlfile, "topics_posted")
+        sqlfile.truncate("topics")
+        sqlfile.truncate("topics_posted")
 
-        sql.truncate(sqlfile, "posts")
-        sql.truncate(sqlfile, "privmsgs")
-        sql.truncate(sqlfile, "privmsgs_to")
+        sqlfile.truncate("posts")
+        sqlfile.truncate("privmsgs")
+        sqlfile.truncate("privmsgs_to")
 
-        sql.truncate(sqlfile, "bbcodes")
+        sqlfile.truncate("bbcodes")
 
         # Add bbcodes tags
         for bbcode in phpbb.bbcodes:
-            sql.insert(sqlfile, "bbcodes", bbcode)
+            sqlfile.insert("bbcodes", bbcode)
 
     def __setstate__(self, state):
         Node.__setstate__(self, state)

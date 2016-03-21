@@ -30,7 +30,6 @@ from lalf.node import Node
 from lalf.topics import ForumPage
 from lalf.util import pages
 from lalf import phpbb
-from lalf import sql
 from lalf import session
 
 @Node.expose(self="forum")
@@ -127,7 +126,7 @@ class Forum(Node):
             forum_type = 0
 
         # TODO : add statistics
-        sql.insert(sqlfile, "forums", {
+        sqlfile.insert("forums", {
             "forum_id" : self.newid,
             "parent_id" : self.parent_id,
             "left_id" : self.left_id,
@@ -141,7 +140,7 @@ class Forum(Node):
         })
 
         for acl in phpbb.default_forum_acl(self.newid):
-            sql.insert(sqlfile, "acl_groups", acl)
+            sqlfile.insert("acl_groups", acl)
 
 class Forums(Node):
     """

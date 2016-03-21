@@ -51,6 +51,6 @@ def totext(img):
     Returns the string contained in the image img
     """
     try:
-        return subprocess.check_output([config.gocr, "-i", img], universal_newlines=True).strip()
+        return subprocess.check_output([config["gocr"], "-i", img], universal_newlines=True).strip()
     except FileNotFoundError:
         raise GocrNotInstalled()
