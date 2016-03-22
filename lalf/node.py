@@ -30,11 +30,10 @@ class Node(object):
        exposed_attrs (Dict(str, (Node, str))): Dictionnary containing the attributes
            exposed by parent nodes. This should not be used directly, see @Node.expose.
        exported (bool): True if the node has been exported
-       children_exported (bool): True if the node's children have been exported
     """
 
     # Attributes to save
-    NODE_KEEP = ["children", "exposed_attrs", "exported", "children_exported"]
+    NODE_KEEP = ["children", "exposed_attrs", "exported"]
     STATE_KEEP = []
 
     # Attributes exposed to the node's children (used by @Node.expose decorator)
@@ -81,7 +80,6 @@ class Node(object):
         self.exposed_attrs = {}
 
         self.exported = False
-        self.children_exported = False
 
     def __getattr__(self, name):
         if name == "exposed_attrs" or name not in self.exposed_attrs:
@@ -114,10 +112,8 @@ class Node(object):
             self._export_()
             self.exported = True
 
-        if not self.children_exported:
-            for child in self.children:
-                child.export()
-            self.children_exported = True
+        for child in self.children:
+            child.export()
 
     def _export_(self):
         """

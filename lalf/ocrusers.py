@@ -253,11 +253,6 @@ class OcrUsersPage(UsersPage):
 
             self.add_child(OcrUser(oldid, name, posts, date))
 
-    def __setstate__(self, state):
-        UsersPage.__setstate__(self, state)
-        # TODO : why?
-        self.children_exported = False
-
 class OcrUsers(Users):
     """
     Node used to export the users
