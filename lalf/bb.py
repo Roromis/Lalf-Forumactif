@@ -33,7 +33,7 @@ from lalf.smilies import Smilies
 from lalf import phpbb
 from lalf.session import Session
 
-@Node.expose("config", "session", self="root")
+@Node.expose("config", "session", "ui", self="root")
 class BB(Node):
     """
     The BB node is the root of the tree representing the forum.
@@ -54,11 +54,12 @@ class BB(Node):
     STATE_KEEP = ["total_posts", "total_topics", "total_users",
                   "current_posts", "current_topics", "current_users"]
 
-    def __init__(self, config):
+    def __init__(self, config, ui):
         Node.__init__(self)
 
         self.config = config
         self.session = Session(self.config)
+        self.ui = ui
 
         # Statistics
         self.total_posts = 0
@@ -206,7 +207,7 @@ class BB(Node):
         """
         return self.smilies.smilies
 
-def load(config):
+def load(config, ui):
     """
     Returns the BB node contained in the file save.pickle.
     """
@@ -217,9 +218,10 @@ def load(config):
             bb = pickle.load(fileobj)
             bb.config = config
             bb.session = Session(config)
+            bb.ui = ui
     except FileNotFoundError:
-        bb = BB(config)
+        bb = BB(config, ui)
     except EOFError:
         logger.warning("Erreur lors du chargement de la sauvegarde. Réinitialisation.")
-        bb = BB(config)
+        bb = BB(config, ui)
     return bb

@@ -39,7 +39,6 @@ from pyquery import PyQuery
 from lalf.node import Node
 from lalf.util import pages, month, random_string
 from lalf.phpbb import BOTS
-from lalf import ui
 from lalf import htmltobbcode
 
 EMAIL = base64.b64decode(b'bGFsZkBvcGVubWFpbGJveC5vcmc=\n').decode("utf-8")
@@ -120,7 +119,7 @@ class User(Node):
             self.users.count += 1
 
         self.root.current_users += 1
-        ui.update()
+        self.ui.update()
 
     def confirm_email(self, _):
         """

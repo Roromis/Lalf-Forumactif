@@ -34,7 +34,6 @@ from pyquery import PyQuery
 from lalf.users import Users, UsersPage, User
 
 from lalf.util import month, clean_filename, pages
-from lalf import ui
 
 class GocrNotInstalled(Exception):
     """
@@ -124,7 +123,7 @@ class OcrUser(User):
 
         if not self.exported:
             self.root.current_users += 1
-            ui.update()
+            self.ui.update()
 
         # Search for this user in the administration panel
         try:

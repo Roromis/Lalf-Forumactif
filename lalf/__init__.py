@@ -22,13 +22,14 @@ import sys
 from lalf.bb import load
 from lalf.sql import SqlFile
 from lalf.config import read as read_config
-from lalf import ui
+from lalf.ui import UI
 from lalf import session
 from lalf.__version__ import __version__
 
 def main():
     logger = logging.getLogger("lalf")
     logger.setLevel(logging.DEBUG)
+    logger.propagate = False
 
     # File output
     filehandler = logging.FileHandler('debug.log')
@@ -40,7 +41,7 @@ def main():
     logger.addHandler(filehandler)
 
     config = read_config("config.cfg")
-    ui.init()
+    ui = UI()
 
     logger.info("Lalf %s", __version__)
 
@@ -49,7 +50,7 @@ def main():
             "Il est vivement conseillé d'utiliser la reconaissance de caractère "
             "pour récupérer les adresse email des utilisateurs.")
 
-    bb = load(config)
+    bb = load(config, ui)
     ui.bb = bb
 
     try:

@@ -26,7 +26,6 @@ from pyquery import PyQuery
 
 from lalf.node import Node
 from lalf.util import month, random_string
-from lalf import ui
 from lalf import htmltobbcode
 
 class Post(Node):
@@ -52,7 +51,7 @@ class Post(Node):
 
     def _export_(self):
         self.root.current_posts += 1
-        ui.update()
+        self.ui.update()
 
     def _dump_(self, sqlfile):
         uid = random_string()

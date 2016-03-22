@@ -15,101 +15,115 @@
 # You should have received a copy of the GNU General Public License
 # along with Lalf.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Module handling the interface
+"""
+
 import logging
-import os
 from shutil import get_terminal_size
-import time
-import shlex
-import struct
-import platform
-import subprocess
+import sys
 
-bb = None
-uihandler = None
-exporting = True
-
-def disp(l):
-    global uihandler
-    w, h = get_terminal_size()
-
-    if uihandler:
-        uihandler.display(h)
-
-    if l:
-        namewidth = max([len(i[0]) for i in l])
-        numwidth = max([len(str(i[2])) for i in l])
-        barwidth = w - namewidth - 2*numwidth - 5
-
-        if barwidth < 0:
-            for e in l:
-                if e[2] > 0:
-                    print(e[0], end="")
-                    print(" "*(namewidth-len(e[0])+1), end="")
-                    print(" "*(numwidth-len(str(e[1]))+1), end="")
-                    print(e[1], end="")
-                    print("/", end="")
-                    print(e[2])
-        else:
-            for e in l:
-                if e[2] > 0:
-                    fullbar = min(barwidth, int((e[1]*barwidth)/e[2]))
-
-                    print(e[0], end="")
-                    print(" "*(namewidth-len(e[0])+1), end="")
-                    print("[", end="")
-                    print("#"*fullbar, end="")
-                    print(" "*(barwidth-fullbar), end="")
-                    print("]", end="")
-                    print(" "*(numwidth-len(str(e[1]))+1), end="")
-                    print(e[1], end="")
-                    print("/", end="")
-                    print(e[2])
-
-def update():
+class UI(logging.Handler):
     """
-    Update the progress bars
+    Handler displaying the logging messages and a progress bar
     """
-    if bb:
-        disp([
-            ("Membres", bb.current_users, bb.total_users),
-            ("Sujets", bb.current_topics, bb.total_topics),
-            ("Messages", bb.current_posts, bb.total_posts)
-        ])
-    else:
-        disp([])
+    def __init__(self):
+        logging.Handler.__init__(self, logging.DEBUG)
+        self.setFormatter(logging.Formatter('%(levelname)-8s : %(message)s'))
 
-class UiLoggingHandler(logging.Handler):
-    """
-    Logging handler used to keep the last LENGTH lines of logs.
-    """
-    LENGTH = 200
-    def __init__(self, level=logging.NOTSET):
-        logging.Handler.__init__(self, level)
-        self.messages = [""]*self.LENGTH
-        self.next = 0
+        logger = logging.getLogger("lalf")
+        logger.addHandler(self)
+
+        self.bb = None
+
+        self.current = 0
+        self.total = 0
+        self.progressbar = ""
+        self.width = 0
 
     def emit(self, record):
-        message = self.format(record)
-        self.messages[self.next] = message
-        self.next = (self.next+1)%self.LENGTH
-        update()
+        message = self.format(record).split("\n", 1)
 
-    def display(self, length=None):
+        self.update_bar()
+
+        # Go back to to beginning of the line
+        sys.stdout.write("\r")
+
+        # Display the first line of the message and erase the end of the line
+        sys.stdout.write(message[0])
+        sys.stdout.write(" "*(self.width - len(message[0])))
+
+        # Display the other lines of the message
+        if len(message) > 1:
+            sys.stdout.write("\n")
+            sys.stdout.write(message[1])
+
+        # Display the progress bar on the next line
+        sys.stdout.write("\n")
+        sys.stdout.write(self.progressbar)
+        sys.stdout.flush()
+
+    def update_bar(self):
         """
-        Print the last length lines of logs.
+        Update the progress bar without displaying it
+
+        Returns
+            bool: True if the progress bar changed and should be redrawn
         """
-        if not length:
-            length = self.LENGTH
-        for i in range(self.next-length, self.next):
-            print(self.messages[i])
+        changed = False
 
-def init():
-    global uihandler
-    uihandler = UiLoggingHandler()
+        width, _ = get_terminal_size()
+        if width != self.width:
+            # The width of the terminal changed
+            self.width = width
+            changed = True
 
-    formatter = logging.Formatter('%(levelname)-8s : %(message)s')
-    uihandler.setLevel(logging.DEBUG)
+        # Compute progress
+        if self.bb:
+            current = self.bb.current_users + self.bb.current_topics + self.bb.current_posts
+            total = self.bb.total_users + self.bb.total_topics + self.bb.total_posts
+        else:
+            current = 0
+            total = 0
 
-    uihandler.setFormatter(formatter)
-    logger = logging.getLogger("lalf")
-    logger.addHandler(uihandler)
+        if self.current != current or self.total != total:
+            self.current = current
+            self.total = total
+            changed = True
+
+        if changed:
+            # Size of the actual progress bar
+            # Leave space for two brackets, one space, and four characters for the percentage
+            barsize = self.width - 7
+
+            if total == 0:
+                completedsize = 0
+                uncompletedsize = barsize
+                progress = 0
+            else:
+                # Size of the part of the progress bar that is completed
+                completedsize = current * barsize // total
+                if completedsize > barsize:
+                    completedsize = barsize
+                uncompletedsize = barsize - completedsize
+
+                # Progress (in percents)
+                progress = current * 100 // total
+                if progress > 100:
+                    progress = 100
+
+            progressbar = "[{}{}] {:3}%".format("#"*completedsize, " "*uncompletedsize, progress)
+            if progressbar != self.progressbar:
+                self.progressbar = progressbar
+                return True
+
+        # The progress bar did not change
+        return False
+
+    def update(self):
+        """
+        Update and display the progress bar
+        """
+        if self.update_bar():
+            sys.stdout.write("\r")
+            sys.stdout.write(self.progressbar)

@@ -21,7 +21,6 @@ from pyquery import PyQuery
 from lalf.node import Node
 from lalf.posts import TopicPage
 from lalf.util import pages
-from lalf import ui
 
 # TODO : do not use globals
 topicids = []
@@ -63,7 +62,7 @@ class Topic(Node):
         self.logger.debug('Récupération du sujet %d', self.topic_id)
 
         self.root.current_topics += 1
-        ui.update()
+        self.ui.update()
 
         response = self.session.get("/t{}-a".format(self.topic_id))
         for page in pages(response.text):

@@ -56,6 +56,7 @@ class StackHandler(Handler):
     the start method
     """
     def __init__(self):
+        Handler.__init__(self)
         self.stack = []
 
     def end(self, parser, tag):
@@ -65,7 +66,6 @@ class Parser(HTMLParser):
     """
     Object used to parse html and generate bbcode
     """
-    logger = logging.getLogger("lalf.htmltobbcode.Parser")
     handlers = {}
 
     @classmethod
@@ -97,7 +97,7 @@ class Parser(HTMLParser):
                 if tag in props:
                     for prop in props[tag]:
                         if prop in attrs:
-                            Parser.logger.warning(
+                            parser.logger.warning(
                                 'La propriété "%s" du bbcode [%s] n\'est pas supportée.', prop, tag)
 
                 method(self, parser, tag, attrs)
@@ -106,6 +106,9 @@ class Parser(HTMLParser):
 
     def __init__(self, smilies, uid):
         HTMLParser.__init__(self)
+
+        self.logger = logging.getLogger("{}.{}".format(self.__class__.__module__,
+                                                       self.__class__.__name__))
 
         self.smilies = smilies
 
@@ -309,18 +312,18 @@ class ListHandler(Handler):
             parser.append_text(newlines)
 
 @Parser.handler("dl", "dt", "dd")
-class BoxHandler(Handler):
+class BoxHandler(StackHandler):
     """
     Handles [spoiler], [quote] and [code] tags
     """
     def __init__(self):
+        StackHandler.__init__(self)
         self.author = ""
-        self.stack = []
 
     def start(self, parser, tag, attrs):
         if tag == "dl":
             if "hidecode" in attrs["class"]:
-                Parser.logger.warning("La balise [hide] n'est pas supportée.")
+                parser.logger.warning("La balise [hide] n'est pas supportée.")
                 self.stack.append(None)
             elif "spoiler" in attrs["class"]:
                 parser.append_tag("spoiler")
