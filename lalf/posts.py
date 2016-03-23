@@ -55,17 +55,23 @@ class Post(Node):
 
     def _dump_(self, sqlfile):
         uid = random_string()
-        parser = htmltobbcode.Parser(self.root.get_smilies(), uid)
+        parser = htmltobbcode.Parser(self.root, uid)
         parser.feed(self.text)
         text = parser.output
         bitfield = parser.get_bitfield()
         checksum = parser.get_checksum()
 
+        try:
+            poster_id = self.user_names[self.author].newid
+        except KeyError:
+            # The user does not exist (he is either anonymous or has been deleted)
+            poster_id = 1
+
         sqlfile.insert("posts", {
             "post_id" : self.post_id,
             "topic_id" : self.topic.topic_id,
             "forum_id" : self.forum.newid,
-            "poster_id" : self.root.users.get_newid(self.author),
+            "poster_id" : poster_id,
             "post_time" : self.time,
             "poster_ip" : "::1",
             "post_username" : self.author,

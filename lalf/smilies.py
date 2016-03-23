@@ -26,7 +26,7 @@ from pyquery import PyQuery
 from PIL import Image
 
 from lalf.node import Node
-from lalf.util import pages
+from lalf.util import Counter, pages
 from lalf.phpbb import DEFAULT_SMILIES
 
 class Smiley(Node):
@@ -86,11 +86,11 @@ class Smiley(Node):
                 with open(os.path.join(dirname, self.smiley_url), "wb") as fileobj:
                     fileobj.write(response.content)
 
-                self.smilies.count += 1
-                self.order = self.smilies.count
+                self.smilies_count += 1
+                self.order = self.smilies_count.value
 
         # Add the smiley to the smilies dictionnary
-        self.smilies.smilies[self.smiley_id] = {
+        self.smilies[self.smiley_id] = {
             "code" : self.code,
             "emotion" : self.emotion,
             "smiley_url" : self.smiley_url}
@@ -144,28 +144,26 @@ class SmiliesPage(Node):
 
                 if code in DEFAULT_SMILIES:
                     self.logger.debug("L'émoticone \"%s\" existe déjà dans phpbb.", code)
-                    self.smilies.smilies[smiley_id] = DEFAULT_SMILIES[code]
+                    self.smilies[smiley_id] = DEFAULT_SMILIES[code]
                 else:
                     child = Smiley(smiley_id, code, url, emotion)
                     self.add_child(child)
 
-@Node.expose(self="smilies")
+@Node.expose(count="smilies_count")
 class Smilies(Node):
     """
     Node used to export the smilies
 
     Attrs:
-        smilies (dict): Dictionnary associating each smiley to its code, url and emotion.
-        count (int): The number of smilies
+        count (Counter): The number of smilies
     """
 
     # Attributes to save
-    STATE_KEEP = ["smilies", "order", "count"]
+    STATE_KEEP = ["order", "count"]
 
     def __init__(self):
         Node.__init__(self)
-        self.smilies = {}
-        self.count = len(DEFAULT_SMILIES)
+        self.count = Counter(len(DEFAULT_SMILIES))
 
     def _export_(self):
         self.logger.info('Récupération des émoticones')

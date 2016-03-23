@@ -127,6 +127,8 @@ class Forum(Node):
         for page in pages(response.text):
             self.add_child(ForumPage(page))
 
+        self.forums[self.oldid] = self
+
     def get_topics(self):
         """
         Returns the topics of this forum

@@ -40,6 +40,30 @@ MONTHS = {
 
 ILLEGAL_CHARS = ['?', '<', '>', '|', '*', '/', '\\', '"', ":", ";"]
 
+class Counter(object):
+    """
+    Counter acting as a reference to an integer
+
+    Example:
+        >>> n = Counter(5)
+        >>> c = n
+        >>> n.value, c.value
+        5, 5
+        >>> c += 1
+        >>> n.value, c.value
+        6, 6
+    """
+    def __init__(self, value=0):
+        self.value = value
+
+    def __iadd__(self, other):
+        self.value += other
+        return self
+
+    def __isub__(self, other):
+        self.value -= other
+        return self
+
 def month(string):
     """
     Converts an abbreviated french month name to an int

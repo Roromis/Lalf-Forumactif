@@ -121,10 +121,6 @@ class OcrUser(User):
 
         User._export_(self)
 
-        if not self.exported:
-            self.root.current_users += 1
-            self.ui.update()
-
         # Search for this user in the administration panel
         try:
             encodedname = self.name.encode("latin1")

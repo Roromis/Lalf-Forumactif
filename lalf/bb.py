@@ -33,7 +33,7 @@ from lalf.smilies import Smilies
 from lalf import phpbb
 from lalf.session import Session
 
-@Node.expose("config", "session", "ui", self="root")
+@Node.expose("config", "session", "ui", "smilies", "user_names", "user_ids", "forums", self="root")
 class BB(Node):
     """
     The BB node is the root of the tree representing the forum.
@@ -52,9 +52,10 @@ class BB(Node):
 
     # Attributes to save
     STATE_KEEP = ["total_posts", "total_topics", "total_users",
-                  "current_posts", "current_topics", "current_users"]
+                  "current_posts", "current_topics", "current_users",
+                  "smilies", "user_names", "user_ids", "forums"]
 
-    def __init__(self, config, ui):
+    def __init__(self, config, ui=None):
         Node.__init__(self)
 
         self.config = config
@@ -71,6 +72,11 @@ class BB(Node):
         self.current_users = 0
 
         self.dump_time = 0
+
+        self.smilies = {}
+        self.user_names = {}
+        self.user_ids = {}
+        self.forums = {}
 
     def _export_(self):
         self.logger.info('Récupération des statistiques')
@@ -143,47 +149,11 @@ class BB(Node):
         with open("save.pickle", "wb") as fileobj:
             pickle.dump(self, fileobj, 2)
 
-    @property
-    def smilies(self):
-        """
-        Smilies: The node handling the exportation of the smilies
-        """
-        try:
-            return self.children[0]
-        except IndexError:
-            raise AttributeError("'BB' object has no attribute 'smilies'")
-
-    @property
-    def users(self):
-        """
-        Users: The node handling the exportation of the users
-        """
-        try:
-            return self.children[1]
-        except IndexError:
-            raise AttributeError("'BB' object has no attribute 'users'")
-
-    @property
-    def forums(self):
-        """
-        Forums: The node handling the exportation of the forums
-        """
-        try:
-            return self.children[2]
-        except IndexError:
-            raise AttributeError("'BB' object has no attribute 'forums'")
-
-    def get_forums(self):
-        """
-        Returns a list of the forums
-        """
-        return self.forums.children
-
     def get_topics(self):
         """
         Iterator on the topics of the forum
         """
-        for forum in self.get_forums():
+        for forum in self.forums.values():
             for topic in forum.get_topics():
                 yield topic
 
@@ -194,18 +164,6 @@ class BB(Node):
         for topic in self.get_topics():
             for post in topic.get_posts():
                 yield post
-
-    def get_users(self):
-        """
-        Returns a list of the users
-        """
-        return self.users.get_users()
-
-    def get_smilies(self):
-        """
-        Returns a dictionnary associating each smiley id to its informations
-        """
-        return self.smilies.smilies
 
 def load(config, ui):
     """

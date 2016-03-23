@@ -37,7 +37,7 @@ from binascii import crc32
 from pyquery import PyQuery
 
 from lalf.node import Node
-from lalf.util import pages, month, random_string
+from lalf.util import Counter, pages, month, random_string
 from lalf.phpbb import BOTS
 from lalf import htmltobbcode
 
@@ -112,14 +112,18 @@ class User(Node):
         self.newid = None
 
     def _export_(self):
-        if self.name == self.config["admin_name"]:
-            self.newid = 2
-        else:
-            self.newid = self.users.count
-            self.users.count += 1
+        if self.newid is None:
+            if self.name == self.config["admin_name"]:
+                self.newid = 2
+            else:
+                self.newid = self.users_count.value
+                self.users_count += 1
 
-        self.root.current_users += 1
-        self.ui.update()
+            self.root.current_users += 1
+            self.ui.update()
+
+            self.user_names[self.name] = self
+            self.user_ids[self.oldid] = self
 
     def confirm_email(self, _):
         """
@@ -193,7 +197,7 @@ class User(Node):
 
             # Send a private message confirming the import was successful
             uid = random_string()
-            parser = htmltobbcode.Parser(self.root.get_smilies(), uid)
+            parser = htmltobbcode.Parser(self.root, uid)
             parser.feed(PM_POST)
             post = parser.output
             bitfield = parser.get_bitfield()
@@ -279,7 +283,7 @@ class UsersPage(Node):
 
             self.add_child(User(oldid, name, mail, posts, date, lastvisit))
 
-@Node.expose(self="users")
+@Node.expose(count="users_count")
 class Users(Node):
     """
     Node used to export the users (DEPRECATED)
@@ -292,7 +296,7 @@ class Users(Node):
         Node.__init__(self)
         # User ids start at one, the first one is the anonymous user,
         # and the second one is the administrator
-        self.count = len(BOTS) + 3
+        self.count = Counter(len(BOTS) + 3)
 
     def _export_(self):
         self.logger.info('Récupération des membres')
@@ -305,27 +309,6 @@ class Users(Node):
         response = self.session.get_admin("/admin/index.forum", params=params)
         for page in pages(response.text):
             self.add_child(UsersPage(page))
-
-    def get_users(self):
-        """
-        Returns the list of users
-        """
-        for page in self.children:
-            for user in page.children:
-                yield user
-
-    def get_newid(self, name):
-        """
-        Return the new id of a user given his username
-        """
-        # TODO : rewrite this using a dictionnary
-        for user in self.get_users():
-            if user.name == name:
-                # The user exists
-                return user.newid
-
-        # The user does not exist (he is either anonymous or has been deleted)
-        return 1
 
     def _dump_(self, sqlfile):
         # Add anonymous user

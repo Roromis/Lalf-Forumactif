@@ -25,8 +25,10 @@ from html import escape
 from html.parser import HTMLParser
 import base64
 import hashlib
+from urllib.parse import urlparse, urlunparse
 
 from lalf.phpbb import BBCODES
+from lalf.linkrewriter import LinkRewriter
 
 class Handler(object):
     """
@@ -104,13 +106,14 @@ class Parser(HTMLParser):
             return new_method
         return method_rebuilder
 
-    def __init__(self, smilies, uid):
+    def __init__(self, bb, uid):
         HTMLParser.__init__(self)
 
         self.logger = logging.getLogger("{}.{}".format(self.__class__.__module__,
                                                        self.__class__.__name__))
 
-        self.smilies = smilies
+        self.bb = bb
+        self.linkrewriter = LinkRewriter(self.bb)
 
         if uid:
             self.uid = ":{}".format(uid)
@@ -365,22 +368,56 @@ class LinkHandler(StackHandler):
     """
     Handles [url] and [email] tags and inline links
     """
+    def process_link(self, parser, url):
+        """
+        Rewrite an internal link to make it point to the same page in the new forum
+        """
+        scheme, netloc, path, params, query, fragment = urlparse(url)
+
+        # Add domain name to relative links
+        if scheme == "" and netloc == "":
+            scheme = "http"
+            netloc = parser.bb.config["url"]
+        url = urlunparse((scheme, netloc, path, params, query, fragment))
+
+        # Rewrite internal links
+        if parser.bb.config["rewrite_links"] and netloc == parser.bb.config["url"]:
+            newurl = parser.linkrewriter.rewrite(url)
+            if newurl:
+                url = newurl
+            else:
+                parser.logger.warning("Le lien suivant n'a pas pu être réécrit : %s", url)
+
+        return url
+
     def start(self, parser, tag, attrs):
         if attrs["class"] == "postlink" and "href" in attrs:
-            parser.append_tag("url", "={}".format(escape(attrs["href"])))
+            url = self.process_link(parser, attrs["href"])
+            parser.append_tag("url", "={}".format(escape(url)))
             self.stack.append("/url")
         elif "href" in attrs and attrs["href"][:7] == "mailto:":
             parser.append_tag("email", "={}".format(escape(attrs["href"][7:])))
             self.stack.append("/email")
         elif "href" in attrs:
-            url = attrs["href"]
-            # TODO : add domain
-            if len(url) <= 55:
-                ellipsized_url = url
+            url = self.process_link(parser, attrs["href"])
+
+            local = url.startswith(parser.bb.config["phpbb_url"])
+            if local:
+                # Remove domain name and first forward slash
+                ellipsized_url = url[len(parser.bb.config["phpbb_url"])+1:]
             else:
+                ellipsized_url = url
+
+            if len(ellipsized_url) > 55:
+                # Remove middle part of the url
                 ellipsized_url = "{} ... {}".format(url[:39], url[-10:])
-            parser.append_text('<!-- m --><a class="postlink" href="{}">{}</a><!-- m -->'
-                               .format(url, ellipsized_url))
+
+            if local:
+                parser.append_text('<!-- l --><a class="postlink-local" href="{}">{}</a><!-- l -->'
+                                   .format(url, ellipsized_url))
+            else:
+                parser.append_text('<!-- m --><a class="postlink" href="{}">{}</a><!-- m -->'
+                                   .format(url, ellipsized_url))
             parser.start_capture()
             self.stack.append(None)
         else:
@@ -446,8 +483,8 @@ class ImageHandler(Handler):
     Handles [img] tags and smilies
     """
     def startend(self, parser, tag, attrs):
-        if "longdesc" in attrs and attrs["longdesc"] in parser.smilies:
-            smiley = parser.smilies[attrs["longdesc"]]
+        if "longdesc" in attrs and attrs["longdesc"] in parser.bb.smilies:
+            smiley = parser.bb.smilies[attrs["longdesc"]]
             if smiley["smiley_url"]:
                 parser.append_text((
                     "  <!-- s{code} -->"
@@ -458,7 +495,7 @@ class ImageHandler(Handler):
                     code=smiley["code"],
                     title=smiley["emotion"]))
             else:
-                parser.append_text(" {code} ".format(**parser.smilies[attrs["longdesc"]]))
+                parser.append_text(" {code} ".format(**parser.bb.smilies[attrs["longdesc"]]))
         elif "src" in attrs:
             parser.append_tag("img")
             parser.append_text(escape(attrs["src"]))

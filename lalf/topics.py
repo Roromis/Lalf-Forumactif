@@ -78,14 +78,26 @@ class Topic(Node):
 
     def _dump_(self, sqlfile):
         first_post = self.children[0].children[0]
+        try:
+            topic_poster = self.user_names[first_post.author].newid
+        except KeyError:
+            # The user does not exist (he is either anonymous or has been deleted)
+            topic_poster = 1
+
         last_post = self.children[-1].children[-1]
+        try:
+            last_poster = self.user_names[last_post.author].newid
+        except KeyError:
+            # The user does not exist (he is either anonymous or has been deleted)
+            last_poster = 1
+
         replies = sum(1 for _ in self.get_posts()) - 1
 
         sqlfile.insert("topics", {
             "topic_id" : self.topic_id,
             "forum_id" : self.forum.newid,
             "topic_title" : self.title,
-            "topic_poster" : self.root.users.get_newid(first_post.author),
+            "topic_poster" : topic_poster,
             "topic_time" : first_post.time,
             "topic_views" : self.views,
             "topic_replies" : replies,
@@ -96,7 +108,7 @@ class Topic(Node):
             "topic_first_poster_name" : first_post.author,
             #"topic_first_post_colour" (TODO)
             "topic_last_post_id" : last_post.post_id,
-            "topic_last_poster_id" : self.root.users.get_newid(last_post.author),
+            "topic_last_poster_id" : last_poster,
             "topic_last_poster_name" : last_post.author,
             #"topic_last_poster_colour" (TODO)
             "topic_last_post_subject" : last_post.title,
@@ -104,8 +116,14 @@ class Topic(Node):
         })
 
         for username in set(post.author for post in self.get_posts()):
+            try:
+                user_id = self.user_names[username].newid
+            except KeyError:
+                # The user does not exist (he is either anonymous or has been deleted)
+                user_id = 1
+
             sqlfile.insert("topics_posted", {
-                "user_id" : self.root.users.get_newid(username),
+                "user_id" : user_id,
                 "topic_id" : self.topic_id,
                 "topic_posted" : 1
             })
