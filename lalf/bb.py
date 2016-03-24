@@ -34,7 +34,7 @@ from lalf import phpbb
 from lalf.session import Session
 from lalf.linkrewriter import LinkRewriter
 
-@Node.expose("config", "session", "ui", "smilies", "user_names", "user_ids", "forums", self="root")
+@Node.expose("config", "session", "ui", "smilies", "user_names", "user_ids", "forums", "announcements", self="root")
 class BB(Node):
     """
     The BB node is the root of the tree representing the forum.
@@ -54,7 +54,7 @@ class BB(Node):
     # Attributes to save
     STATE_KEEP = ["total_posts", "total_topics", "total_users",
                   "current_posts", "current_topics", "current_users",
-                  "smilies", "user_names", "user_ids", "forums"]
+                  "smilies", "user_names", "user_ids", "forums", "announcements"]
 
     def __init__(self, config, ui=None):
         Node.__init__(self)
@@ -78,6 +78,7 @@ class BB(Node):
         self.user_names = {}
         self.user_ids = {}
         self.forums = {}
+        self.announcements = []
 
         self.linkrewriter = LinkRewriter(self)
 

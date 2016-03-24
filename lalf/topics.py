@@ -22,9 +22,6 @@ from lalf.node import Node
 from lalf.posts import TopicPage
 from lalf.util import pages
 
-# TODO : do not use globals
-topicids = []
-
 TOPIC_TYPES = {
     'Post-it:': 1,
     'Annonce:': 2,
@@ -154,7 +151,7 @@ class ForumPage(Node):
             e = PyQuery(element)
 
             topic_id = int(re.search(r"/t(\d+)-.*", e("a").attr("href")).group(1))
-            if topic_id not in topicids:
+            if topic_id not in self.announcements:
                 f = e.parents().eq(-2)
                 locked = 1 if ("verrouillé" in f("td img").eq(0).attr("alt")) else 0
                 views = int(f("td").eq(5).text())
@@ -162,12 +159,6 @@ class ForumPage(Node):
                 title = e("a").text()
 
                 self.add_child(Topic(topic_id, topic_type, title, locked, views))
-                topicids.append(topic_id)
-            else:
-                # Topic has already been exported (it's a global announcement)
-                self.logger.warning('Le sujet %d existe déjà.', topic_id)
-
-    def __setstate__(self, state):
-        Node.__setstate__(self, state)
-        for topic in self.children:
-            topicids.append(topic.topic_id)
+                if topic_type >= 2:
+                    # The topic is an announcement, save its id to avoid exporting it again
+                    self.announcements.append(topic_id)
