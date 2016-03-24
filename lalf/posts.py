@@ -54,6 +54,7 @@ class Post(Node):
         self.ui.update()
 
     def _dump_(self, sqlfile):
+        self.logger.debug("Exportation du message %d (sujet %d)", self.post_id, self.topic.topic_id)
         parser = htmltobbcode.Parser(self.root)
         parser.feed(self.text)
         post = parser.get_post()
@@ -99,14 +100,14 @@ class TopicPage(Node):
 
             post_id = int(e("td span.name a").attr("name"))
 
-            self.logger.debug('Récupération du message %d (sujet %d, page %d)',
-                              post_id, self.topic.topic_id, self.page)
+            self.logger.info('Récupération du message %d (sujet %d)',
+                             post_id, self.topic.topic_id)
 
             author = e("td span.name").text()
             post = e("td div.postbody div").eq(0).html()
             if not post:
-                self.logger.warning('Le message  %d (sujet %d, page %d) semble être vide',
-                                    post_id, self.topic.topic_id, self.page)
+                self.logger.warning('Le message  %d (sujet %d) semble être vide',
+                                    post_id, self.topic.topic_id)
                 post = ""
 
             # Get title

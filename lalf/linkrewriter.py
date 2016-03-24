@@ -19,7 +19,6 @@
 Module handling the rewriting of internal links
 """
 
-import logging
 import re
 from urllib.parse import urlparse, parse_qs
 
@@ -66,8 +65,6 @@ class LinkRewriter(object):
         return decorator
 
     def __init__(self, bb):
-        self.logger = logging.getLogger("{}.{}".format(self.__class__.__module__,
-                                                       self.__class__.__name__))
         self.bb = bb
 
     def rewrite(self, url):

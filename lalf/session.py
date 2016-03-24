@@ -75,7 +75,7 @@ class Session(object):
         """
         Connect to the forum and initialize session, sid and tid.
         """
-        self.logger.info('Connection au forum')
+        self.logger.debug('Connection au forum')
 
         # Reset session
         self.session.close()
@@ -145,7 +145,7 @@ class Session(object):
 
             if failures >= 2:
                 # The connection failed two times, wait
-                self.logger.debug(
+                self.logger.info(
                     "La connexion a échoué au moins deux fois, attend 30 "
                     "secondes avant de réessayer.")
                 time.sleep(30)

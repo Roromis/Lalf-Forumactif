@@ -44,6 +44,7 @@ def main():
     ui = UI()
 
     logger.info("Lalf %s", __version__)
+    logger.debug("OS : %s", sys.platform)
 
     if not config["use_ocr"]:
         logger.warning(

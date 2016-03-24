@@ -117,7 +117,7 @@ class OcrUser(User):
         return False
 
     def _export_(self):
-        self.logger.debug('Récupération du membre %d', self.oldid)
+        self.logger.info('Récupération du membre %d', self.oldid)
 
         User._export_(self)
 

@@ -64,7 +64,7 @@ class Smiley(Node):
 
     def _export_(self):
         if self.config["export_smilies"]:
-            self.logger.debug("Téléchargement de l'émoticone \"%s\"", self.code)
+            self.logger.info("Téléchargement de l'émoticone \"%s\"", self.code)
 
             # Create the smilies directory if necessary
             dirname = os.path.join("images", "smilies")
@@ -122,7 +122,7 @@ class SmiliesPage(Node):
         self.page = page
 
     def _export_(self):
-        self.logger.info('Récupération des émoticones (page %d)', self.page)
+        self.logger.debug('Récupération des émoticones (page %d)', self.page)
 
         # Get the page
         params = {

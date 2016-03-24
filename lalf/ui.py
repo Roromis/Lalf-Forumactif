@@ -30,13 +30,28 @@ class DummyUI(object):
     def update(self):
         return
 
+class Formatter(logging.Formatter):
+    """
+    Formatter displaying debug and info messages normally, and messages with
+    level warning and above with their levelname
+    """
+    def __init__(self):
+        self.formatter = logging.Formatter('%(message)s')
+        self.warning_formatter = logging.Formatter('%(levelname)-8s : %(message)s')
+
+    def format(self, record):
+        if record.levelno > logging.INFO:
+            return self.warning_formatter.format(record)
+        else:
+            return self.formatter.format(record)
+
 class UI(logging.Handler):
     """
     Handler displaying the logging messages and a progress bar
     """
     def __init__(self):
-        logging.Handler.__init__(self, logging.DEBUG)
-        self.setFormatter(logging.Formatter('%(levelname)-8s : %(message)s'))
+        logging.Handler.__init__(self, logging.INFO)
+        self.setFormatter(Formatter())
 
         logger = logging.getLogger("lalf")
         logger.addHandler(self)

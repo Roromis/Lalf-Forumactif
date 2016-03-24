@@ -59,7 +59,7 @@ class Topic(Node):
         self.views = views
 
     def _export_(self):
-        self.logger.debug('Récupération du sujet %d', self.topic_id)
+        self.logger.info('Récupération du sujet %d', self.topic_id)
 
         self.root.current_topics += 1
         self.ui.update()

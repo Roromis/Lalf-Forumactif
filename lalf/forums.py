@@ -81,7 +81,7 @@ class Forum(Node):
         self.icon = ""
 
     def _export_(self):
-        self.logger.debug('Récupération du forum %s', self.oldid)
+        self.logger.info('Récupération du forum %s', self.oldid)
 
         # Download the forum's page in the administration panel
         params = {
@@ -104,7 +104,7 @@ class Forum(Node):
                 self.icon = element.text
 
         if self.icon:
-            self.logger.debug("Téléchargement de l'icône du forum %s", self.oldid)
+            self.logger.info("Téléchargement de l'icône du forum %s", self.oldid)
             response = self.session.get_image(self.icon)
 
             # Get the image's format

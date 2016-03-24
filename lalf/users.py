@@ -261,7 +261,7 @@ class UsersPage(Node):
             e = PyQuery(element)
             oldid = int(re.search(r"&u=(\d+)&", e("td a").eq(0).attr("href")).group(1))
 
-            self.logger.debug('Récupération du membre %d', oldid)
+            self.logger.info('Récupération du membre %d', oldid)
             name = e("td a").eq(0).text()
             mail = e("td a").eq(1).text()
             posts = int(e("td").eq(2).text())
