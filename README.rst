@@ -50,9 +50,10 @@ Méthode 1 (avec pip)
 
 Installez python 3 et `pip
 <http://www.pip-installer.org/en/latest/installing.html>`_, puis
-exécutez::
+exécutez (l'option ``--user`` est optionnelle, elle permet d'installer
+le lalf sans droits d'administrateurs)::
 
-  pip install lalf --pre
+  pip install [--user] -U git+https://github.com/Roromis/Lalf-Forumactif.git@v3
 
 Pour désintaller le lalf, il suffira d'exécuter::
 
@@ -60,7 +61,7 @@ Pour désintaller le lalf, il suffira d'exécuter::
 
 Créez un nouveau dossier (l'emplacement importe peu), et créez y le
 fichier de configuration ``config.cfg`` en vous inspirant du fichier
-``/usr/share/doc/lalf/config.example.cfg``.
+``config.example.cfg``.
 
 Si vous souhaitez utiliser la reconnaissance de caractères pour la
 récupération des adresses e-mail (conseillé), installez `gocr
@@ -70,7 +71,7 @@ l'exécutable dans le même dossier que le fichier ``config.cfg``).
 Placez vous dans le dossier contenant le fichier de configuration, et
 lancez::
 
-  lalf.py
+  lalf
 
 .. _méthode 2:
 

@@ -49,7 +49,11 @@ setup(
         'requests',
         'Pillow'
     ],
-    scripts=['lalf.py'],
+    entry_points={
+        'console_scripts': [
+            'lalf = lalf:main',
+        ],
+    },
     data_files=[('share/doc/lalf', [
         'config.example.cfg',
         'LICENSE',
