@@ -19,13 +19,10 @@
 Module handling the exportation of the posts
 """
 
-from time import mktime
-from datetime import time, date, datetime, timedelta
-
 from pyquery import PyQuery
 
 from lalf.node import Node
-from lalf.util import month, random_string
+from lalf.util import parse_date
 from lalf import htmltobbcode
 
 class Post(Node):
@@ -116,18 +113,6 @@ class TopicPage(Node):
             title = title[7:].rstrip()
 
             # Get the date and time of the post
-            post_date, post_time = e("table td span.postdetails").contents()[3].split(" - ")
-            hours, minutes = post_time.split(":")
-            post_time = time(int(hours), int(minutes))
-
-            if post_date == "Aujourd'hui":
-                post_date = date.today()
-            elif post_date == "Hier":
-                post_date = date.today() - timedelta(1)
-            else:
-                post_date = post_date.split(" ")
-                post_date = date(int(post_date[3]), month(post_date[2]), int(post_date[1]))
-
-            timestamp = int(mktime(datetime.combine(post_date, post_time).timetuple()))
+            timestamp = parse_date(e("table td span.postdetails").contents()[3])
 
             self.add_child(Post(post_id, post, title, timestamp, author))

@@ -79,3 +79,13 @@ class SqlFile(object):
         self.fileobj.write('TRUNCATE TABLE {prefix}{table};\n'.format(
             prefix=self.prefix,
             table=table))
+
+    def set_config(self, name, value):
+        """
+        Update a value in the phpbb_config table
+        """
+        self.fileobj.write(
+            "UPDATE {prefix}config SET config_value='{value}' WHERE config_name='{name}';\n".format(
+                prefix=self.prefix,
+                value=escape(str(value)),
+                name=escape(name)))

@@ -22,6 +22,8 @@ Module containing some utility functions
 import re
 import random
 from string import ascii_letters, digits
+import time
+import datetime
 
 MONTHS = {
     "Ja": 1,
@@ -109,3 +111,32 @@ def random_string():
     Generate a random string of length 8
     """
     return ''.join([random.choice(ascii_letters + digits) for n in range(8)])
+
+def parse_date(string):
+    """
+    Convert a date to a timestamp
+    """
+    post_date, post_time = string.split(" - ")
+    hours, minutes = post_time.split(":")
+    post_time = datetime.time(int(hours), int(minutes))
+
+    if post_date == "Aujourd'hui":
+        post_date = datetime.date.today()
+    elif post_date == "Hier":
+        post_date = datetime.date.today() - datetime.timedelta(1)
+    else:
+        post_date = post_date.split(" ")
+        post_date = datetime.date(int(post_date[3]), month(post_date[2]), int(post_date[1]))
+
+    return int(time.mktime(datetime.datetime.combine(post_date, post_time).timetuple()))
+
+def parse_admin_date(string):
+    """
+    Convert a date of the administrator panel to a timestamp
+    """
+    date = string.split(" ")
+    try:
+        return int(time.mktime(time.struct_time(
+            (int(date[2]), month(date[1]), int(date[0]), 0, 0, 0, 0, 0, 0))))
+    except IndexError:
+        return 0

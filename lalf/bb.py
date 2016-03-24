@@ -33,8 +33,10 @@ from lalf.smilies import Smilies
 from lalf import phpbb
 from lalf.session import Session
 from lalf.linkrewriter import LinkRewriter
+from lalf.util import parse_date
 
-@Node.expose("config", "session", "ui", "smilies", "user_names", "user_ids", "forums", "announcements", self="root")
+@Node.expose("config", "session", "ui", "smilies", "user_names", "user_ids", "forums",
+             "announcements", self="root")
 class BB(Node):
     """
     The BB node is the root of the tree representing the forum.
@@ -54,7 +56,9 @@ class BB(Node):
     # Attributes to save
     STATE_KEEP = ["total_posts", "total_topics", "total_users",
                   "current_posts", "current_topics", "current_users",
-                  "smilies", "user_names", "user_ids", "forums", "announcements"]
+                  "startdate", "record_online_date", "record_online_users",
+                  "site_name", "site_desc", "smilies", "user_names", "user_ids",
+                  "forums", "announcements"]
 
     def __init__(self, config, ui=None):
         Node.__init__(self)
@@ -71,6 +75,13 @@ class BB(Node):
         self.current_posts = 0
         self.current_topics = 0
         self.current_users = 0
+
+        self.startdate = 0
+        self.record_online_date = 0
+        self.record_online_users = 0
+
+        self.site_name = ""
+        self.site_desc = ""
 
         self.dump_time = 0
 
@@ -89,15 +100,24 @@ class BB(Node):
 
         # Go through the table of statistics and save the relevant
         # ones
+        stats = {}
         for element in document.find("table.forumline tr"):
             e = PyQuery(element)
 
-            if e("td.row2 span").eq(0).text() == "Messages":
-                self.total_posts = int(e("td.row1 span").eq(0).text())
-            elif e("td.row2 span").eq(0).text() == "Nombre de sujets ouvert dans le forum":
-                self.total_topics = int(e("td.row1 span").eq(0).text())
-            elif e("td.row2 span").eq(0).text() == "Nombre d'utilisateurs":
-                self.total_users = int(e("td.row1 span").eq(0).text())
+            stats[e("td span").eq(0).text()] = e("td span").eq(1).text()
+            stats[e("td span").eq(2).text()] = e("td span").eq(3).text()
+
+        self.total_posts = int(stats["Messages"])
+        self.total_topics = int(stats["Nombre de sujets ouvert dans le forum"])
+        self.total_users = int(stats["Nombre d'utilisateurs"])
+
+        self.startdate = parse_date(stats["Ouverture du forum"])
+        self.record_online_date = parse_date(stats["Date du record de connexions"])
+        self.record_online_users = int(
+            stats["Nombre record d'utilisateurs connectés en même temps"])
+
+        self.site_name = document("div.maintitle").eq(0).text().strip(" \n")
+        self.site_desc = document("div.maintitle").siblings("span.gen").eq(0).text().strip(" \n")
 
         self.logger.debug('Messages : %d', self.total_posts)
         self.logger.debug('Sujets : %d', self.total_topics)
@@ -117,6 +137,7 @@ class BB(Node):
         self.add_child(Forums())
 
     def _dump_(self, sqlfile):
+        self.logger.info("Création du fichier phpbb.sql")
         self.dump_time = int(time.time())
 
         # Clean tables
@@ -135,6 +156,26 @@ class BB(Node):
         sqlfile.truncate("privmsgs_to")
 
         sqlfile.truncate("bbcodes")
+
+        # Update configuration and statistics
+        sqlfile.set_config("board_startdate", self.startdate)
+        sqlfile.set_config("default_lang", self.config["default_lang"])
+        sqlfile.set_config("record_online_date", self.record_online_date)
+        sqlfile.set_config("record_online_users", self.record_online_users)
+        sqlfile.set_config("sitename", self.site_name)
+        sqlfile.set_config("site_desc", self.site_desc)
+
+        # TODO : use actual counts?
+        sqlfile.set_config("num_posts", self.total_posts)
+        sqlfile.set_config("num_topics", self.total_topics)
+        sqlfile.set_config("num_users", self.total_users)
+
+        newest_user_oldid = max(self.user_ids)
+        newest_user = self.user_ids[newest_user_oldid]
+
+        sqlfile.set_config("newest_user_id", newest_user.newid)
+        sqlfile.set_config("newest_username", newest_user.name)
+        #sqlfile.set_config("newest_user_colour", newest_user.) (TODO)
 
         # Add bbcodes tags
         for bbcode in phpbb.BBCODES:

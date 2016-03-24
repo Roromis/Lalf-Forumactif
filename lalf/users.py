@@ -28,7 +28,6 @@ module to create the entries in the sql file.
 """
 
 import re
-import time
 import hashlib
 import urllib.parse
 import base64
@@ -37,7 +36,7 @@ from binascii import crc32
 from pyquery import PyQuery
 
 from lalf.node import Node
-from lalf.util import Counter, pages, month, random_string
+from lalf.util import Counter, pages, random_string, parse_admin_date
 from lalf.phpbb import BOTS
 from lalf import htmltobbcode
 
@@ -146,7 +145,7 @@ class User(Node):
             "user_lastvisit" : self.lastvisit,
             #"user_lastpost_time" (TODO)
             "user_posts" : self.posts,
-            "user_lang" : "fr", # TODO : define in config
+            "user_lang" : self.config["default_language"],
             "user_style" : "1",
             #"user_rank" (TODO)
             #"user_colour" (TODO)
@@ -266,18 +265,8 @@ class UsersPage(Node):
             mail = e("td a").eq(1).text()
             posts = int(e("td").eq(2).text())
 
-            date = e("td").eq(3).text().split(" ")
-            date = int(time.mktime(time.struct_time(
-                (int(date[2]), month(date[1]), int(date[0]), 0, 0, 0, 0, 0, 0))))
-
-            lastvisit = e("td").eq(4).text()
-
-            if lastvisit != "":
-                lastvisit = lastvisit.split(" ")
-                lastvisit = int(time.mktime(time.struct_time(
-                    (int(lastvisit[2]), month(lastvisit[1]), int(lastvisit[0]), 0, 0, 0, 0, 0, 0))))
-            else:
-                lastvisit = 0
+            date = parse_admin_date(e("td").eq(3).text())
+            lastvisit = parse_admin_date(e("td").eq(4).text())
 
             self.add_child(User(oldid, name, mail, posts, date, lastvisit))
 
@@ -317,7 +306,7 @@ class Users(Node):
             "username" : "Anonymous",
             "username_clean" : "anonymous",
             #"user_regdate" : creation date, (TODO)
-            "user_lang" : "fr", # TODO : define in config
+            "user_lang" : self.config["default_language"],
             "user_style" : "1",
             "user_allow_massemail" : "0"})
         sqlfile.insert("user_group", {
@@ -337,7 +326,7 @@ class Users(Node):
                 "username_clean" : bot["name"].lower(),
                 "user_passchg" : self.root.dump_time,
                 "user_lastmark" : self.root.dump_time,
-                "user_lang" : "fr", # TODO : define in config
+                "user_lang" : self.config["default_language"],
                 "user_dateformat" : "D M d, Y g:i a",
                 "user_style" : "1",
                 "user_colour" : "9E8DA7",
