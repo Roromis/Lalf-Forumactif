@@ -32,6 +32,7 @@ from lalf.ocrusers import OcrUsers
 from lalf.smilies import Smilies
 from lalf import phpbb
 from lalf.session import Session
+from lalf.linkrewriter import LinkRewriter
 
 @Node.expose("config", "session", "ui", "smilies", "user_names", "user_ids", "forums", self="root")
 class BB(Node):
@@ -77,6 +78,8 @@ class BB(Node):
         self.user_names = {}
         self.user_ids = {}
         self.forums = {}
+
+        self.linkrewriter = LinkRewriter(self)
 
     def _export_(self):
         self.logger.info('Récupération des statistiques')
@@ -138,7 +141,7 @@ class BB(Node):
 
     def __setstate__(self, state):
         Node.__setstate__(self, state)
-
+        self.linkrewriter = LinkRewriter(self)
         # TODO : recompute current counts
 
     def save(self):

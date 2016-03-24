@@ -176,3 +176,9 @@ class Smilies(Node):
         response = self.session.get_admin("/admin/index.forum", params=params)
         for page in pages(response.text):
             self.add_child(SmiliesPage(page))
+
+    def _dump_(self, sqlfile):
+        # Add code for "8)"
+        for smiley in DEFAULT_SMILIES.values():
+            if smiley["smiley_url"]:
+                sqlfile.insert("smilies", smiley)

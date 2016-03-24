@@ -196,20 +196,18 @@ class User(Node):
             })
 
             # Send a private message confirming the import was successful
-            uid = random_string()
-            parser = htmltobbcode.Parser(self.root, uid)
+            parser = htmltobbcode.Parser(self.root)
             parser.feed(PM_POST)
-            post = parser.output
-            bitfield = parser.get_bitfield()
+            post = parser.get_post()
 
             sqlfile.insert("privmsgs", {
                 'msg_id'          : 1,
                 'author_id'       : self.newid,
                 'message_time'    : self.root.dump_time,
                 'message_subject' : PM_SUBJECT,
-                'message_text'    : post,
-                'bbcode_bitfield' : bitfield,
-                'bbcode_uid'      : uid,
+                'message_text'    : post.text,
+                'bbcode_bitfield' : post.bitfield,
+                'bbcode_uid'      :post. uid,
                 'to_address'      : "u_{}".format(self.newid),
                 'bcc_address'     : ""
             })

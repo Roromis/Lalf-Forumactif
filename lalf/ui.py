@@ -23,6 +23,13 @@ import logging
 from shutil import get_terminal_size
 import sys
 
+class DummyUI(object):
+    """
+    Interface displaying nothing, for debugging
+    """
+    def update(self):
+        return
+
 class UI(logging.Handler):
     """
     Handler displaying the logging messages and a progress bar

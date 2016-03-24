@@ -21,48 +21,142 @@ Module handling the conversion of html to bbcode (as stored in the phpbb databas
 
 import logging
 import re
-from html import escape
 from html.parser import HTMLParser
 import base64
-import hashlib
 from urllib.parse import urlparse, urlunparse
+from collections import namedtuple
+from io import StringIO
 
 from lalf.phpbb import BBCODES
-from lalf.linkrewriter import LinkRewriter
+from lalf.util import random_string
 
-class Handler(object):
+TAGS = {
+    '*' : -1,
+    'quote' : 0,
+    'b' : 1,
+    'i' : 2,
+    'url' : 3,
+    'img' : 4,
+    'size' : 5,
+    'color' : 6,
+    'u' : 7,
+    'code' : 8,
+    'list' : 9,
+    'email' : 10,
+    'flash' : 11,
+    'attachment' : 12}
+for bbcode in BBCODES:
+    TAGS[bbcode["bbcode_tag"]] = bbcode["bbcode_id"]
+
+def escape(string):
     """
-    Abstract tag handler
+    Transform some characters in valid bbcodes
+
+    Phpbb uses the same function (bbcode_specialchars in includes/message_parser.php)
     """
-    def start(self, parser, tag, args):
-        """
-        Method called by the parser to handle the start of a tag
-        """
-        return
+    replace = {
+        '<': '&lt;',
+        '>': '&gt;',
+        '[': '&#91;',
+        ']': '&#93;',
+        '.': '&#46;',
+        ':': '&#58;'
+    }
+    for key, value in replace.items():
+        string = string.replace(key, value)
+    return string
 
-    def end(self, parser, tag):
-        """
-        Method called by the parser to handle the end of a tag
-        """
-        return
-
-    def startend(self, parser, tag, args):
-        """
-        Method called by the parser to handle an empty tag ("<... />")
-        """
-        return
-
-class StackHandler(Handler):
+def process_link(bb, url):
     """
-    Abstract tag handler allowing to define the closing bbcode tag in
-    the start method
+    Rewrite an internal link to make it point to the same page in the new forum
     """
-    def __init__(self):
-        Handler.__init__(self)
-        self.stack = []
+    logger = logging.getLogger('lalf.htmltobbcode')
 
-    def end(self, parser, tag):
-        parser.append_tag(self.stack.pop())
+    scheme, netloc, path, params, query, fragment = urlparse(url)
+
+    # Add domain name to relative links
+    if scheme == "" and netloc == "":
+        scheme = "http"
+        netloc = bb.config["url"]
+    url = urlunparse((scheme, netloc, path, params, query, fragment))
+
+    # Rewrite internal links
+    if bb.config["rewrite_links"] and netloc == bb.config["url"]:
+        newurl = bb.linkrewriter.rewrite(url)
+        if newurl:
+            url = newurl
+        else:
+            logger.warning("Le lien suivant n'a pas pu être réécrit : %s", url)
+
+    return url
+
+class Node(object):
+    """
+    Node in the tree representation of a bbcode post
+
+    Attrs:
+        tag (str): The bbcode tag of this node (or None)
+        parent (Node): The parent Node
+        children (List(Node)): The children of this node
+    """
+    def __init__(self, tag=None):
+        self.tag = tag
+        self.parent = None
+        self.children = []
+
+    def add_text(self, text):
+        """
+        Add text inside the node
+        """
+        # Get the last child of the node
+        try:
+            last_child = self.children[-1]
+        except IndexError:
+            last_child = None
+
+        # Check if it is a TextNode
+        if isinstance(last_child, TextNode):
+            last_child.text += text
+        else:
+            self.add_child(TextNode(text))
+
+    def add_child(self, child):
+        """
+        Add a child
+        """
+        child.parent = self
+        self.children.append(child)
+
+    def get_bbcode(self, fileobj, bb, uid=""):
+        """
+        Write the bbcode corresponding to this node in a file object
+        """
+        for child in self.children:
+            child.get_bbcode(fileobj, bb, uid)
+
+    def get_bitfield(self, bitfield):
+        """
+        Get the bitifield of this node
+        """
+        if self.tag in TAGS and TAGS[self.tag] >= 0:
+            c, d = divmod(TAGS[self.tag], 8)
+            bitfield[c] |= (1 << (7-d))
+
+        for child in self.children:
+            child.get_bitfield(bitfield)
+
+class TextNode(Node):
+    """
+    Node containing only text (no bbcode tags)
+    """
+    def __init__(self, text):
+        Node.__init__(self)
+        self.text = text
+
+    def get_bbcode(self, fileobj, bb, uid=""):
+        fileobj.write(self.text)
+
+BBCodePost = namedtuple("BBCodePost", ("text", "uid", "bitfield"))
 
 class Parser(HTMLParser):
     """
@@ -75,131 +169,69 @@ class Parser(HTMLParser):
         """
         Decorator adding a handler to the Parser class
 
-        Attrs:
-            *tags: The tags handled by the handler
+        The function handling a certain tag is called when a start tag of this type is met.
+        It should take two arguments :
+           tag (str): The tag of the element
+           attrs (Dict(str, str)): Dictionnary containing the attributes of the element
+
+        And it should return a node or a string that will be added to the current node
+
+        Args:
+            *tags (List(str)): The tags handled by the handler
         """
-        def class_rebuilder(handler_class):
-            handler = handler_class()
+        def decorator(handler):
             for tag in tags:
                 cls.handlers[tag] = handler
-            return handler_class
-        return class_rebuilder
+            return handler
+        return decorator
 
-    @classmethod
-    def unsupported(cls, **props):
-        """
-        Decorator used to show warning when an attribute is not supported by a
-        handler
-
-        Attrs:
-            **props: Dictionnary containing the unsupported attributes
-        """
-        def method_rebuilder(method):
-            def new_method(self, parser, tag, attrs):
-                if tag in props:
-                    for prop in props[tag]:
-                        if prop in attrs:
-                            parser.logger.warning(
-                                'La propriété "%s" du bbcode [%s] n\'est pas supportée.', prop, tag)
-
-                method(self, parser, tag, attrs)
-            return new_method
-        return method_rebuilder
-
-    def __init__(self, bb, uid):
+    def __init__(self, bb):
         HTMLParser.__init__(self)
 
         self.logger = logging.getLogger("{}.{}".format(self.__class__.__module__,
                                                        self.__class__.__name__))
 
         self.bb = bb
-        self.linkrewriter = LinkRewriter(self.bb)
 
-        if uid:
-            self.uid = ":{}".format(uid)
-        else:
-            self.uid = ""
+        self.root_node = Node()
+        self.current_node = self.root_node
+        self.stack = []
 
-        self.output = ""
-        self.bitfield = [0] * 10
+    def get_post(self, uid=None):
+        """
+        Get the post content
 
-        self.tags = {
-            'code' : 8,
-            'quote' : 0,
-            'attachment' : 12,
-            'b' : 1,
-            'i' : 2,
-            'url' : 3,
-            'img' : 4,
-            'size' : 5,
-            'color' : 6,
-            'u' : 7,
-            'list' : 9,
-            'email' : 10,
-            'flash' : 11}
-        for bbcode in BBCODES:
-            self.tags[bbcode["bbcode_tag"]] = bbcode["bbcode_id"]
+        Attrs:
+            uid (Optionnal(str)): The bbcode uid (a 8-character string)
+               if the uid is "", no uid will be used
+               if the uid is None, a random uid will be generated
 
-        self.capture_data = False
-        self.data = ""
+        Returns:
+            BBCodePost: A named tuple with the following attributes:
+                text (str): The post's content in bbcode
+                uid (str)
+                bitfield (str)
+        """
+        if uid is None:
+            uid = random_string()
+        actual_uid = uid
 
-    def get_bitfield(self):
-        """
-        Returns the bitfield of the text (a string indicating which bbcodes a used)
-        """
-        tempstr = ''.join([chr(c) for c in self.bitfield]).rstrip('\0').encode("latin-1")
-        return base64.b64encode(tempstr).decode("utf-8")
+        if uid != "":
+            uid = ":"+uid
 
-    def get_checksum(self):
-        """
-        Returns the checksum of the text
-        """
-        return hashlib.md5(self.output.encode("utf8")).hexdigest()
+        # Get the post's text
+        fileobj = StringIO()
+        self.root_node.get_bbcode(fileobj, self.bb, uid)
+        text = fileobj.getvalue().rstrip("\n")
+        fileobj.close()
 
-    def append_text(self, text):
-        """
-        Add text at the end of the output
-        """
-        self.output += text
+        # Get the bitfield
+        bitfield = [0] * 10
+        self.root_node.get_bitfield(bitfield)
+        bitfield = ''.join([chr(c) for c in bitfield]).rstrip('\0').encode("latin-1")
+        bitfield = base64.b64encode(bitfield).decode("utf-8")
 
-    def append_tag(self, tag, options=""):
-        """
-        Add a tag at the end of the output
-        """
-        if tag:
-            if tag in self.tags:
-                c, d = divmod(self.tags[tag], 8)
-                self.bitfield[c] |= (1 << (7-d))
-            self.append_text("[{}{}{}]".format(tag, options, self.uid))
-
-    def rstrip(self):
-        """
-        Remove the newlines at the end of the output and return them.
-        """
-        i = len(self.output)
-        while self.output[i-1] == "\n":
-            i -= 1
-        newlines = self.output[i:]
-        self.output = self.output[:i]
-        return newlines
-
-    def start_capture(self):
-        """
-        Start capturing data
-
-        When capturing, the text nodes are saved instead of being added to the output.
-        """
-        self.data = ""
-        self.capture_data = True
-
-    def end_capture(self):
-        """
-        End the capture and return the data
-        """
-        self.capture_data = False
-        data = self.data
-        self.data = ""
-        return data
+        return BBCodePost(text, actual_uid, bitfield)
 
     def handle_data(self, data):
         """
@@ -208,203 +240,230 @@ class Parser(HTMLParser):
         In normal mode, add the data to the output.
         In capture mode, save the data.
         """
-        if self.capture_data:
-            self.data += data
-        else:
-            self.append_text(data)
-
-    def handle_startendtag(self, tag, attrs):
-        try:
-            handler = self.__class__.handlers[tag]
-        except KeyError:
-            pass
-        else:
-            handler.startend(self, tag, dict(attrs))
+        self.current_node.add_text(data)
 
     def handle_starttag(self, tag, attrs):
+        """
+        Handle the start tag of an element
+        """
         attrs = dict(attrs)
         attrs["class"] = attrs.get("class", None)
         attrs["style"] = attrs.get("style", "")
 
+        # Get the handler for this tag, and call it
+        # If it creates a node, set it as the current one and add True to the stack
+        # (in order to be able to tell that a node was opened when the end tag of
+        # this element is encountered)
         try:
             handler = self.__class__.handlers[tag]
         except KeyError:
-            pass
+            self.stack.append(False)
         else:
-            handler.start(self, tag, attrs)
+            node = handler(tag, attrs)
+            if isinstance(node, Node):
+                self.current_node.add_child(node)
+                self.current_node = node
+                self.stack.append(True)
+            elif isinstance(node, str):
+                self.current_node.add_text(node)
+                self.stack.append(False)
+            else:
+                self.stack.append(False)
 
     def handle_endtag(self, tag):
-        try:
-            handler = self.__class__.handlers[tag]
-        except KeyError:
-            pass
-        else:
-            handler.end(self, tag)
+        """
+        Handle the end tag of an element
+        """
+        # Check if a node was opened at the start tag of this element, and close it
+        if self.stack.pop():
+            self.current_node = self.current_node.parent
 
-@Parser.handler("i", "u", "strike", "sub", "sup", "tr", "hr", "tr", "td")
-class InlineHandler(Handler):
+class CaptureNode(Node):
     """
-    Handles inline tags that do not need to be renamed
-    """
-    @Parser.unsupported(td=["colspan", "rowspan"])
-    def start(self, parser, tag, attrs):
-        parser.append_tag(tag)
-
-    def end(self, parser, tag):
-        parser.append_tag("/{}".format(tag))
-
-    def startend(self, parser, tag, attrs):
-        parser.append_tag(tag)
-        parser.append_tag("/{}".format(tag))
-
-@Parser.handler("strong")
-class StrongHandler(Handler):
-    """
-    Handles [b] tag
-    """
-    def start(self, parser, tag, attrs):
-        parser.append_tag("b")
-
-    def end(self, parser, tag):
-        parser.append_tag("/b")
-
-@Parser.handler("table")
-class TableHandler(Handler):
-    """
-    Handles [table] tag
-    """
-    @Parser.unsupported(table=["border", "cellspacing", "cellpadding"])
-    def start(self, parser, tag, attrs):
-        parser.append_tag("table")
-
-    def end(self, parser, tag):
-        parser.append_tag("/table")
-        parser.append_text("\n")
-
-@Parser.handler("br")
-class NewlineHandler(Handler):
-    """
-    Handles newlines
-    """
-    def startend(self, parser, tag, attrs):
-        parser.append_text("\n")
-
-@Parser.handler("ul", "ol", "li")
-class ListHandler(Handler):
-    """
-    Handles [list] and [*] tags
-    """
-    def start(self, parser, tag, attrs):
-        if tag == "ul":
-            parser.append_tag("list")
-        elif tag == "ol":
-            parser.append_tag("list", "="+attrs["type"])
-        elif tag == "li":
-            parser.append_tag("*")
-
-    def end(self, parser, tag):
-        if tag == "ul":
-            newlines = parser.rstrip()
-            parser.append_tag("/list:u")
-        elif tag == "ol":
-            newlines = parser.rstrip()
-            parser.append_tag("/list:o")
-        elif tag == "li":
-            newlines = parser.rstrip()
-            parser.append_tag("/*:m")
-            parser.append_text(newlines)
-
-@Parser.handler("dl", "dt", "dd")
-class BoxHandler(StackHandler):
-    """
-    Handles [spoiler], [quote] and [code] tags
+    Node used to capture text. Its content will not be rendered by the get_bbcode method.
     """
     def __init__(self):
-        StackHandler.__init__(self)
-        self.author = ""
+        Node.__init__(self)
+        self.text = ""
 
-    def start(self, parser, tag, attrs):
-        if tag == "dl":
-            if "hidecode" in attrs["class"]:
-                parser.logger.warning("La balise [hide] n'est pas supportée.")
-                self.stack.append(None)
-            elif "spoiler" in attrs["class"]:
-                parser.append_tag("spoiler")
-                self.stack.append("/spoiler")
-            else:
-                self.stack.append(None)
-        elif tag == "dt":
-            parser.start_capture()
-        elif tag == "dd":
-            if attrs["class"] == "quote":
-                if self.author:
-                    parser.append_tag("quote", "=&quot;{}&quot;".format(escape(self.author)))
-                    self.author = ""
-                else:
-                    parser.append_tag("quote")
-                self.stack.append("/quote")
-            elif attrs["class"] == "code":
-                parser.append_tag("code")
-                self.stack.append("/code")
-            elif attrs["class"] == "spoiler_closed":
-                parser.start_capture()
-                self.stack.append(None)
-            else:
-                self.stack.append(None)
+    def add_text(self, text):
+        self.text += text
 
-    def end(self, parser, tag):
-        data = parser.end_capture()
-        if tag == "dt":
-            if data[-9:] == " a écrit:":
-                self.author = data[:-9]
+    def get_bbcode(self, fileobj, bb, uid=""):
+        return
+
+class SmileyNode(Node):
+    """
+    Node representing a smiley
+    """
+    def __init__(self, smiley_id):
+        Node.__init__(self)
+        self.smiley_id = smiley_id
+
+    def get_bbcode(self, fileobj, bb, uid=""):
+        try:
+            smiley = bb.smilies[self.smiley_id]
+        except KeyError:
+            return
+
+        if smiley["smiley_url"]:
+            fileobj.write((
+                "  <!-- s{code} -->"
+                "<img src=\"{{SMILIES_PATH}}/{url}\" alt=\"{code}\" title=\"{title}\" />"
+                "<!-- s{code} -->  "
+            ).format(
+                url=smiley["smiley_url"],
+                code=smiley["code"],
+                title=smiley["emotion"]))
         else:
-            tag = self.stack.pop()
-            if tag:
-                parser.append_tag(tag)
-                parser.append_text("\n")
+            fileobj.write(" {code} ".format(**bb.smilies[self.smiley_id]))
 
-@Parser.handler("a")
-class LinkHandler(StackHandler):
+class InlineTagNode(Node):
     """
-    Handles [url] and [email] tags and inline links
+    A node representing an inline element
     """
-    def process_link(self, parser, url):
-        """
-        Rewrite an internal link to make it point to the same page in the new forum
-        """
-        scheme, netloc, path, params, query, fragment = urlparse(url)
+    def __init__(self, tag, attrs="", closing_tag=None, content=""):
+        Node.__init__(self, tag)
+        self.closing_tag = closing_tag
+        self.attrs = attrs
 
-        # Add domain name to relative links
-        if scheme == "" and netloc == "":
-            scheme = "http"
-            netloc = parser.bb.config["url"]
-        url = urlunparse((scheme, netloc, path, params, query, fragment))
+        if content:
+            self.add_text(content)
 
-        # Rewrite internal links
-        if parser.bb.config["rewrite_links"] and netloc == parser.bb.config["url"]:
-            newurl = parser.linkrewriter.rewrite(url)
-            if newurl:
-                url = newurl
+    def get_bbcode(self, fileobj, bb, uid=""):
+        if self.tag not in TAGS:
+            logger = logging.getLogger("lalf.htmltobbcode")
+            logger.warning("La balise bbcode [%s] n'est pas supportée.", self.tag)
+
+            Node.get_bbcode(self, fileobj, bb, uid)
+        else:
+            fileobj.write("[{}{}{}]".format(self.tag, self.attrs, uid))
+            Node.get_bbcode(self, fileobj, bb, uid)
+            if self.closing_tag:
+                fileobj.write("[/{}{}]".format(self.closing_tag, uid))
             else:
-                parser.logger.warning("Le lien suivant n'a pas pu être réécrit : %s", url)
+                fileobj.write("[/{}{}]".format(self.tag, uid))
 
-        return url
+class BlockTagNode(InlineTagNode):
+    """
+    A node representing an block element
+    """
+    def get_bbcode(self, fileobj, bb, uid=""):
+        InlineTagNode.get_bbcode(self, fileobj, bb, uid)
+        fileobj.write("\n")
 
-    def start(self, parser, tag, attrs):
-        if attrs["class"] == "postlink" and "href" in attrs:
-            url = self.process_link(parser, attrs["href"])
-            parser.append_tag("url", "={}".format(escape(url)))
-            self.stack.append("/url")
-        elif "href" in attrs and attrs["href"][:7] == "mailto:":
-            parser.append_tag("email", "={}".format(escape(attrs["href"][7:])))
-            self.stack.append("/email")
-        elif "href" in attrs:
-            url = self.process_link(parser, attrs["href"])
+class CodeQuoteNode(BlockTagNode):
+    """
+    A node representing a code block or a quote block
+    """
+    def __init__(self):
+        BlockTagNode.__init__(self, "quote")
 
-            local = url.startswith(parser.bb.config["phpbb_url"])
+    def get_bbcode(self, fileobj, bb, uid=""):
+        try:
+            node = self.children[0]
+        except IndexError:
+            node = None
+
+        self.attrs = ""
+        if isinstance(node, CaptureNode):
+            if node.text[-9:] == " a écrit:":
+                self.attrs = "=&quot;{}&quot;".format(node.text[:-9])
+            elif node.text == "Code:":
+                self.tag = "code"
+                try:
+                    child = self.children[0]
+                except IndexError:
+                    pass
+                try:
+                    child.text = escape(child.text)
+                except AttributeError:
+                    pass
+
+        BlockTagNode.get_bbcode(self, fileobj, bb, uid)
+
+class ItemNode(InlineTagNode):
+    """
+    Node representing a list item
+    """
+    def __init__(self):
+        InlineTagNode.__init__(self, "*", closing_tag="*:m")
+
+    def get_bbcode(self, fileobj, bb, uid=""):
+        try:
+            node = self.children[-1]
+        except IndexError:
+            node = None
+
+        if isinstance(node, TextNode):
+            i = len(node.text)
+            while i > 0 and node.text[i-1] == "\n":
+                i -= 1
+            newlines = node.text[i:]
+            node.text = node.text[:i]
+        else:
+            newlines = ""
+
+        InlineTagNode.get_bbcode(self, fileobj, bb, uid)
+        fileobj.write(newlines)
+
+class EmailNode(InlineTagNode):
+    """
+    Node representing a email
+    """
+    def __init__(self, email):
+        InlineTagNode.__init__(self, "email")
+        self.email = email
+
+    def get_bbcode(self, fileobj, bb, uid=""):
+        try:
+            text = self.children[0].text
+        except (IndexError, AttributeError):
+            text = None
+
+        if len(self.children) > 1:
+            text = None
+
+        if text == self.email:
+            self.children[0].text = escape(self.children[0].text)
+        else:
+            self.attrs = "={}".format(escape(self.email))
+        InlineTagNode.get_bbcode(self, fileobj, bb, uid)
+
+class UrlNode(InlineTagNode):
+    """
+    Node representing a url
+    """
+    def __init__(self, url, postlink):
+        InlineTagNode.__init__(self, None)
+        self.url = url
+        self.postlink = postlink
+
+    def get_bbcode(self, fileobj, bb, uid=""):
+        try:
+            text = self.children[0].text
+        except (IndexError, AttributeError):
+            text = None
+
+        if len(self.children) > 1:
+            text = None
+
+        url = process_link(bb, self.url)
+
+        if self.postlink or not text:
+            # [url] tag
+            self.tag = "url"
+            if text == self.url:
+                self.children = [TextNode(escape(url))]
+            else:
+                self.attrs = "={}".format(escape(url))
+            InlineTagNode.get_bbcode(self, fileobj, bb, uid)
+        else:
+            # Magic url
+            local = url.startswith(bb.config["phpbb_url"])
             if local:
                 # Remove domain name and first forward slash
-                ellipsized_url = url[len(parser.bb.config["phpbb_url"])+1:]
+                ellipsized_url = url[len(bb.config["phpbb_url"])+1:]
             else:
                 ellipsized_url = url
 
@@ -413,117 +472,118 @@ class LinkHandler(StackHandler):
                 ellipsized_url = "{} ... {}".format(url[:39], url[-10:])
 
             if local:
-                parser.append_text('<!-- l --><a class="postlink-local" href="{}">{}</a><!-- l -->'
-                                   .format(url, ellipsized_url))
+                fileobj.write('<!-- l --><a class="postlink-local" href="{}">{}</a><!-- l -->'
+                              .format(url, ellipsized_url))
             else:
-                parser.append_text('<!-- m --><a class="postlink" href="{}">{}</a><!-- m -->'
-                                   .format(url, ellipsized_url))
-            parser.start_capture()
-            self.stack.append(None)
-        else:
-            self.stack.append(None)
+                fileobj.write('<!-- m --><a class="postlink" href="{}">{}</a><!-- m -->'
+                              .format(url, ellipsized_url))
 
-    def end(self, parser, tag):
-        parser.end_capture()
-        parser.append_tag(self.stack.pop())
+@Parser.handler("i", "u", "strike", "sub", "sup", "hr", "tr")
+def _inline_handler(tag, attrs):
+    return InlineTagNode(tag)
+
+@Parser.handler("td")
+def _td_handler(tag, attrs):
+    logger = logging.getLogger('lalf.htmltobbcode')
+    if "colspan" in attrs:
+        logger.warning('La propriété "colspan" du bbcode [td] n\'est pas supportée.')
+    if "rowspan" in attrs:
+        logger.warning('La propriété "rowspan" du bbcode [td] n\'est pas supportée.')
+    return InlineTagNode(tag)
+
+@Parser.handler("strong")
+def _strong_handler(tag, attrs):
+    return InlineTagNode("b")
+
+@Parser.handler("table")
+def _table_handler(tag, attrs):
+    logger = logging.getLogger('lalf.htmltobbcode')
+    if "border" in attrs:
+        logger.warning('La propriété "border" du bbcode [table] n\'est pas supportée.')
+    if "cellspacing" in attrs:
+        logger.warning('La propriété "cellspacing" du bbcode [table] n\'est pas supportée.')
+    if "cellpadding" in attrs:
+        logger.warning('La propriété "cellpadding" du bbcode [table] n\'est pas supportée.')
+    return BlockTagNode("table")
+
+@Parser.handler("br")
+def _br_handler(tag, attrs):
+    return "\n"
+
+@Parser.handler("ul")
+def _ul_handler(tag, attrs):
+    return InlineTagNode("list", closing_tag="list:u")
+
+@Parser.handler("ol")
+def _ol_handler(tag, attrs):
+    return InlineTagNode("list", "={type}".format(**attrs), closing_tag="list:o")
+
+@Parser.handler("li")
+def _li_handler(tag, attrs):
+    return ItemNode()
+
+@Parser.handler("dt")
+def _dt_handler(tag, attrs):
+    # Get the quote author's name
+    return CaptureNode()
+
+@Parser.handler("dl")
+def _dl_handler(tag, attrs):
+    if "hidecode" in attrs["class"]:
+        return BlockTagNode("hide")
+    elif "spoiler" in attrs["class"]:
+        return BlockTagNode("spoiler")
+    else:
+        return CodeQuoteNode()
+
+@Parser.handler("dd")
+def _dd_handler(tag, attrs):
+    if attrs["class"] == "spoiler_closed":
+        return CaptureNode()
+
+@Parser.handler("a")
+def _a_handler(tag, attrs):
+    if "href" in attrs:
+        if attrs["href"][:7] == "mailto:":
+            return EmailNode(attrs["href"][7:])
+        else:
+            return UrlNode(attrs["href"], attrs["class"] == "postlink")
 
 @Parser.handler("font")
-class FontHandler(StackHandler):
-    """
-    Handles [color] and [font] tags
-    """
-    def start(self, parser, tag, attrs):
-        if "color" in attrs:
-            parser.append_tag("color", "={}".format(attrs["color"]))
-            self.stack.append("/color")
-        elif "face" in attrs:
-            parser.append_tag("font", "={}".format(attrs["face"]))
-            self.stack.append("/font")
-        else:
-            self.stack.append(None)
+def _font_handler(tag, attrs):
+    if "color" in attrs:
+        return InlineTagNode("color", "={color}".format(**attrs))
+    elif "face" in attrs:
+        return InlineTagNode("font", "={face}".format(**attrs))
 
 @Parser.handler("span")
-class SizeHandler(StackHandler):
-    """
-    Handles [size] tags
-    """
-    def start(self, parser, tag, attrs):
-        match = re.search('font-size: (\\d+)px', attrs["style"])
-        if match:
-            size = int(int(match.group(1)) * 100 / 12)
-            parser.append_tag("size", "={}".format(size))
-            self.stack.append("/size")
-        else:
-            self.stack.append(None)
+def _span_handler(tag, attrs):
+    match = re.search('font-size: (\\d+)px', attrs["style"])
+    if match:
+        size = int(int(match.group(1)) * 100 / 12)
+        return InlineTagNode("size", "={}".format(size))
 
 @Parser.handler("div")
-class AlignHandler(StackHandler):
-    """
-    Handles [left], [center] and [right] tags
-    """
-    def start(self, parser, tag, attrs):
-        if "align" in attrs:
-            parser.append_tag(attrs["align"])
-            self.stack.append("/{}".format(attrs["align"]))
-        elif "text-align:center" in attrs["style"]:
-            parser.append_tag("center")
-            self.stack.append("/center")
-        else:
-            self.stack.append(None)
-
-    def end(self, parser, stack):
-        tag = self.stack.pop()
-        if tag:
-            parser.append_tag(tag)
-            parser.append_text("\n")
+def _div_handler(tag, attrs):
+    if "align" in attrs:
+        return BlockTagNode(attrs["align"])
 
 @Parser.handler("img")
-class ImageHandler(Handler):
-    """
-    Handles [img] tags and smilies
-    """
-    def startend(self, parser, tag, attrs):
-        if "longdesc" in attrs and attrs["longdesc"] in parser.bb.smilies:
-            smiley = parser.bb.smilies[attrs["longdesc"]]
-            if smiley["smiley_url"]:
-                parser.append_text((
-                    "  <!-- s{code} -->"
-                    "<img src=\"{{SMILIES_PATH}}/{url}\" alt=\"{code}\" title=\"{title}\" />"
-                    "<!-- s{code} -->  "
-                ).format(
-                    url=smiley["smiley_url"],
-                    code=smiley["code"],
-                    title=smiley["emotion"]))
-            else:
-                parser.append_text(" {code} ".format(**parser.bb.smilies[attrs["longdesc"]]))
-        elif "src" in attrs:
-            parser.append_tag("img")
-            parser.append_text(escape(attrs["src"]))
-            parser.append_tag("/img")
+def _img_handler(tag, attrs):
+    if "longdesc" in attrs:
+        return SmileyNode(attrs["longdesc"])
+    elif "src" in attrs:
+        return InlineTagNode("img", content=escape(attrs["src"]))
 
 @Parser.handler("embed")
-class FlashHandler(Handler):
-    """
-    Handles [flash] tags
-    """
-    def start(self, parser, tag, attrs):
-        if "width" in attrs and "height" in attrs and "src" in attrs:
-            parser.append_tag("flash", "={},{}".format(attrs["width"], attrs["height"]))
-            parser.append_text(escape(attrs["src"]))
-            parser.append_tag("/flash")
-
-    def end(self, parser, tag):
-        pass
+def _embed_handler(tag, attrs):
+    if "width" in attrs and "height" in attrs and "src" in attrs:
+        return InlineTagNode("flash", "={width},{height}".format(**attrs),
+                             content=escape(attrs["src"]))
 
 @Parser.handler("marquee")
-class MarqueeHandler(StackHandler):
-    """
-    Handles [updown] and [scroll] tags
-    """
-    def start(self, parser, tag, attrs):
-        if "direction" in attrs and attrs["direction"] == "up":
-            parser.append_tag("updown")
-            self.stack.append("/updown")
-        else:
-            parser.append_tag("scroll")
-            self.stack.append("/scroll")
+def _marquee_handler(tag, attrs):
+    if "direction" in attrs and attrs["direction"] == "up":
+        return InlineTagNode("updown")
+    else:
+        return InlineTagNode("scroll")

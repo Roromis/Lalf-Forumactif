@@ -54,12 +54,9 @@ class Post(Node):
         self.ui.update()
 
     def _dump_(self, sqlfile):
-        uid = random_string()
-        parser = htmltobbcode.Parser(self.root, uid)
+        parser = htmltobbcode.Parser(self.root)
         parser.feed(self.text)
-        text = parser.output
-        bitfield = parser.get_bitfield()
-        checksum = parser.get_checksum()
+        post = parser.get_post()
 
         try:
             poster_id = self.user_names[self.author].newid
@@ -74,12 +71,10 @@ class Post(Node):
             "poster_id" : poster_id,
             "post_time" : self.time,
             "poster_ip" : "::1",
-            "post_username" : self.author,
             "post_subject" : self.title,
-            "post_text" : text,
-            "post_checksum" : checksum,
-            "bbcode_bitfield" : bitfield,
-            "bbcode_uid" : uid})
+            "post_text" : post.text,
+            "bbcode_bitfield" : post.bitfield,
+            "bbcode_uid" : post.uid})
 
 class TopicPage(Node):
     """
