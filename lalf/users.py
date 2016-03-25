@@ -206,7 +206,7 @@ class User(Node):
                 'message_subject' : PM_SUBJECT,
                 'message_text'    : post.text,
                 'bbcode_bitfield' : post.bitfield,
-                'bbcode_uid'      :post. uid,
+                'bbcode_uid'      : post.uid,
                 'to_address'      : "u_{}".format(self.newid),
                 'bcc_address'     : ""
             })
