@@ -97,9 +97,9 @@ class User(Node):
 
         newid (int): The id of the user in the new forum
     """
-    STATE_KEEP = ["oldid", "newid", "name", "mail", "posts", "date", "lastvisit"]
+    STATE_KEEP = ["oldid", "newid", "name", "mail", "posts", "date", "lastvisit", "colour", "groups"]
 
-    def __init__(self, oldid, name, mail, posts, date, lastvisit):
+    def __init__(self, oldid, name, mail, posts, date, lastvisit, colour=""):
         Node.__init__(self)
         self.oldid = oldid
         self.name = name
@@ -107,7 +107,9 @@ class User(Node):
         self.posts = posts
         self.date = date
         self.lastvisit = lastvisit
+        self.colour = colour
 
+        self.groups = []
         self.newid = None
 
     def _export_(self):
@@ -132,9 +134,14 @@ class User(Node):
         return
 
     def _dump_(self, sqlfile):
+        try:
+            group_id = self.groups[0].newid
+        except:
+            group_id = 2
+
         user = {
             "user_id" : self.newid,
-            "group_id" : "2",
+            "group_id" : group_id,
             "user_regdate" : self.date,
             "username" : self.name,
             "username_clean" : self.name.lower(),
@@ -145,10 +152,10 @@ class User(Node):
             "user_lastvisit" : self.lastvisit,
             #"user_lastpost_time" (TODO)
             "user_posts" : self.posts,
-            "user_lang" : self.config["default_language"],
+            "user_lang" : self.config["default_lang"],
             "user_style" : "1",
             #"user_rank" (TODO)
-            #"user_colour" (TODO)
+            "user_colour" : self.colour
             #"user_avatar" (TODO)
             #"user_sig" (TODO)
             #"user_from" (TODO)
@@ -159,10 +166,9 @@ class User(Node):
         if self.name == self.config["admin_name"]:
             user.update({
                 "user_type": 3,
-                "group_id" : 5,
                 "user_password" : md5(self.config["admin_password"]),
+                "user_colour" : "AA0000",
                 "user_rank" : 1,
-                "user_colour" : "AA0000", # TODO : get actual color?
                 "user_new_privmsg" : 1,
                 "user_unread_privmsg" : 1,
                 "user_last_privmsg" : self.root.dump_time
@@ -178,6 +184,15 @@ class User(Node):
             "user_pending" : 0
         })
 
+        for group in self.groups:
+            group_leader = 1 if group.leader_name == self.name else 0
+            sqlfile.insert("user_group", {
+                "group_id" : group.newid,
+                "user_id" : self.newid,
+                "user_pending" : 0,
+                "group_leader": group_leader
+            })
+
         # Check if the user is the administrator
         if self.name == self.config["admin_name"]:
             # Add user to global moderators group
@@ -185,13 +200,6 @@ class User(Node):
                 "group_id" : 4,
                 "user_id" : self.newid,
                 "user_pending" : 0
-            })
-            # Add user to administrators group
-            sqlfile.insert("user_group", {
-                "group_id" : 5,
-                "user_id" : self.newid,
-                "user_pending" : 0,
-                "group_leader" : 1
             })
 
             # Send a private message confirming the import was successful
@@ -305,8 +313,8 @@ class Users(Node):
             "group_id" : "1",
             "username" : "Anonymous",
             "username_clean" : "anonymous",
-            #"user_regdate" : creation date, (TODO)
-            "user_lang" : self.config["default_language"],
+            "user_regdate" : self.root.startdate,
+            "user_lang" : self.config["default_lang"],
             "user_style" : "1",
             "user_allow_massemail" : "0"})
         sqlfile.insert("user_group", {
@@ -321,12 +329,12 @@ class Users(Node):
                 "user_id" : user_id,
                 "user_type" : "2",
                 "group_id" : "6",
-                #"user_regdate" : creation date, (TODO)
+                "user_regdate" : self.root.startdate,
                 "username" : bot["name"],
                 "username_clean" : bot["name"].lower(),
                 "user_passchg" : self.root.dump_time,
                 "user_lastmark" : self.root.dump_time,
-                "user_lang" : self.config["default_language"],
+                "user_lang" : self.config["default_lang"],
                 "user_dateformat" : "D M d, Y g:i a",
                 "user_style" : "1",
                 "user_colour" : "9E8DA7",

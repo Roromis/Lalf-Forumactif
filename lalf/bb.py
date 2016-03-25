@@ -27,6 +27,7 @@ from pyquery import PyQuery
 
 from lalf.node import Node
 from lalf.forums import Forums
+from lalf.groups import Groups
 from lalf.users import Users
 from lalf.ocrusers import OcrUsers
 from lalf.smilies import Smilies
@@ -134,6 +135,8 @@ class BB(Node):
         else:
             self.add_child(Users())
 
+        self.add_child(Groups())
+
         self.add_child(Forums())
 
     def _dump_(self, sqlfile):
@@ -175,7 +178,7 @@ class BB(Node):
 
         sqlfile.set_config("newest_user_id", newest_user.newid)
         sqlfile.set_config("newest_username", newest_user.name)
-        #sqlfile.set_config("newest_user_colour", newest_user.) (TODO)
+        sqlfile.set_config("newest_user_colour", newest_user.colour)
 
         # Add bbcodes tags
         for bbcode in phpbb.BBCODES:

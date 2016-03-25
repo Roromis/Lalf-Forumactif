@@ -86,8 +86,8 @@ class OcrUser(User):
     # Attributes to save
     STATE_KEEP = User.STATE_KEEP + ["trust", "img"]
 
-    def __init__(self, oldid, name, posts, date):
-        User.__init__(self, oldid, name, None, posts, date, 0)
+    def __init__(self, oldid, name, posts, date, colour):
+        User.__init__(self, oldid, name, None, posts, date, 0, colour)
         self.trust = 0
         self.img = os.path.join("usermails", "{}.png".format(clean_filename(self.name)))
 
@@ -230,6 +230,9 @@ class OcrUsersPage(UsersPage):
 
         table = PyQuery(document("form[action=\"/memberlist\"]").next_all("table.forumline").eq(0))
 
+        urlpattern = re.compile(r"/u(\d+)")
+        stylepattern = re.compile(r"color:#(.{6})")
+
         first = True
         for element in table.find("tr"):
             # Skip first row
@@ -238,7 +241,7 @@ class OcrUsersPage(UsersPage):
                 continue
 
             e = PyQuery(element)
-            oldid = int(re.search(r"u(\d+)$", e("td a").eq(0).attr("href")).group(1))
+            oldid = int(urlpattern.fullmatch(e("td a").eq(0).attr("href")).group(1))
 
             name = e("td a").eq(1).text()
             posts = int(e("td").eq(6).text())
@@ -247,7 +250,13 @@ class OcrUsersPage(UsersPage):
             date = int(time.mktime(time.struct_time(
                 (int(date[2]), int(date[1]), int(date[0]), 0, 0, 0, 0, 0, 0))))
 
-            self.add_child(OcrUser(oldid, name, posts, date))
+            match = stylepattern.fullmatch(e("td a").eq(1).children("span").attr("style") or "")
+            if match:
+                colour = match.group(1)
+            else:
+                colour = ""
+
+            self.add_child(OcrUser(oldid, name, posts, date, colour))
 
 class OcrUsers(Users):
     """
