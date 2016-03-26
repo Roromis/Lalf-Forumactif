@@ -19,16 +19,14 @@
 Module handling the exportation of the forums
 """
 
-import os
 import re
-from io import BytesIO
 
 from pyquery import PyQuery
-from PIL import Image
 
 from lalf.node import Node
 from lalf.topics import ForumPage
 from lalf.util import pages
+from lalf import htmltobbcode
 
 def default_forum_acl(forumid):
     for gid, perm in ((1, 17), # guests: readonly
@@ -67,7 +65,7 @@ class Forum(Node):
     """
     # Attributes to save
     STATE_KEEP = ["oldid", "newid", "parent_id", "title", "description", "icon", "left_id",
-                  "right_id"]
+                  "right_id", "status", "num_topics", "num_posts"]
 
     def __init__(self, oldid, newid, left_id, parent_id, title):
         Node.__init__(self)
@@ -77,57 +75,23 @@ class Forum(Node):
         self.right_id = 0
         self.parent_id = parent_id
         self.title = title
+
         self.description = ""
         self.icon = ""
+        self.status = 0
+        self.num_topics = None
+        self.num_posts = None
 
     def _export_(self):
         self.logger.info('Récupération du forum %s', self.oldid)
 
-        # Download the forum's page in the administration panel
-        params = {
-            "part" : "general",
-            "sub" : "general",
-            "mode" : "edit",
-            "fid" : self.oldid
-        }
-        response = self.session.get_admin("/admin/index.forum", params=params)
-        document = PyQuery(response.text)
-
-        # Get the description
-        self.description = document("textarea").text()
-        if self.description is None:
-            self.description = ""
-
-        # Get the icon
-        for element in document("input"):
-            if element.get("name", "") == "image":
-                self.icon = element.text
-
-        if self.icon:
-            self.logger.info("Téléchargement de l'icône du forum %s", self.oldid)
-            response = self.session.get_image(self.icon)
-
-            # Get the image's format
-            try:
-                with Image.open(BytesIO(response.content)) as image:
-                    extension = image.format.lower()
-            except IOError:
-                self.logger.warning("Le format de l'icône du forum %s est inconnu", self.oldid)
-            else:
-                # Save the image
-                if not os.path.isdir(os.path.join("images", "forums")):
-                    os.makedirs(os.path.join("images", "forums"))
-                self.icon = os.path.join("images", "forums", "{}.{}".format(self.newid, extension))
-                with open(self.icon, "wb") as fileobj:
-                    fileobj.write(response.content)
-        else:
-            self.icon = ""
-
         response = self.session.get("/{}-a".format(self.oldid))
+
+        # Get subforums descriptions, number of topics, ...
+        self.forums_node.get_subforums_infos(response.text)
+
         for page in pages(response.text):
             self.add_child(ForumPage(page))
-
-        self.forums[self.oldid] = self
 
     def get_topics(self):
         """
@@ -143,23 +107,38 @@ class Forum(Node):
         else:
             forum_type = 0
 
+        parser = htmltobbcode.Parser(self.root)
+        parser.feed(self.description)
+        description = parser.get_post()
+
         # TODO : add statistics
         sqlfile.insert("forums", {
             "forum_id" : self.newid,
             "parent_id" : self.parent_id,
             "left_id" : self.left_id,
             "right_id" : self.right_id,
+            #"forum_parents" : (TODO)
             "forum_name" : self.title,
-            "forum_desc" : self.description,
-            #"forum_desc_bitfield" (TODO)
-            #"forum_desc_uid" (TODO)
+            "forum_desc" : description.text,
+            "forum_desc_bitfield" : description.bitfield,
+            "forum_desc_uid" : description.uid,
             "forum_type" : forum_type,
-            "forum_image" : self.icon
+            "forum_image" : self.icon,
+            "forum_status" : self.status,
+            #"forum_posts" : (TODO)
+            #"forum_topics" : (TODO)
+            #"forum_topics_real" : (TODO)
+            #"forum_last_post_id" : (TODO)
+            #"forum_last_poster_id" : (TODO)
+            #"forum_last_post_time" : (TODO)
+            #"forum_last_poster_name" : (TODO)
+            #"forum_last_poster_colour" : (TODO)
         })
 
         for acl in default_forum_acl(self.newid):
             sqlfile.insert("acl_groups", acl)
 
+@Node.expose(self="forums_node")
 class Forums(Node):
     """
     Node used to export the forums
@@ -208,6 +187,7 @@ class Forums(Node):
                     nested_id += 1
 
                 forum = Forum(forum_id, newid, nested_id, parent_id, title)
+                self.forums[forum_id] = forum
                 depths.append(forum)
                 self.add_child(forum)
                 newid += 1
@@ -217,3 +197,40 @@ class Forums(Node):
             forum = depths.pop()
             forum.right_id = nested_id
             nested_id += 1
+
+        # Get subforums descriptions, number of topics, ...
+        response = self.session.get("/forum")
+        self.get_subforums_infos(response.text)
+
+    def get_subforums_infos(self, html):
+        """
+        Get informations (description, number of topics and posts, ...) about
+        the forums listed on a page
+        """
+        document = PyQuery(html)
+
+        idpattern = re.compile(r"/([fc]\d+)-.*")
+
+        for element in document("a.forumlink"):
+            e = PyQuery(element)
+
+            match = idpattern.fullmatch(e.attr("href"))
+            if not match:
+                continue
+
+            oldid = match.group(1)
+
+            row = e.closest("tr")
+
+            # Get forum status
+            alt = row("td:nth-of-type(1) img").eq(0).attr("alt")
+            self.forums[oldid].status = 1 if "verrouillé" in alt else 0
+
+            # Get subforum description
+            self.forums[oldid].description = row("td:nth-of-type(2) span").eq(1).html() or ""
+
+            # TODO : Get subforum icon
+
+            # Get subforum numbers of topics and posts
+            self.forums[oldid].num_topics = int(row("td").eq(2).text())
+            self.forums[oldid].num_posts = int(row("td").eq(3).text())

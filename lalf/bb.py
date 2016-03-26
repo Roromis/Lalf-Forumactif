@@ -35,6 +35,8 @@ from lalf import phpbb
 from lalf.session import Session
 from lalf.linkrewriter import LinkRewriter
 from lalf.util import parse_date
+from lalf.ui import DummyUI
+from lalf.config import read as read_config
 
 @Node.expose("config", "session", "ui", "smilies", "user_names", "user_ids", "forums",
              "announcements", self="root")
@@ -213,11 +215,17 @@ class BB(Node):
             for post in topic.get_posts():
                 yield post
 
-def load(config, ui):
+def load(config=None, ui=None):
     """
     Returns the BB node contained in the file save.pickle.
     """
     logger = logging.getLogger("lalf.bb.load")
+
+    if ui is None:
+        ui = DummyUI()
+
+    if config is None:
+        config = read_config("config.cfg")
 
     try:
         with open("save.pickle", "rb") as fileobj:
