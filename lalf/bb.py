@@ -38,7 +38,7 @@ from lalf.util import parse_date
 from lalf.ui import DummyUI
 from lalf.config import read as read_config
 
-@Node.expose("config", "session", "ui", "smilies", "user_names", "user_ids", "forums",
+@Node.expose("config", "session", "ui", "smilies", "users", "forums",
              "announcements", self="root")
 class BB(Node):
     """
@@ -60,7 +60,7 @@ class BB(Node):
     STATE_KEEP = ["total_posts", "total_topics", "total_users",
                   "current_posts", "current_topics", "current_users",
                   "startdate", "record_online_date", "record_online_users",
-                  "site_name", "site_desc", "smilies", "user_names", "user_ids",
+                  "site_name", "site_desc", "smilies", "users",
                   "forums", "announcements"]
 
     def __init__(self, config, ui=None):
@@ -89,8 +89,7 @@ class BB(Node):
         self.dump_time = 0
 
         self.smilies = {}
-        self.user_names = {}
-        self.user_ids = {}
+        self.users = {}
         self.forums = {}
         self.announcements = []
 
@@ -175,8 +174,8 @@ class BB(Node):
         sqlfile.set_config("num_topics", self.total_topics)
         sqlfile.set_config("num_users", self.total_users)
 
-        newest_user_oldid = max(self.user_ids)
-        newest_user = self.user_ids[newest_user_oldid]
+        newest_user_oldid = max(self.users)
+        newest_user = self.users[newest_user_oldid]
 
         sqlfile.set_config("newest_user_id", newest_user.newid)
         sqlfile.set_config("newest_username", newest_user.name)

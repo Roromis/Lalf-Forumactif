@@ -75,22 +75,7 @@ class Topic(Node):
 
     def _dump_(self, sqlfile):
         first_post = self.children[0].children[0]
-        try:
-            topic_poster_id = self.user_names[first_post.author].newid
-            topic_poster_colour = self.user_names[first_post.author].colour
-        except KeyError:
-            # The user does not exist (he is either anonymous or has been deleted)
-            topic_poster_id = 1
-            topic_poster_colour = ""
-
         last_post = self.children[-1].children[-1]
-        try:
-            last_poster_id = self.user_names[last_post.author].newid
-            last_poster_colour = self.user_names[last_post.author].colour
-        except KeyError:
-            # The user does not exist (he is either anonymous or has been deleted)
-            last_poster_id = 1
-            last_poster_colour = ""
 
         replies = sum(1 for _ in self.get_posts()) - 1
 
@@ -98,7 +83,7 @@ class Topic(Node):
             "topic_id" : self.topic_id,
             "forum_id" : self.forum.newid,
             "topic_title" : self.title,
-            "topic_poster" : topic_poster_id,
+            "topic_poster" : first_post.poster.newid,
             "topic_time" : first_post.time,
             "topic_views" : self.views,
             "topic_replies" : replies,
@@ -106,23 +91,17 @@ class Topic(Node):
             "topic_status" : self.locked,
             "topic_type" : self.topic_type,
             "topic_first_post_id" : first_post.post_id,
-            "topic_first_poster_name" : first_post.author,
-            "topic_first_poster_colour" : topic_poster_colour,
+            "topic_first_poster_name" : first_post.poster.name,
+            "topic_first_poster_colour" : first_post.poster.colour,
             "topic_last_post_id" : last_post.post_id,
-            "topic_last_poster_id" : last_poster_id,
-            "topic_last_poster_name" : last_post.author,
-            "topic_last_poster_colour" : last_poster_colour,
+            "topic_last_poster_id" : last_post.poster.newid,
+            "topic_last_poster_name" : last_post.poster.name,
+            "topic_last_poster_colour" : last_post.poster.colour,
             "topic_last_post_subject" : last_post.title,
             "topic_last_post_time" : last_post.time
         })
 
-        for username in set(post.author for post in self.get_posts()):
-            try:
-                user_id = self.user_names[username].newid
-            except KeyError:
-                # The user does not exist (he is either anonymous or has been deleted)
-                user_id = 1
-
+        for user_id in set(post.poster.newid for post in self.get_posts()):
             sqlfile.insert("topics_posted", {
                 "user_id" : user_id,
                 "topic_id" : self.topic_id,

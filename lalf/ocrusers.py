@@ -31,7 +31,7 @@ import subprocess
 from PIL import Image
 from pyquery import PyQuery
 
-from lalf.users import Users, UsersPage, User
+from lalf.users import Users, UsersPage, User, AnonymousUser
 
 from lalf.util import month, clean_filename, pages
 
@@ -264,6 +264,8 @@ class OcrUsers(Users):
     """
     def _export_(self):
         self.logger.info('Récupération des membres')
+
+        self.add_child(AnonymousUser())
 
         response = self.session.get("/memberlist")
         for page in pages(response.text):

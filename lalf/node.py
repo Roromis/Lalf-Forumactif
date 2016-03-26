@@ -123,8 +123,7 @@ class Node(object):
         children (and put them in the children list). It should not
         export the children.
         """
-        raise NotImplementedError("_export_ is a virtual method of Node and "
-                                  "should be implemented by its subclasses.")
+        return
 
     def __getstate__(self):
         odict = self.__dict__.copy()

@@ -67,7 +67,7 @@ def main():
 
     ui.update()
 
-    for user in bb.user_names.values():
+    for user in bb.users.values():
         user.confirm_email()
 
     bb.save()

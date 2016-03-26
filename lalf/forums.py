@@ -25,6 +25,7 @@ from pyquery import PyQuery
 
 from lalf.node import Node
 from lalf.topics import ForumPage
+from lalf.posts import NoPost
 from lalf.util import pages
 from lalf import htmltobbcode
 
@@ -141,25 +142,9 @@ class Forum(Node):
         num_topics = sum(1 for post in self.get_topics())
 
         if num_posts == 0:
-            last_post_id = 0
-            last_poster_id = 0
-            last_post_subject = ""
-            last_post_time = 0
-            last_poster_name = ""
-            last_poster_colour = ""
+            last_post = NoPost()
         else:
             last_post = max(self.get_posts(), key=lambda post: post.time)
-            last_post_id = last_post.post_id
-            last_post_subject = last_post.title
-            last_post_time = last_post.time
-            last_poster_name = last_post.author
-            try:
-                last_poster_id = self.user_names[last_post.author].newid
-                last_poster_colour = self.user_names[last_post.author].colour
-            except KeyError:
-                # The user does not exist (he is either anonymous or has been deleted)
-                last_poster_id = 1
-                last_poster_colour = ""
 
         sqlfile.insert("forums", {
             "forum_id" : self.newid,
@@ -177,12 +162,12 @@ class Forum(Node):
             "forum_posts" : num_posts,
             "forum_topics" : num_topics,
             "forum_topics_real" : num_topics,
-            "forum_last_post_id" : last_post_id,
-            "forum_last_poster_id" : last_poster_id,
-            "forum_last_post_subject" : last_post_subject,
-            "forum_last_post_time" : last_post_time,
-            "forum_last_poster_name" : last_poster_name,
-            "forum_last_poster_colour" : last_poster_colour
+            "forum_last_post_id" : last_post.post_id,
+            "forum_last_poster_id" : last_post.poster.newid,
+            "forum_last_post_subject" : last_post.title,
+            "forum_last_post_time" : last_post.time,
+            "forum_last_poster_name" : last_post.poster.name,
+            "forum_last_poster_colour" : last_post.poster.colour
         })
 
         for acl in default_forum_acl(self.newid):

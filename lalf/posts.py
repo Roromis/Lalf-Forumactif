@@ -19,11 +19,22 @@
 Module handling the exportation of the posts
 """
 
+import re
+
 from pyquery import PyQuery
 
 from lalf.node import Node
 from lalf.util import parse_date
+from lalf.users import AnonymousUser, NoUser
 from lalf import htmltobbcode
+
+class NoPost(object):
+    def __init__(self):
+        self.post_id = 0
+        self.text = ""
+        self.title = ""
+        self.time = 0
+        self.poster = NoUser()
 
 class Post(Node):
     """
@@ -34,17 +45,17 @@ class Post(Node):
         text (str): The content of the post in html
         title (str): The title of the post
         time (int): Time of the post (unix timestamp)
-        author (str): Username of the poster
+        poster (User): User who submitted the post
     """
-    STATE_KEEP = ["post_id", "text", "title", "time", "author"]
+    STATE_KEEP = ["post_id", "text", "title", "time", "poster"]
 
-    def __init__(self, post_id, text, title, post_time, author):
+    def __init__(self, post_id, text, title, post_time, poster):
         Node.__init__(self)
         self.post_id = post_id
         self.text = text
         self.title = title
         self.time = post_time
-        self.author = author
+        self.poster = poster
 
     def _export_(self):
         self.root.current_posts += 1
@@ -56,17 +67,11 @@ class Post(Node):
         parser.feed(self.text)
         post = parser.get_post()
 
-        try:
-            poster_id = self.user_names[self.author].newid
-        except KeyError:
-            # The user does not exist (he is either anonymous or has been deleted)
-            poster_id = 1
-
         sqlfile.insert("posts", {
             "post_id" : self.post_id,
             "topic_id" : self.topic.topic_id,
             "forum_id" : self.forum.newid,
-            "poster_id" : poster_id,
+            "poster_id" : self.poster.newid,
             "post_time" : self.time,
             "poster_ip" : "::1",
             "post_subject" : self.title,
@@ -92,6 +97,8 @@ class TopicPage(Node):
         response = self.session.get("/t{}p{}-a".format(self.topic.topic_id, self.page))
         document = PyQuery(response.text)
 
+        pattern = re.compile(r"/u(\d+)")
+
         for element in document.find('tr.post'):
             e = PyQuery(element)
 
@@ -100,7 +107,12 @@ class TopicPage(Node):
             self.logger.info('Récupération du message %d (sujet %d)',
                              post_id, self.topic.topic_id)
 
-            author = e("td span.name").text()
+            match = pattern.fullmatch(e("td span.name strong a").eq(0).attr("href") or "")
+            if match:
+                poster = self.users[int(match.group(1))]
+            else:
+                poster = AnonymousUser()
+
             post = e("td div.postbody div").eq(0).html()
             if not post:
                 self.logger.warning('Le message  %d (sujet %d) semble être vide',
@@ -115,4 +127,4 @@ class TopicPage(Node):
             # Get the date and time of the post
             timestamp = parse_date(e("table td span.postdetails").contents()[3])
 
-            self.add_child(Post(post_id, post, title, timestamp, author))
+            self.add_child(Post(post_id, post, title, timestamp, poster))

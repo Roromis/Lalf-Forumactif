@@ -83,6 +83,45 @@ def md5(string):
     """
     return hashlib.md5(string.encode("utf8")).hexdigest()
 
+class NoUser(object):
+    def __init__(self):
+        self.newid = 0
+        self.name = ""
+        self.colour = ""
+
+class AnonymousUser(Node):
+    """
+    Node representing the anonymous user
+    """
+
+    STATE_KEEP = ["newid", "name", "colour"]
+
+    def __init__(self):
+        Node.__init__(self)
+        self.newid = 1
+        self.name = "Anonymous"
+        self.colour = ""
+
+    def _dump_(self, sqlfile):
+        sqlfile.insert("users", {
+            "user_id" : "1",
+            "user_type" : "2",
+            "group_id" : "1",
+            "username" : "Anonymous",
+            "username_clean" : "anonymous",
+            "user_regdate" : self.root.startdate,
+            "user_lang" : self.config["default_lang"],
+            "user_style" : "1",
+            "user_allow_massemail" : "0"
+            #"user_lastpost_time" (TODO)
+            #"user_posts" : (TODO)
+        })
+        sqlfile.insert("user_group", {
+            "group_id" : "1",
+            "user_id" : "1",
+            "user_pending" : "0"
+        })
+
 class User(Node):
     """
     Node representing a user
@@ -116,6 +155,8 @@ class User(Node):
         if self.newid is None:
             if self.name == self.config["admin_name"]:
                 self.newid = 2
+            elif self.name == "Anonymous":
+                self.newid = 1
             else:
                 self.newid = self.users_count.value
                 self.users_count += 1
@@ -123,10 +164,9 @@ class User(Node):
             self.root.current_users += 1
             self.ui.update()
 
-            self.user_names[self.name] = self
-            self.user_ids[self.oldid] = self
+            self.users[self.oldid] = self
 
-    def confirm_email(self, _):
+    def confirm_email(self):
         """
         Let the user confirm the email address if it could not be
         validated (for compatibility with OcrUser)
@@ -177,15 +217,29 @@ class User(Node):
                 "user_last_privmsg" : self.root.dump_time
             })
 
+        if self.name == "Anonymous":
+            user.update({
+                "user_type": 2,
+                "group_id": 1,
+                "user_allow_massemail" : "0"
+            })
+
         # Add user to database
         sqlfile.insert("users", user)
 
         # Add user to registered group
-        sqlfile.insert("user_group", {
-            "group_id" : 2,
-            "user_id" : self.newid,
-            "user_pending" : 0
-        })
+        if self.name == "Anonymous":
+            sqlfile.insert("user_group", {
+                "group_id" : "1",
+                "user_id" : "1",
+                "user_pending" : "0"
+            })
+        else:
+            sqlfile.insert("user_group", {
+                "group_id" : 2,
+                "user_id" : self.newid,
+                "user_pending" : 0
+            })
 
         for group in self.groups:
             group_leader = 1 if group.leader_name == self.name else 0
@@ -299,6 +353,8 @@ class Users(Node):
     def _export_(self):
         self.logger.info('Récupération des membres')
 
+        self.add_child(AnonymousUser())
+
         # Get the list of users from the administration panel
         params = {
             "part" : "users_groups",
@@ -309,22 +365,6 @@ class Users(Node):
             self.add_child(UsersPage(page))
 
     def _dump_(self, sqlfile):
-        # Add anonymous user
-        sqlfile.insert("users", {
-            "user_id" : "1",
-            "user_type" : "2",
-            "group_id" : "1",
-            "username" : "Anonymous",
-            "username_clean" : "anonymous",
-            "user_regdate" : self.root.startdate,
-            "user_lang" : self.config["default_lang"],
-            "user_style" : "1",
-            "user_allow_massemail" : "0"})
-        sqlfile.insert("user_group", {
-            "group_id" : "1",
-            "user_id" : "1",
-            "user_pending" : "0"})
-
         user_id = 3
         # Add bots
         for bot in BOTS:
