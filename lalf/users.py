@@ -139,6 +139,10 @@ class User(Node):
         except:
             group_id = 2
 
+        if 5 in [group.newid for group in self.groups]:
+            # The user is an administrator
+            self.colour = "AA0000"
+
         user = {
             "user_id" : self.newid,
             "group_id" : group_id,
@@ -167,7 +171,6 @@ class User(Node):
             user.update({
                 "user_type": 3,
                 "user_password" : md5(self.config["admin_password"]),
-                "user_colour" : "AA0000",
                 "user_rank" : 1,
                 "user_new_privmsg" : 1,
                 "user_unread_privmsg" : 1,

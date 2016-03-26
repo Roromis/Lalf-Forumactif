@@ -124,9 +124,6 @@ Resynchronisation
   resynchronisez les statistiques, les compteurs de messages et les
   sujets pointés (Onglet Général).
 
-- Resynchronisez tous les forums/sous-forums (Onglet Forums, Bouton
-  orange "Resynchroniser" à droite de chaque forum).
-
 - Créez les index de recherche (Onglet Maintenance -> Base de donnée
   -> Index de recherche, cliquez sur les deux boutons "Supprimer
   l'index de recherche" (s'ils sont présent) puis sur les boutons
@@ -135,6 +132,11 @@ Resynchronisation
 - Modifiez les permissions de vos forums (par défaut, ils sont
   visibles par tous les utilisateurs et les invités), ajoutez les
   modérateurs, co-administrateurs manuellement.
+
+- (Optionnel) Si vous constatez des erreurs dans les compteurs de
+  sujets de messages ou de sujets, resynchronisez les forums touchés
+  par ce problème (Onglet Forums, Bouton orange "Resynchroniser" à
+  droite de chaque forum).
 
 - (Optionnel) Il est possible qu'il y ait eut des erreurs lors de la
   transcription des messages en bbcodes. Si vous constatez un tel

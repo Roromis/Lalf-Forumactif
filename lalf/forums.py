@@ -57,24 +57,29 @@ class Forum(Node):
         left_id (int): Left id of the forum in the nested set model (see
                        https://en.wikipedia.org/wiki/Nested_set_model)
         right_id (int): Right id of the forum in the nested set model
-        parent_id (int): The id of the parent forum (0 if it is a category)
+        parent (Forum): The parent forum (or None)
         title (str): The title of the forum
 
         description (str): The description of the forum
         icon (str): The url of the forum icon
     """
     # Attributes to save
-    STATE_KEEP = ["oldid", "newid", "parent_id", "title", "description", "icon", "left_id",
-                  "right_id", "status", "num_topics", "num_posts"]
+    STATE_KEEP = ["oldid", "newid", "parent", "title", "description", "icon", "left_id",
+                  "right_id", "status", "num_topics", "num_posts", "forum_type"]
 
-    def __init__(self, oldid, newid, left_id, parent_id, title):
+    def __init__(self, oldid, newid, left_id, parent, title):
         Node.__init__(self)
         self.oldid = oldid
         self.newid = newid
         self.left_id = left_id
         self.right_id = 0
-        self.parent_id = parent_id
-        self.title = title
+        self.parent = parent
+        self.title = title.replace('"', '&quot;')
+
+        if self.oldid[0] == "f":
+            self.forum_type = 1
+        else:
+            self.forum_type = 0
 
         self.description = ""
         self.icon = ""
@@ -101,38 +106,83 @@ class Forum(Node):
             for topic in page.children:
                 yield topic
 
+    def get_posts(self):
+        """
+        Returns the topics of this forum
+        """
+        for topic in self.get_topics():
+            for post in topic.get_posts():
+                yield post
+
     def _dump_(self, sqlfile):
-        if self.oldid[0] == "f":
-            forum_type = 1
+        # Get parent id
+        if self.parent:
+            parent_id = self.parent.newid
         else:
-            forum_type = 0
+            parent_id = 0
+
+        # Get forum_parents field
+        entry = "i:{};a:2:{{i:0;s:{}:\"{}\";i:1;i:{};}}"
+        entries = []
+        parent = self.parent
+        while parent:
+            title = parent.title
+            entries.append(entry.format(
+                parent.newid, len(parent.title), title, parent.forum_type))
+            parent = parent.parent
+
+        parents = "a:{}:{{{}}}".format(len(entries), "".join(reversed(entries)))
 
         parser = htmltobbcode.Parser(self.root)
         parser.feed(self.description)
         description = parser.get_post()
 
-        # TODO : add statistics
+        num_posts = sum(1 for post in self.get_posts())
+        num_topics = sum(1 for post in self.get_topics())
+
+        if num_posts == 0:
+            last_post_id = 0
+            last_poster_id = 0
+            last_post_subject = ""
+            last_post_time = 0
+            last_poster_name = ""
+            last_poster_colour = ""
+        else:
+            last_post = max(self.get_posts(), key=lambda post: post.time)
+            last_post_id = last_post.post_id
+            last_post_subject = last_post.title
+            last_post_time = last_post.time
+            last_poster_name = last_post.author
+            try:
+                last_poster_id = self.user_names[last_post.author].newid
+                last_poster_colour = self.user_names[last_post.author].colour
+            except KeyError:
+                # The user does not exist (he is either anonymous or has been deleted)
+                last_poster_id = 1
+                last_poster_colour = ""
+
         sqlfile.insert("forums", {
             "forum_id" : self.newid,
-            "parent_id" : self.parent_id,
+            "parent_id" : parent_id,
             "left_id" : self.left_id,
             "right_id" : self.right_id,
-            #"forum_parents" : (TODO)
+            "forum_parents" : parents,
             "forum_name" : self.title,
             "forum_desc" : description.text,
             "forum_desc_bitfield" : description.bitfield,
             "forum_desc_uid" : description.uid,
-            "forum_type" : forum_type,
+            "forum_type" : self.forum_type,
             "forum_image" : self.icon,
             "forum_status" : self.status,
-            #"forum_posts" : (TODO)
-            #"forum_topics" : (TODO)
-            #"forum_topics_real" : (TODO)
-            #"forum_last_post_id" : (TODO)
-            #"forum_last_poster_id" : (TODO)
-            #"forum_last_post_time" : (TODO)
-            #"forum_last_poster_name" : (TODO)
-            #"forum_last_poster_colour" : (TODO)
+            "forum_posts" : num_posts,
+            "forum_topics" : num_topics,
+            "forum_topics_real" : num_topics,
+            "forum_last_post_id" : last_post_id,
+            "forum_last_poster_id" : last_poster_id,
+            "forum_last_post_subject" : last_post_subject,
+            "forum_last_post_time" : last_post_time,
+            "forum_last_poster_name" : last_poster_name,
+            "forum_last_poster_colour" : last_poster_colour
         })
 
         for acl in default_forum_acl(self.newid):
@@ -177,16 +227,16 @@ class Forums(Node):
                 depth = len(re.findall('(\\||\xa0)\xa0\xa0\xa0', element.text))
 
                 if depth <= 0:
-                    parent_id = 0
+                    parent = None
                 else:
-                    parent_id = depths[depth-1].newid
+                    parent = depths[depth-1]
 
                 for _ in range(depth, len(depths)):
                     forum = depths.pop()
                     forum.right_id = nested_id
                     nested_id += 1
 
-                forum = Forum(forum_id, newid, nested_id, parent_id, title)
+                forum = Forum(forum_id, newid, nested_id, parent, title)
                 self.forums[forum_id] = forum
                 depths.append(forum)
                 self.add_child(forum)
