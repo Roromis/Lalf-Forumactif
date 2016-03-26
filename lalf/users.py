@@ -99,10 +99,17 @@ class AnonymousUser(Node):
     def __init__(self):
         Node.__init__(self)
         self.newid = 1
-        self.name = "Anonymous"
+        self.name = ""
         self.colour = ""
 
     def _dump_(self, sqlfile):
+        post_times = [post.time for post in self.root.get_posts() if post.poster.newid == 1]
+        num_posts = sum(1 for _ in post_times)
+        if num_posts > 0:
+            lastpost_time = max(post_times)
+        else:
+            lastpost_time = 0
+
         sqlfile.insert("users", {
             "user_id" : "1",
             "user_type" : "2",
@@ -112,9 +119,9 @@ class AnonymousUser(Node):
             "user_regdate" : self.root.startdate,
             "user_lang" : self.config["default_lang"],
             "user_style" : "1",
-            "user_allow_massemail" : "0"
-            #"user_lastpost_time" (TODO)
-            #"user_posts" : (TODO)
+            "user_allow_massemail" : "0",
+            "user_lastpost_time" : lastpost_time,
+            "user_posts" : num_posts
         })
         sqlfile.insert("user_group", {
             "group_id" : "1",
@@ -183,6 +190,13 @@ class User(Node):
             # The user is an administrator
             self.colour = "AA0000"
 
+        post_times = [post.time for post in self.root.get_posts() if post.poster == self]
+        num_posts = sum(1 for _ in post_times)
+        if num_posts > 0:
+            lastpost_time = max(post_times)
+        else:
+            lastpost_time = 0
+
         user = {
             "user_id" : self.newid,
             "group_id" : group_id,
@@ -194,8 +208,8 @@ class User(Node):
             "user_email" : self.mail,
             "user_email_hash" : email_hash(self.mail),
             "user_lastvisit" : self.lastvisit,
-            #"user_lastpost_time" (TODO)
-            "user_posts" : self.posts,
+            "user_lastpost_time" : lastpost_time,
+            "user_posts" : num_posts,
             "user_lang" : self.config["default_lang"],
             "user_style" : "1",
             #"user_rank" (TODO)

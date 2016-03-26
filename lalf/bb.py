@@ -169,10 +169,13 @@ class BB(Node):
         sqlfile.set_config("sitename", self.site_name)
         sqlfile.set_config("site_desc", self.site_desc)
 
-        # TODO : use actual counts?
-        sqlfile.set_config("num_posts", self.total_posts)
-        sqlfile.set_config("num_topics", self.total_topics)
-        sqlfile.set_config("num_users", self.total_users)
+        num_posts = sum(1 for _ in self.get_posts())
+        num_topics = sum(1 for _ in self.get_topics())
+        num_users = sum(1 for _ in self.users)
+
+        sqlfile.set_config("num_posts", num_posts)
+        sqlfile.set_config("num_topics", num_topics)
+        sqlfile.set_config("num_users", num_users)
 
         newest_user_oldid = max(self.users)
         newest_user = self.users[newest_user_oldid]
