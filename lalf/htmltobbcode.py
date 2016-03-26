@@ -33,17 +33,21 @@ from lalf.util import random_string
 TAGS = {
     '*' : -1,
     'quote' : 0,
+    'quote=' : 0,
     'b' : 1,
     'i' : 2,
     'url' : 3,
+    'url=' : 3,
     'img' : 4,
-    'size' : 5,
-    'color' : 6,
+    'size=' : 5,
+    'color=' : 6,
     'u' : 7,
     'code' : 8,
     'list' : 9,
+    'list=' : 9,
     'email' : 10,
-    'flash' : 11,
+    'email=' : 10,
+    'flash=' : 11,
     'attachment' : 12}
 for bbcode in BBCODES:
     TAGS[bbcode["bbcode_tag"]] = bbcode["bbcode_id"]
@@ -342,7 +346,7 @@ class InlineTagNode(Node):
             if self.closing_tag:
                 fileobj.write("[/{}{}]".format(self.closing_tag, uid))
             else:
-                fileobj.write("[/{}{}]".format(self.tag, uid))
+                fileobj.write("[/{}{}]".format(self.tag.rstrip("="), uid))
 
 class BlockTagNode(InlineTagNode):
     """
@@ -368,7 +372,8 @@ class CodeQuoteNode(BlockTagNode):
         self.attrs = ""
         if isinstance(node, CaptureNode):
             if node.text[-9:] == " a écrit:":
-                self.attrs = "=&quot;{}&quot;".format(node.text[:-9])
+                self.tag = "quote="
+                self.attrs = "&quot;{}&quot;".format(node.text[:-9])
             elif node.text == "Code:":
                 self.tag = "code"
                 try:
@@ -425,9 +430,11 @@ class EmailNode(InlineTagNode):
             text = None
 
         if text == self.email:
+            self.tag = "email"
             self.children[0].text = escape(self.children[0].text)
         else:
-            self.attrs = "={}".format(escape(self.email))
+            self.tag = "email="
+            self.attrs = escape(self.email)
         InlineTagNode.get_bbcode(self, fileobj, bb, uid)
 
 class UrlNode(InlineTagNode):
@@ -452,11 +459,12 @@ class UrlNode(InlineTagNode):
 
         if self.postlink or not text:
             # [url] tag
-            self.tag = "url"
             if text == self.url:
+                self.tag = "url"
                 self.children = [TextNode(escape(url))]
             else:
-                self.attrs = "={}".format(escape(url))
+                self.tag = "url="
+                self.attrs = escape(url)
             InlineTagNode.get_bbcode(self, fileobj, bb, uid)
         else:
             # Magic url
@@ -485,11 +493,12 @@ def _inline_handler(tag, attrs):
 @Parser.handler("td")
 def _td_handler(tag, attrs):
     logger = logging.getLogger('lalf.htmltobbcode')
-    if "colspan" in attrs:
-        logger.warning('La propriété "colspan" du bbcode [td] n\'est pas supportée.')
-    if "rowspan" in attrs:
-        logger.warning('La propriété "rowspan" du bbcode [td] n\'est pas supportée.')
-    return InlineTagNode(tag)
+    colspan = attrs.get("colspan", 1)
+    rowspan = attrs.get("rowspan", 1)
+    if colspan == 1 and rowspan == 1:
+        return InlineTagNode("td")
+    else:
+        return InlineTagNode("td=", "{},{}".format(colspan, rowspan))
 
 @Parser.handler("strong")
 def _strong_handler(tag, attrs):
@@ -516,7 +525,7 @@ def _ul_handler(tag, attrs):
 
 @Parser.handler("ol")
 def _ol_handler(tag, attrs):
-    return InlineTagNode("list", "={type}".format(**attrs), closing_tag="list:o")
+    return InlineTagNode("list=", attrs["type"], closing_tag="list:o")
 
 @Parser.handler("li")
 def _li_handler(tag, attrs):
@@ -552,16 +561,16 @@ def _a_handler(tag, attrs):
 @Parser.handler("font")
 def _font_handler(tag, attrs):
     if "color" in attrs:
-        return InlineTagNode("color", "={color}".format(**attrs))
+        return InlineTagNode("color=", attrs["color"])
     elif "face" in attrs:
-        return InlineTagNode("font", "={face}".format(**attrs))
+        return InlineTagNode("font=", attrs["face"])
 
 @Parser.handler("span")
 def _span_handler(tag, attrs):
     match = re.search('font-size: (\\d+)px', attrs["style"])
     if match:
         size = int(int(match.group(1)) * 100 / 12)
-        return InlineTagNode("size", "={}".format(size))
+        return InlineTagNode("size=", size)
 
 @Parser.handler("div")
 def _div_handler(tag, attrs):
@@ -578,7 +587,7 @@ def _img_handler(tag, attrs):
 @Parser.handler("embed")
 def _embed_handler(tag, attrs):
     if "width" in attrs and "height" in attrs and "src" in attrs:
-        return InlineTagNode("flash", "={width},{height}".format(**attrs),
+        return InlineTagNode("flash=", "{width},{height}".format(**attrs),
                              content=escape(attrs["src"]))
 
 @Parser.handler("marquee")
