@@ -1,2 +1,0 @@
-- Vérifier les versions minimales des dépendances
-- Possibilité de spliter le fichier SQL
