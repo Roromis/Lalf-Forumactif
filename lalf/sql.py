@@ -19,6 +19,8 @@
 Module handling the writing of the sql dump file
 """
 
+import codecs
+
 def escape(string):
     """
     Escapes special characters in a string for use in an SQL statement
@@ -43,7 +45,7 @@ class SqlFile(object):
         ...     })
     """
     def __init__(self, path, prefix=""):
-        self.fileobj = open(path, "w")
+        self.fileobj = codecs.open(path, "w", "utf-8")
         self.prefix = prefix
 
     def __enter__(self):

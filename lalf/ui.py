@@ -95,6 +95,10 @@ class UI(logging.Handler):
         changed = False
 
         width, _ = get_terminal_size()
+
+        # Drawing at the end of the row will create a newline on windows
+        width -= 1
+
         if width != self.width:
             # The width of the terminal changed
             self.width = width

@@ -66,7 +66,8 @@ fichier de configuration ``config.cfg`` en vous inspirant du fichier
 Si vous souhaitez utiliser la reconnaissance de caractères pour la
 récupération des adresses e-mail (conseillé), installez `gocr
 <http://jocr.sourceforge.net/>`_ (sous windows, téléchargez
-l'exécutable dans le même dossier que le fichier ``config.cfg``).
+l'exécutable dans le même dossier que le fichier ``config.cfg``, et
+renommez le en ``gocr.exe``).
 
 Placez vous dans le dossier contenant le fichier de configuration, et
 lancez::
@@ -92,7 +93,8 @@ fichier ``config.example.cfg``.
 Si vous souhaitez utiliser la reconnaissance de caractères pour la
 récupération des adresses e-mail (conseillé), installez `gocr
 <http://jocr.sourceforge.net/>`_ (sous windows, téléchargez
-l'exécutable dans le même dossier que le fichier ``config.cfg``).
+l'exécutable dans le même dossier que le fichier ``config.cfg``, et
+renommez le en ``gocr.exe``).
 
 Placez vous dans le dossier contenant le fichier de configuration, et
 lancez::
