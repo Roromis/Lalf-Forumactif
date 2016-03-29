@@ -77,7 +77,7 @@ définitivement votre forum.
 
 ```conf
 # Lien de votre nouveau forum (utilisé pour la réécriture des liens internes)
-phpbb_url=http://localhost/
+phpbb_url=http://localhost
 ```
 
 Une fois l'exportation terminée, vous pouvez modifier l'option

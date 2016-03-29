@@ -20,7 +20,7 @@
 [requests]: http://docs.python-requests.org/en/latest/ "Requests - HTTP library for Python"
 [pillow]: http://python-pillow.org/ "Pillow - Python Imaging Library fork"
 [gocr]: http://jocr.sourceforge.net/download.html "GOCR - Optical Character Recognition"
-[crawler converters]: http://www.phpbb.com/community/viewtopic.php?f=65&t=1761395
+[crawler converters]: https://www.phpbb.com/community/viewtopic.php?f=65&t=1761395
 
 [miniconda]: http://conda.pydata.org/miniconda.html
 [installation phpbb]: http://forums.phpbb-fr.com/documentation/installation/installation-de-phpbb3-a170-view.html

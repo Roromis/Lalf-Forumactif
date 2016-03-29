@@ -20,7 +20,7 @@
   <ul>{% for page in annexe_pages %}
     <li><a href="{{ page.url | prepend: site.baseurl }}">{{ page.title }}</a></li>
 	<ul>{% for title in page.toc %}
-	  <li><a href="{{ page.url | prepend: site.baseurl }}#{{ title | slugify }}">{{ title }}</a></li>{% endfor %}
+	  <li><a href="{{ page.url | prepend: site.baseurl }}#{{ title | slugify | remove: 'è' }}">{{ title }}</a></li>{% endfor %}
 	</ul>{% endfor %}
   </ul>
 </div>
