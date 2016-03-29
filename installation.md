@@ -31,11 +31,11 @@ mkdir ~/Lalf
 cd ~/Lalf
 ```
 
-Copiez-y le fichier `~/.local/share/doc/lalf/config.example.cfg` en le
+Copiez-y le fichier `~/.local/share/doc/lalf/config.cfg` en le
 renommant en `config.cfg` :
 
 ```bash
-cp ~/.local/share/doc/lalf/config.example.cfg ./config.cfg
+cp ~/.local/share/doc/lalf/config.cfg .
 ```
 
 Vous pouvez à présent passer à l'étape [Configuration][].
@@ -63,8 +63,7 @@ Quand la ligne `Proceed([y]/n)?` s'affiche, appuyez sur Entrée.
 
 Créez ensuite un nouveau dossier (par exemple `C:\Lalf`), et copiez-y
 le fichier
-`C:\Users\<votrenom>\Miniconda3\share\doc\lalf\config.example.cfg` en
-le renommant en `config.cfg`.
+`C:\Users\<votrenom>\Miniconda3\share\doc\lalf\config.cfg`.
 
 Téléchargez [GOCR][] (cliquez sur le lien *Windows binary*), et
 enregistrez l'exécutable dans le dossier précédemment créé. Renommez le
@@ -95,9 +94,7 @@ dépendances suivantes :
 - [Pillow][]
 - [GOCR][]
 
-Placez vous dans le dossier contenant le fichier `lalf.py`, et créez
-une copie `config.cfg` du fichier `config.example.cfg`.
-
-Dans la suite, utilisez la commande `./lalf.py` à la place de `lalf`.
+Placez vous dans le dossier contenant le fichier `lalf.py`. Dans la
+suite, utilisez la commande `./lalf.py` à la place de `lalf`.
 
 Vous pouvez à présent passer à l'étape [Configuration][].

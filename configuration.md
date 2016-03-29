@@ -85,8 +85,7 @@ Une fois l'exportation terminée, vous pouvez modifier l'option
 
 ### Autres options
 
-Les autres options sont documentées dans le fichier
-`config.example.cfg`, et n'ont normalement pas besoin d'être
-modifiées.
+Les autres options sont documentées dans le fichier `config.cfg`, et
+n'ont normalement pas besoin d'être modifiées.
 
 Vous pouvez à présent passer à l'étape [Exportation][].
