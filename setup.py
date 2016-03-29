@@ -31,7 +31,7 @@ setup(
     long_description=long_description,
     author='Roromis',
     author_email='lalf@openmailbox.org',
-    url='https://github.com/Roromis/Lalf-Forumactif',
+    url='https://roromis.github.io/Lalf-Forumactif/',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Console',
@@ -55,7 +55,7 @@ setup(
         ],
     },
     data_files=[('share/doc/lalf', [
-        'config.example.cfg',
+        'config.cfg',
         'LICENSE',
         'README.md'
     ])]

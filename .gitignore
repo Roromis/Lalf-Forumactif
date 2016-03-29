@@ -1,7 +1,6 @@
 *.pyc
-config.cfg
 debug.log
-save.pickle*
+save.pickle
 phpbb.sql
 usermails
 MANIFEST
