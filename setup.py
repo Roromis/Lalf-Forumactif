@@ -18,7 +18,7 @@
 
 from distutils.core import setup
 
-with open('README.rst') as f:
+with open('README.md') as f:
     long_description = f.read()
 
 with open("lalf/__version__.py") as f:
