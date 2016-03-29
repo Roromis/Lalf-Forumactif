@@ -1,0 +1,34 @@
+{% capture cache %}
+{% assign sorted_pages = (site.pages | sort: 'pos') %}
+{% assign documentation_pages = (site.pages | where: 'category','documentation' | sort: 'pos') %}
+{% assign annexe_pages = (site.pages | where: 'category','annexes' | sort: 'pos') %}
+{% assign index_pages = (site.pages | where: 'title','Lalf') %}
+{% assign index_page = index_pages.first %}
+{% endcapture %}{% assign cache = nil %}
+<div class="col-box post-toc">
+  <div class="col-box-title">Documentation</div>
+  <ul>{% for page in documentation_pages %}
+    <li><a href="{{ page.url | prepend: site.baseurl }}">{{ page.title }}</a></li>
+	<ul>{% for title in page.toc %}
+	  <li><a href="{{ page.url | prepend: site.baseurl }}#{{ title | slugify }}">{{ title }}</a></li>{% endfor %}
+	</ul>{% endfor %}
+  </ul>
+</div>
+
+<div class="col-box post-toc">
+  <div class="col-box-title">Annexes</div>
+  <ul>{% for page in annexe_pages %}
+    <li><a href="{{ page.url | prepend: site.baseurl }}">{{ page.title }}</a></li>
+	<ul>{% for title in page.toc %}
+	  <li><a href="{{ page.url | prepend: site.baseurl }}#{{ title | slugify }}">{{ title }}</a></li>{% endfor %}
+	</ul>{% endfor %}
+  </ul>
+</div>
+
+<div class="col-box post-toc">
+  <div class="col-box-title">À propos</div>
+  <ul>{% for title in index_page.toc %}
+	<li><a href="{{ index_page.url | prepend: site.baseurl }}#{{ title | slugify }}">{{ title }}</a></li>{% endfor %}
+	<li><a href="https://github.com/Roromis/Lalf-Forumactif/" title="Github">Source</a></li>
+  </ul>
+</div>

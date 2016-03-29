@@ -1,0 +1,15 @@
+# Site settings
+title: Lalf
+author: Roromis
+description: >
+  Le Lalf est un logiciel permettant de convertir les données d'un forum
+  hébergé par Forumactif et de les importer dans un forum phpBB.
+baseurl: /Lalf-Forumactif
+
+highlighter: rouge
+markdown: kramdown
+
+kramdown:
+#  input: GFM
+  auto_ids: true
+  syntax_highlighter: rouge
