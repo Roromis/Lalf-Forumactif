@@ -57,7 +57,6 @@ setup(
     data_files=[('share/doc/lalf', [
         'config.example.cfg',
         'LICENSE',
-        'README.rst',
-        'TODO.rst'
+        'README.md'
     ])]
 )
