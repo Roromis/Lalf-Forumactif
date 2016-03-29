@@ -35,7 +35,7 @@ votre forum.
 
 Il est possible (mais rare) que quelques messages soient mal convertis
 (phpBB ne supporte pas l'utilisation d'html dans les messages, la
-balise bbcode [hide] n'est pas supportée, et la balise [table] ne
+balise bbcode `[hide]` n'est pas supportée, et la balise `[table]` ne
 l'est que partiellement).
 
 Les profils des utilisateurs (avatars, signatures, ...) ne sont pour
