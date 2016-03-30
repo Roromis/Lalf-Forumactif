@@ -23,13 +23,6 @@ import logging
 from shutil import get_terminal_size
 import sys
 
-class DummyUI(object):
-    """
-    Interface displaying nothing, for debugging
-    """
-    def update(self):
-        return
-
 class Formatter(logging.Formatter):
     """
     Formatter displaying debug and info messages normally, and messages with
@@ -49,14 +42,14 @@ class UI(logging.Handler):
     """
     Handler displaying the logging messages and a progress bar
     """
-    def __init__(self):
+    def __init__(self, bb):
         logging.Handler.__init__(self, logging.INFO)
         self.setFormatter(Formatter())
 
         logger = logging.getLogger("lalf")
         logger.addHandler(self)
 
-        self.bb = None
+        self.bb = bb
 
         self.current = 0
         self.total = 0

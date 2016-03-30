@@ -140,3 +140,14 @@ def parse_admin_date(string):
             (int(date[2]), month(date[1]), int(date[0]), 0, 0, 0, 0, 0, 0))))
     except IndexError:
         return 0
+
+def parse_userlist_date(string):
+    """
+    Convert a date of the list of users to a timestamp
+    """
+    date = string.split("/")
+    try:
+        return int(time.mktime(time.struct_time(
+                (int(date[2]), int(date[1]), int(date[0]), 0, 0, 0, 0, 0, 0))))
+    except IndexError:
+        return 0

@@ -25,7 +25,7 @@ import os.path
 # Options defined in the config file
 STRINGS = ["url", "admin_name", "admin_password", "table_prefix", "gocr", "temporary_theme",
            "phpbb_url", "default_lang"]
-BOOLEANS = ["use_ocr", "export_smilies", "rewrite_links"]
+BOOLEANS = ["export_smilies", "rewrite_links"]
 
 class NoConfigurationFile(Exception):
     """

@@ -1,10 +1,15 @@
-*.pyc
+# Fichiers créés par pip
+dist/
+build/
+lalf.egg-info/
+MANIFEST
+
+# Fichiers créés par python
+__pycache__
+
+# Fichiers créés par le lalf
+images/
+usermails/
 debug.log
 save.pickle
 phpbb.sql
-usermails
-MANIFEST
-dist/
-build/
-images/
-usermails/

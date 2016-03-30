@@ -16,66 +16,77 @@
 # along with Lalf.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Module handling the exportation of users (DEPRECATED)
+Module handling the exportation of users
 
-This is the module that previously handled the exporation of
-users. Using it can (and probably will) prevent you from having access
-to the users list of your administration panel during 24h (thus
-preventing you from exporting them).
-
-The ocrusers module now handles the exportation, using this users
-module to create the entries in the sql file.
+In order to prevent the exportation of email addresses, Forumactif
+sometimes displays them as images instead of text. This module uses
+optical character recognition to export them anyway.
 """
 
+import os
 import re
+import subprocess
 import hashlib
-import urllib.parse
-import base64
 from binascii import crc32
 
+from PIL import Image
 from pyquery import PyQuery
 
 from lalf.node import Node
-from lalf.util import Counter, pages, random_string, parse_admin_date
+from lalf.util import Counter, pages, random_string, parse_admin_date, parse_userlist_date, clean_filename
 from lalf.phpbb import BOTS
 from lalf import htmltobbcode
-
-EMAIL = base64.b64decode(b'bGFsZkBvcGVubWFpbGJveC5vcmc=\n').decode("utf-8")
 
 PM_SUBJECT = "Félicitations !"
 PM_POST = """Félicitations !
 
-Vous avez terminé la première partie de l'importation. Suivez la
-partie Resynchronisation du README pour terminer la migration.
+Vous avez importé vos données avec succès. N'oubliez pas de
+terminer l'importation en suivant la <a class="postlink"
+href=https://roromis.github.io/Lalf-Forumactif/importation.html">documentation</a>.
 
-Une fois la migration terminée, n'hésitez pas à m'envoyer vos
-remerciements à l'adresse {}. Si vous le souhaitez, vous pouvez me
-supporter en m'offrant un café ;) , j'accepte les dons en
-bitcoins.""".format(EMAIL)
+J’ai consacré de nombreuses heures de mon temps libre à la création du
+Lalf. Bien que je n’en ai plus l’utilité, j’essaye de le maintenir
+malgré les multiples tentatives de la part de l’équipe de Forumactif
+de le rendre inutilisable.
+
+N’hésitez pas à me montrer votre reconnaissance une fois l'importation
+terminée en effectuant un <a class="postlink"
+href="https://roromis.github.io/Lalf-Forumactif/#dons">don</a>."""
+
+class GocrNotInstalled(Exception):
+    """
+    Exception raised when the gocr executable cannot be found
+    """
+    def __init__(self, ocrpath):
+        Exception.__init__(self)
+        self.ocrpath = ocrpath
+
+    def __str__(self):
+        return (
+            "L'exécutable de gocr ({exe}) n'existe pas. Vérifiez que gocr est bien installé et "
+            "que le chemin est correctement configuré dans le fichier config.cfg."
+        ).format(exe=self.ocrpath)
+
+def toolong(path):
+    """
+    Returns true if the email displayed in the image file is too long to
+    be displayed entirely
+    """
+    with Image.open(path) as image:
+        width, height = image.size
+
+        for i in range(width-6, width):
+            for j in range(0, height):
+                if image.getpixel((i, j)) != (255, 255, 255):
+                    return True
+
+    return False
 
 def email_hash(email):
     """
     Email hash function used by phpbb
     """
     return str(crc32(email.encode("utf-8"))&0xffffffff) + str(len(email))
-
-class MemberPageBlocked(Exception):
-    """
-    Exception raised when the member page is blocked
-    """
-
-    def __str__(self):
-        return (
-            "Vous avez été bloqué par forumactif. Attendez d'être débloqué avant de relancer le "
-            "script (environ 24h).\n\n"
-
-            "Pour savoir si vous êtes bloqué, essayez d'accéder à la deuxième page de la gestion "
-            "des utilisateurs dans votre panneau d'administration (Utilisateurs & Groupes > "
-            "Gestion des utilisateurs). Si vous êtes bloqué, vous allez être redirigé vers la page "
-            "d'accueil de votre panneau d'administration.\n\n"
-
-            "Pour ne pas avoir à attendre, utilisez l'otion use_ocr."
-        )
 
 def md5(string):
     """
@@ -84,6 +95,10 @@ def md5(string):
     return hashlib.md5(string.encode("utf8")).hexdigest()
 
 class NoUser(object):
+    """
+    Node used to represent an unexisting user in the database (for
+    example if no one has posted in a forum)
+    """
     def __init__(self):
         self.newid = 0
         self.name = ""
@@ -129,6 +144,7 @@ class AnonymousUser(Node):
             "user_pending" : "0"
         })
 
+
 class User(Node):
     """
     Node representing a user
@@ -140,25 +156,62 @@ class User(Node):
         posts (int): The number of posts
         date (int): subscription date (timestamp)
         lastvisit (int): date of last visit (timestamp)
-
         newid (int): The id of the user in the new forum
+        trust (int): level of trust in the email address
+            - 3 if the email has been verified to be correct
+            - 2 if the email could not be verified
+            - 1 if the email is probably incorrect
+            - 0 if the email could not be exported
+        img (str): The path of the image containing the email
     """
-    STATE_KEEP = ["oldid", "newid", "name", "mail", "posts", "date", "lastvisit", "colour", "groups"]
+    # Attributes to save
+    STATE_KEEP = ["oldid", "newid", "name", "mail", "posts", "date",
+                  "lastvisit", "colour", "groups", "trust", "img"]
 
-    def __init__(self, oldid, name, mail, posts, date, lastvisit, colour=""):
+    def __init__(self, oldid, name, posts, date, colour):
         Node.__init__(self)
         self.oldid = oldid
         self.name = name
-        self.mail = mail
         self.posts = posts
         self.date = date
-        self.lastvisit = lastvisit
         self.colour = colour
 
-        self.groups = []
         self.newid = None
+        self.groups = []
+        self.lastvisit = 0
+
+        self.mail = None
+        self.trust = 0
+        self.img = os.path.join("usermails", "{}.png".format(clean_filename(self.name)))
+
+    def validate_email(self):
+        """
+        Check if the email address is correct (using email research)
+        """
+        # Search for the users who have this email address
+        params = {
+            "part" : "users_groups",
+            "sub" : "users",
+            "username" : self.mail,
+            "submituser" : "Ok",
+            "sort" : "user_id",
+            "order" : "ASC"
+        }
+        response = self.session.get_admin("/admin/index.forum", params=params)
+
+        # Check if this user is one of them
+        document = PyQuery(response.text)
+        for element in document('tbody tr'):
+            e = PyQuery(element)
+
+            if e("td a").eq(0).text() == self.name:
+                return True
+
+        return False
 
     def _export_(self):
+        self.logger.info('Récupération du membre %d', self.oldid)
+
         if self.newid is None:
             if self.name == self.config["admin_name"]:
                 self.newid = 2
@@ -173,17 +226,94 @@ class User(Node):
 
             self.users[self.oldid] = self
 
-    def confirm_email(self):
+        # Search for this user in the administration panel
+        try:
+            encodedname = self.name.encode("latin1")
+        except UnicodeEncodeError:
+            encodedname = self.name
+
+        params = {
+            "part" : "users_groups",
+            "sub" : "users",
+            "username" : encodedname,
+            "submituser" : "Ok",
+            "sort" : "user_id",
+            "order" : "ASC"
+        }
+        response = self.session.get_admin("/admin/index.forum", params=params)
+
+        document = PyQuery(response.text)
+        for element in document('tbody tr'):
+            e = PyQuery(element)
+            if e("td a").eq(0).text() == self.name:
+                # The user was found
+                self.mail = e("td a").eq(1).text()
+
+                if self.mail == "" and e("td a").eq(0).is_('img'):
+                    # The administration panel has been blocked, the
+                    # email is replaced by an image, download it
+                    response = self.session.get(e("td a img").eq(0).attr("src"))
+                    with open(self.img, "wb") as fileobj:
+                        fileobj.write(response.content)
+
+                    # Use the OCR on it
+                    try:
+                        self.mail = subprocess.check_output([self.config["gocr"], "-i", self.img],
+                                                            universal_newlines=True).strip()
+                    except FileNotFoundError:
+                        raise GocrNotInstalled(self.config["gocr"])
+
+                    if toolong(self.img):
+                        # The image seems to be too small for the
+                        # email, the user will have to confirm it
+                        self.trust = 1
+                    elif self.validate_email():
+                        self.trust = 3
+                    else:
+                        # The email could not be validated, the user
+                        # will have to confirm
+                        self.trust = 2
+                else:
+                    # The administration panel hasn't been blocked
+                    # yet, the email is available
+                    self.trust = 3
+
+                self.lastvisit = parse_admin_date(e("td").eq(4).text())
+
+    def confirm_email(self, retries=2):
         """
         Let the user confirm the email address if it could not be
-        validated (for compatibility with OcrUser)
+        validated
         """
-        return
+        if self.trust == 2:
+            self.logger.info(
+                "L'adresse email de l'utilisateur %s est probablement valide "
+                "mais n'a pas pu être validée.)", self.name)
+            print((
+                "Veuillez saisir l'adresse email de l'utilisateur {} (laissez "
+                "vide si l'adresse {} est correcte) :").format(self.name, self.mail))
+            self.mail = input("> ").strip()
+        elif self.trust == 1:
+            self.logger.info(
+                "L'adresse email de l'utilisateur %s est probablement invalide.)", self.name)
+            print((
+                "Veuillez saisir l'adresse email de l'utilisateur {} (laissez "
+                "vide si l'adresse {} est correcte) :").format(self.name, self.mail))
+            self.mail = input("> ").strip()
+        elif self.trust == 0:
+            self.logger.info(
+                "L'adresse email de l'utilisateur %s n'a pas pu être exportée.", self.name)
+            if retries == 0:
+                print("Veuillez saisir l'adresse email de l'utilisateur {} :".format(self.name))
+                self.mail = input("> ").strip()
+            else:
+                self._export_(False)
+                self.confirm_email(retries-1)
 
     def _dump_(self, sqlfile):
         try:
             group_id = self.groups[0].newid
-        except:
+        except IndexError:
             group_id = 2
 
         if 5 in [group.newid for group in self.groups]:
@@ -213,7 +343,7 @@ class User(Node):
             "user_lang" : self.config["default_lang"],
             "user_style" : "1",
             #"user_rank" (TODO)
-            "user_colour" : self.colour
+            "user_colour" : self.colour,
             #"user_avatar" (TODO)
             #"user_sig" (TODO)
             #"user_from" (TODO)
@@ -305,6 +435,7 @@ class User(Node):
                 'folder_id'	   : 0
             })
 
+
 class UsersPage(Node):
     """
     Node representing a page of the list of users
@@ -319,42 +450,48 @@ class UsersPage(Node):
     def _export_(self):
         self.logger.debug('Récupération des membres (page %d)', self.page)
 
-        # Get the page of list of users from the administration panel
         params = {
-            "part" : "users_groups",
-            "sub" : "users",
-            "start" : self.page
+            "mode" : "joined",
+            "order" : "",
+            "start" : self.page,
+            "username" : ""
         }
-        response = self.session.get_admin("/admin/index.forum", params=params)
-
-        # Check if the page was blocked
-        query = urllib.parse.urlparse(response.url).query
-        query = urllib.parse.parse_qs(query)
-        if "start" not in query:
-            raise MemberPageBlocked()
-
+        response = self.session.get("/memberlist", params=params)
         document = PyQuery(response.text)
 
-        for element in document('tbody tr'):
+        table = PyQuery(document("form[action=\"/memberlist\"]").next_all("table.forumline").eq(0))
+
+        urlpattern = re.compile(r"/u(\d+)")
+        stylepattern = re.compile(r"color:#(.{6})")
+
+        first = True
+        for element in table.find("tr"):
+            # Skip first row
+            if first:
+                first = False
+                continue
+
             e = PyQuery(element)
-            oldid = int(re.search(r"&u=(\d+)&", e("td a").eq(0).attr("href")).group(1))
+            oldid = int(urlpattern.fullmatch(e("td a").eq(0).attr("href")).group(1))
 
-            self.logger.info('Récupération du membre %d', oldid)
-            name = e("td a").eq(0).text()
-            mail = e("td a").eq(1).text()
-            posts = int(e("td").eq(2).text())
+            name = e("td a").eq(1).text()
+            posts = int(e("td").eq(6).text())
 
-            date = parse_admin_date(e("td").eq(3).text())
-            lastvisit = parse_admin_date(e("td").eq(4).text())
+            date = parse_userlist_date(e("td").eq(4).text())
 
-            self.add_child(User(oldid, name, mail, posts, date, lastvisit))
+            match = stylepattern.fullmatch(e("td a").eq(1).children("span").attr("style") or "")
+            if match:
+                colour = match.group(1)
+            else:
+                colour = ""
+
+            self.add_child(User(oldid, name, posts, date, colour))
 
 @Node.expose(count="users_count")
 class Users(Node):
     """
-    Node used to export the users (DEPRECATED)
+    Node used to export the users
     """
-
     # Attributes to save
     STATE_KEEP = ["count"]
 
@@ -369,12 +506,7 @@ class Users(Node):
 
         self.add_child(AnonymousUser())
 
-        # Get the list of users from the administration panel
-        params = {
-            "part" : "users_groups",
-            "sub" : "users"
-        }
-        response = self.session.get_admin("/admin/index.forum", params=params)
+        response = self.session.get("/memberlist")
         for page in pages(response.text):
             self.add_child(UsersPage(page))
 

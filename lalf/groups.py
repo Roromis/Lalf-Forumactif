@@ -16,15 +16,7 @@
 # along with Lalf.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Module handling the exportation of users (DEPRECATED)
-
-This is the module that previously handled the exporation of
-users. Using it can (and probably will) prevent you from having access
-to the users list of your administration panel during 24h (thus
-preventing you from exporting them).
-
-The ocrusers module now handles the exportation, using this users
-module to create the entries in the sql file.
+Module handling the exportation of groups
 """
 
 import re

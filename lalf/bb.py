@@ -29,14 +29,15 @@ from lalf.node import Node
 from lalf.forums import Forums
 from lalf.groups import Groups
 from lalf.users import Users
-from lalf.ocrusers import OcrUsers
 from lalf.smilies import Smilies
 from lalf import phpbb
 from lalf.session import Session
 from lalf.linkrewriter import LinkRewriter
 from lalf.util import parse_date
-from lalf.ui import DummyUI
+from lalf.ui import UI
 from lalf.config import read as read_config
+
+CONFIG_PATH = "config.cfg"
 
 @Node.expose("config", "session", "ui", "smilies", "users", "forums",
              "announcements", self="root")
@@ -63,12 +64,12 @@ class BB(Node):
                   "site_name", "site_desc", "smilies", "users",
                   "forums", "announcements"]
 
-    def __init__(self, config, ui=None):
+    def __init__(self):
         Node.__init__(self)
 
-        self.config = config
+        self.config = read_config(CONFIG_PATH)
         self.session = Session(self.config)
-        self.ui = ui
+        self.ui = UI(self)
 
         # Statistics
         self.total_posts = 0
@@ -128,21 +129,15 @@ class BB(Node):
         # Add the children nodes, which respectively handle the
         # exportation of the smilies, the users and the message
         self.add_child(Smilies())
-
-        if self.config["use_ocr"]:
-            # Use Optical Character Recognition to get the users'
-            # emails
-            self.add_child(OcrUsers())
-        else:
-            self.add_child(Users())
-
+        self.add_child(Users())
         self.add_child(Groups())
-
         self.add_child(Forums())
 
     def _dump_(self, sqlfile):
         self.logger.info("Création du fichier phpbb.sql")
         self.dump_time = int(time.time())
+
+        sqlfile.prefix = self.config["table_prefix"]
 
         # Clean tables
         sqlfile.truncate("users")
@@ -190,6 +185,9 @@ class BB(Node):
 
     def __setstate__(self, state):
         Node.__setstate__(self, state)
+        self.config = read_config(CONFIG_PATH)
+        self.session = Session(self.config)
+        self.ui = UI(self)
         self.linkrewriter = LinkRewriter(self)
         # TODO : recompute current counts
 
@@ -217,27 +215,18 @@ class BB(Node):
             for post in topic.get_posts():
                 yield post
 
-def load(config=None, ui=None):
+def load():
     """
     Returns the BB node contained in the file save.pickle.
     """
     logger = logging.getLogger("lalf.bb.load")
 
-    if ui is None:
-        ui = DummyUI()
-
-    if config is None:
-        config = read_config("config.cfg")
-
     try:
         with open("save.pickle", "rb") as fileobj:
             bb = pickle.load(fileobj)
-            bb.config = config
-            bb.session = Session(config)
-            bb.ui = ui
     except FileNotFoundError:
-        bb = BB(config, ui)
+        bb = BB()
     except EOFError:
         logger.warning("Erreur lors du chargement de la sauvegarde. Réinitialisation.")
-        bb = BB(config, ui)
+        bb = BB()
     return bb
