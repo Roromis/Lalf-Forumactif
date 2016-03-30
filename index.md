@@ -37,7 +37,7 @@ malgré les multiples tentatives de la part de l'équipe de Forumactif
 de le rendre inutilisable.
 
 N'hésitez pas à me montrer votre reconnaissance en effectuant un
-don avec [paypal][don paypal].
+don avec [paypal][don paypal] ou en [bitcoin][don bitcoin].
 
 ## Remerciements
 

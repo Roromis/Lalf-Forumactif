@@ -14,6 +14,7 @@
 
 [rapport de bug]: https://github.com/Roromis/Lalf-Forumactif/issues "Rapport de bug"
 [don paypal]: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RXF2GPSMXNX2J "Don Paypal"
+[don bitcoin]: bitcoin:3A2xAccgrPunVBR3shHu1SJS6CbJ7qMyys "Don bitcoin"
 
 [python]: https://www.python.org/ "Python"
 [pyquery]: https://bitbucket.org/olauzanne/pyquery/	"PyQuery - jquery-like library for python"
