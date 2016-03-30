@@ -209,6 +209,36 @@ class User(Node):
 
         return False
 
+    def confirm_email(self, retries=2):
+        """
+        Let the user confirm the email address if it could not be
+        validated
+        """
+        if self.trust == 2:
+            self.logger.info(
+                "L'adresse email de l'utilisateur %s est probablement valide "
+                "mais n'a pas pu être validée.)", self.name)
+            print((
+                "Veuillez saisir l'adresse email de l'utilisateur {} (laissez "
+                "vide si l'adresse {} est correcte) :").format(self.name, self.mail))
+            self.mail = input("> ").strip()
+        elif self.trust == 1:
+            self.logger.info(
+                "L'adresse email de l'utilisateur %s est probablement invalide.)", self.name)
+            print((
+                "Veuillez saisir l'adresse email de l'utilisateur {} (laissez "
+                "vide si l'adresse {} est correcte) :").format(self.name, self.mail))
+            self.mail = input("> ").strip()
+        elif self.trust == 0:
+            self.logger.info(
+                "L'adresse email de l'utilisateur %s n'a pas pu être exportée.", self.name)
+            if retries == 0:
+                print("Veuillez saisir l'adresse email de l'utilisateur {} :".format(self.name))
+                self.mail = input("> ").strip()
+            else:
+                self._export_(False)
+                self.confirm_email(retries-1)
+
     def _export_(self):
         self.logger.info('Récupération du membre %d', self.oldid)
 
@@ -279,36 +309,6 @@ class User(Node):
                     self.trust = 3
 
                 self.lastvisit = parse_admin_date(e("td").eq(4).text())
-
-    def confirm_email(self, retries=2):
-        """
-        Let the user confirm the email address if it could not be
-        validated
-        """
-        if self.trust == 2:
-            self.logger.info(
-                "L'adresse email de l'utilisateur %s est probablement valide "
-                "mais n'a pas pu être validée.)", self.name)
-            print((
-                "Veuillez saisir l'adresse email de l'utilisateur {} (laissez "
-                "vide si l'adresse {} est correcte) :").format(self.name, self.mail))
-            self.mail = input("> ").strip()
-        elif self.trust == 1:
-            self.logger.info(
-                "L'adresse email de l'utilisateur %s est probablement invalide.)", self.name)
-            print((
-                "Veuillez saisir l'adresse email de l'utilisateur {} (laissez "
-                "vide si l'adresse {} est correcte) :").format(self.name, self.mail))
-            self.mail = input("> ").strip()
-        elif self.trust == 0:
-            self.logger.info(
-                "L'adresse email de l'utilisateur %s n'a pas pu être exportée.", self.name)
-            if retries == 0:
-                print("Veuillez saisir l'adresse email de l'utilisateur {} :".format(self.name))
-                self.mail = input("> ").strip()
-            else:
-                self._export_(False)
-                self.confirm_email(retries-1)
 
     def _dump_(self, sqlfile):
         try:

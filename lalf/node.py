@@ -92,38 +92,10 @@ class Node(object):
         else:
             return getattr(obj, attr)
 
-    def add_child(self, child):
-        """
-        Add a child to the node
-        """
-        self.children.append(child)
-
-        child.exposed_attrs.update(self.exposed_attrs)
-        for attr, name in self.__class__.EXPOSE:
-            child.exposed_attrs[name] = (self, attr)
-
-    def export(self):
-        """
-        Export the node and its children (this method calls the _export_
-        method and should not be overwritten)
-        """
-        if not self.exported:
-            self.children = []
-            self._export_()
-            self.exported = True
-
-        for child in self.children:
-            child.export()
-
-    def _export_(self):
-        """
-        Export the node.
-
-        This method should export the data of a node, and initialize its
-        children (and put them in the children list). It should not
-        export the children.
-        """
-        return
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.logger = logging.getLogger("{}.{}".format(self.__class__.__module__,
+                                                       self.__class__.__name__))
 
     def __getstate__(self):
         odict = self.__dict__.copy()
@@ -134,10 +106,50 @@ class Node(object):
 
         return odict
 
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.logger = logging.getLogger("{}.{}".format(self.__class__.__module__,
-                                                       self.__class__.__name__))
+    def add_child(self, child):
+        """
+        Add a child to the node
+        """
+        self.children.append(child)
+
+        child.exposed_attrs.update(self.exposed_attrs)
+        for attr, name in self.__class__.EXPOSE:
+            child.exposed_attrs[name] = (self, attr)
+
+    def remove_children(self):
+        """
+        Remove the children
+        """
+        self.children = []
+
+    def export_children(self):
+        """
+        Export the children of the node
+        """
+        for child in self.children:
+            child.export()
+
+    def export(self):
+        """
+        Export the node and its children (this method calls the _export_
+        method and should not be overwritten)
+        """
+        if not self.exported:
+            self.remove_children()
+            self._export_()
+            self.exported = True
+
+        self.export_children()
+
+    def _export_(self):
+        """
+        Export the node.
+
+        This method should export the data of a node, and initialize its
+        children (and put them in the children list). It should not
+        export the children.
+        """
+        return
 
     def dump(self, sqlfile):
         """

@@ -88,17 +88,6 @@ class Forum(Node):
         self.num_topics = None
         self.num_posts = None
 
-    def _export_(self):
-        self.logger.info('Récupération du forum %s', self.oldid)
-
-        response = self.session.get("/{}-a".format(self.oldid))
-
-        # Get subforums descriptions, number of topics, ...
-        self.forums_node.get_subforums_infos(response.text)
-
-        for page in pages(response.text):
-            self.add_child(ForumPage(page))
-
     def get_topics(self):
         """
         Returns the topics of this forum
@@ -109,11 +98,22 @@ class Forum(Node):
 
     def get_posts(self):
         """
-        Returns the topics of this forum
+        Returns the posts of this forum
         """
         for topic in self.get_topics():
             for post in topic.get_posts():
                 yield post
+
+    def _export_(self):
+        self.logger.info('Récupération du forum %s', self.oldid)
+
+        response = self.session.get("/{}-a".format(self.oldid))
+
+        # Get subforums descriptions, number of topics, ...
+        self.forums_node.get_subforums_infos(response.text)
+
+        for page in pages(response.text):
+            self.add_child(ForumPage(page))
 
     def _dump_(self, sqlfile):
         # Get parent id

@@ -55,6 +55,14 @@ class Topic(Node):
         self.locked = locked
         self.views = views
 
+    def get_posts(self):
+        """
+        Iterator on the posts of the topic
+        """
+        for page in self.children:
+            for post in page.children:
+                yield post
+
     def _export_(self):
         self.logger.info('Récupération du sujet %d', self.topic_id)
 
@@ -64,14 +72,6 @@ class Topic(Node):
         response = self.session.get("/t{}-a".format(self.topic_id))
         for page in pages(response.text):
             self.add_child(TopicPage(page))
-
-    def get_posts(self):
-        """
-        Iterator on the posts of the topic
-        """
-        for page in self.children:
-            for post in page.children:
-                yield post
 
     def _dump_(self, sqlfile):
         first_post = self.children[0].children[0]

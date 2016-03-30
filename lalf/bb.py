@@ -96,6 +96,38 @@ class BB(Node):
 
         self.linkrewriter = LinkRewriter(self)
 
+    def __setstate__(self, state):
+        Node.__setstate__(self, state)
+        self.config = read_config(CONFIG_PATH)
+        self.session = Session(self.config)
+        self.ui = UI(self)
+        self.linkrewriter = LinkRewriter(self)
+        # TODO : recompute current counts
+
+    def save(self):
+        """
+        Dump the tree representing the forum in a pickle file
+        """
+        self.logger.info("Sauvegarde de l'état courant.")
+        with open("save.pickle", "wb") as fileobj:
+            pickle.dump(self, fileobj, 2)
+
+    def get_topics(self):
+        """
+        Iterator on the topics of the forum
+        """
+        for forum in self.forums.values():
+            for topic in forum.get_topics():
+                yield topic
+
+    def get_posts(self):
+        """
+        Iterator on the posts of the forum
+        """
+        for topic in self.get_topics():
+            for post in topic.get_posts():
+                yield post
+
     def _export_(self):
         self.logger.info('Récupération des statistiques')
         response = self.session.get("/statistics")
@@ -182,38 +214,6 @@ class BB(Node):
         # Add bbcodes tags
         for bbcode in phpbb.BBCODES:
             sqlfile.insert("bbcodes", bbcode)
-
-    def __setstate__(self, state):
-        Node.__setstate__(self, state)
-        self.config = read_config(CONFIG_PATH)
-        self.session = Session(self.config)
-        self.ui = UI(self)
-        self.linkrewriter = LinkRewriter(self)
-        # TODO : recompute current counts
-
-    def save(self):
-        """
-        Dump the tree representing the forum in a pickle file
-        """
-        self.logger.info("Sauvegarde de l'état courant.")
-        with open("save.pickle", "wb") as fileobj:
-            pickle.dump(self, fileobj, 2)
-
-    def get_topics(self):
-        """
-        Iterator on the topics of the forum
-        """
-        for forum in self.forums.values():
-            for topic in forum.get_topics():
-                yield topic
-
-    def get_posts(self):
-        """
-        Iterator on the posts of the forum
-        """
-        for topic in self.get_topics():
-            for post in topic.get_posts():
-                yield post
 
 def load():
     """
