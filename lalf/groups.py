@@ -146,16 +146,20 @@ class Groups(Node):
             e = PyQuery(element)
 
             link = e("td a").eq(1)
-            oldid = int(urlpattern.fullmatch(link.attr("href")).group(1))
-            colour = stylepattern.fullmatch(link.attr("style")).group(1)
-            if colour == "000":
-                colour = ""
-            name = link.text()
-            description = e("td").eq(3).text()
-            leader_name = e("td").eq(4).text()
-            group_type = TYPES.get(e("td").eq(6).text(), 1)
 
-            if description == "Personal User":
-                break
+            urlmatch = urlpattern.fullmatch(link.attr("href"))
+            stylematch = stylepattern.fullmatch(link.attr("style"))
+            if urlmatch and stylematch:
+                oldid = int(urlmatch.group(1))
+                colour = stylematch.group(1)
+                if colour == "000":
+                    colour = ""
+                name = link.text()
+                description = e("td").eq(3).text()
+                leader_name = e("td").eq(4).text()
+                group_type = TYPES.get(e("td").eq(6).text(), 1)
 
-            self.add_child(Group(oldid, name, description, leader_name, colour, group_type))
+                if description == "Personal User":
+                    break
+
+                self.add_child(Group(oldid, name, description, leader_name, colour, group_type))
