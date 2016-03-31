@@ -147,12 +147,16 @@ class Groups(Node):
 
             link = e("td a").eq(1)
 
-            urlmatch = urlpattern.fullmatch(link.attr("href"))
-            stylematch = stylepattern.fullmatch(link.attr("style"))
-            if urlmatch and stylematch:
+            urlmatch = urlpattern.fullmatch(link.attr("href") or "")
+            if urlmatch:
                 oldid = int(urlmatch.group(1))
-                colour = stylematch.group(1)
-                if colour == "000":
+
+                stylematch = stylepattern.fullmatch(link.attr("style") or "")
+                if stylematch:
+                    colour = stylematch.group(1)
+                    if colour == "000":
+                        colour = ""
+                else:
                     colour = ""
                 name = link.text()
                 description = e("td").eq(3).text()
