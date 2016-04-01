@@ -279,7 +279,7 @@ class User(Node):
                 # The user was found
                 self.mail = e("td a").eq(1).text()
 
-                if self.mail == "" and e("td a").eq(0).is_('img'):
+                if self.mail == "" and e("td a").eq(0).children().is_('img'):
                     # The administration panel has been blocked, the
                     # email is replaced by an image, download it
                     response = self.session.get(e("td a img").eq(0).attr("src"))
