@@ -116,7 +116,7 @@ def parse_date(string):
     """
     Convert a date to a timestamp
     """
-    post_date, post_time = string.split(" - ")
+    post_date, post_time = re.split(" [-à] ", string)
     hours, minutes = post_time.split(":")
     post_time = datetime.time(int(hours), int(minutes))
 
