@@ -26,7 +26,7 @@ malgré les multiples tentatives de la part de l'équipe de Forumactif
 de le rendre inutilisable.
 
 N'hésitez pas à me montrer votre reconnaissance en effectuant un
-don avec [paypal][don paypal].
+don avec [paypal][don paypal] ou en [bitcoin][don bitcoin].
 
 ## Remerciements
 
@@ -46,6 +46,7 @@ et en s'inspirant des [Crawler Converters][] de nneonneo.
 
 [documentation]: https://roromis.github.io/Lalf-Forumactif/introduction
 [don paypal]: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RXF2GPSMXNX2J "Don Paypal"
+[don bitcoin]: bitcoin:3A2xAccgrPunVBR3shHu1SJS6CbJ7qMyys "Don bitcoin"
 
 [python]: https://www.python.org/ "Python"
 [pyquery]: https://bitbucket.org/olauzanne/pyquery/	"PyQuery - jquery-like library for python"
