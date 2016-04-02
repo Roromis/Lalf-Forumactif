@@ -108,7 +108,7 @@ class TopicPage(Node):
 
             match = pattern.fullmatch(e("td span.name strong a").eq(0).attr("href") or "")
             if match:
-                poster = self.users[int(match.group(1))]
+                poster = self.users.get(int(match.group(1)))
             else:
                 poster = AnonymousUser()
 

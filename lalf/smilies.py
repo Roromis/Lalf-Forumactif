@@ -25,7 +25,7 @@ from io import BytesIO
 from pyquery import PyQuery
 from PIL import Image
 
-from lalf.node import Node
+from lalf.node import Node, PaginatedNode
 from lalf.util import Counter, pages
 from lalf.phpbb import DEFAULT_SMILIES
 
@@ -105,12 +105,6 @@ class Smiley(Node):
                 self.smilies_count += 1
                 self.order = self.smilies_count.value
 
-        # Add the smiley to the smilies dictionnary
-        self.smilies[self.id] = {
-            "code" : self.code,
-            "emotion" : self.emotion,
-            "smiley_url" : self.smiley_url}
-
     def _dump_(self, sqlfile):
         sqlfile.insert("smilies", {
             "code" : self.code,
@@ -155,13 +149,12 @@ class SmiliesPage(Node):
 
                 if code in DEFAULT_SMILIES:
                     self.logger.debug("L'émoticone \"%s\" existe déjà dans phpbb.", code)
-                    self.smilies[smiley_id] = DEFAULT_SMILIES[code]
                     self.add_child(ExistingSmiley(smiley_id, DEFAULT_SMILIES[code]))
                 else:
                     self.add_child(Smiley(smiley_id, code, url, emotion))
 
 @Node.expose(count="smilies_count")
-class Smilies(Node):
+class Smilies(PaginatedNode):
     """
     Node used to export the smilies
 
@@ -173,7 +166,7 @@ class Smilies(Node):
     STATE_KEEP = ["order", "count"]
 
     def __init__(self):
-        Node.__init__(self, "smilies")
+        PaginatedNode.__init__(self, "smilies")
         self.count = Counter(len(DEFAULT_SMILIES))
 
     def _export_(self):

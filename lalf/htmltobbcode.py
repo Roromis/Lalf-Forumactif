@@ -306,21 +306,21 @@ class SmileyNode(Node):
 
     def get_bbcode(self, fileobj, bb, uid=""):
         try:
-            smiley = bb.smilies[self.smiley_id]
+            smiley = bb.smilies.get(self.smiley_id)
         except KeyError:
             return
 
-        if smiley["smiley_url"]:
+        if smiley.smiley_url:
             fileobj.write((
                 "  <!-- s{code} -->"
                 "<img src=\"{{SMILIES_PATH}}/{url}\" alt=\"{code}\" title=\"{title}\" />"
                 "<!-- s{code} -->  "
             ).format(
-                url=smiley["smiley_url"],
-                code=smiley["code"],
-                title=smiley["emotion"]))
+                url=smiley.smiley_url,
+                code=smiley.code,
+                title=smiley.emotion))
         else:
-            fileobj.write(" {code} ".format(**bb.smilies[self.smiley_id]))
+            fileobj.write(" {} ".format(smiley.code))
 
 class InlineTagNode(Node):
     """

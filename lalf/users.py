@@ -32,7 +32,7 @@ from binascii import crc32
 from PIL import Image
 from pyquery import PyQuery
 
-from lalf.node import Node
+from lalf.node import Node, PaginatedNode
 from lalf.util import Counter, pages, random_string, parse_admin_date, parse_userlist_date, clean_filename
 from lalf.phpbb import BOTS
 from lalf import htmltobbcode
@@ -252,8 +252,6 @@ class User(Node):
 
             self.root.current_users += 1
             self.ui.update()
-
-            self.users[self.id] = self
 
         # Search for this user in the administration panel
         try:
@@ -483,7 +481,7 @@ class UsersPage(Node):
             self.add_child(User(user_id, name, posts, date, colour))
 
 @Node.expose(count="users_count")
-class Users(Node):
+class Users(PaginatedNode):
     """
     Node used to export the users
     """
@@ -491,7 +489,7 @@ class Users(Node):
     STATE_KEEP = ["count"]
 
     def __init__(self):
-        Node.__init__(self, "users")
+        PaginatedNode.__init__(self, "users")
         # User ids start at one, the first one is the anonymous user,
         # and the second one is the administrator
         self.count = Counter(len(BOTS) + 3)

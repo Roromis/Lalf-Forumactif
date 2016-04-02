@@ -54,7 +54,7 @@ class GroupPage(Node):
             url = element.get("href", "")
             match = pattern.fullmatch(url)
             if match:
-                user = self.users[int(match.group(1))]
+                user = self.users.get(int(match.group(1)))
                 if self.group not in user.groups:
                     user.groups.append(self.group)
 

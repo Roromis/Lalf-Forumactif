@@ -61,8 +61,7 @@ class BB(Node):
     STATE_KEEP = ["total_posts", "total_topics", "total_users",
                   "current_posts", "current_topics", "current_users",
                   "startdate", "record_online_date", "record_online_users",
-                  "site_name", "site_desc", "smilies", "users",
-                  "forums", "announcements"]
+                  "site_name", "site_desc", "users", "forums", "announcements"]
 
     def __init__(self):
         Node.__init__(self, "root")
@@ -89,8 +88,6 @@ class BB(Node):
 
         self.dump_time = 0
 
-        self.smilies = {}
-        self.users = {}
         self.forums = {}
         self.announcements = []
 
@@ -103,6 +100,14 @@ class BB(Node):
         self.ui = UI(self)
         self.linkrewriter = LinkRewriter(self)
         # TODO : recompute current counts
+
+    @property
+    def smilies(self):
+        return self.get("smilies")
+
+    @property
+    def users(self):
+        return self.get("users")
 
     def save(self):
         """
@@ -198,14 +203,13 @@ class BB(Node):
 
         num_posts = sum(1 for _ in self.get_posts())
         num_topics = sum(1 for _ in self.get_topics())
-        num_users = sum(1 for _ in self.users)
+        num_users = sum(1 for _ in self.users.get_children())
 
         sqlfile.set_config("num_posts", num_posts)
         sqlfile.set_config("num_topics", num_topics)
         sqlfile.set_config("num_users", num_users)
 
-        newest_user_oldid = max(self.users)
-        newest_user = self.users[newest_user_oldid]
+        newest_user = self.users.last()
 
         sqlfile.set_config("newest_user_id", newest_user.newid)
         sqlfile.set_config("newest_username", newest_user.name)

@@ -111,6 +111,15 @@ class Node(object):
     def get_children(self):
         return self.children.values()
 
+    def get(self, child_id):
+        return self.children[child_id]
+
+    def first(self):
+        return next(iter(self.children.values()))
+
+    def last(self):
+        return next(reversed(self.children.values()))
+
     def add_child(self, child):
         """
         Add a child to the node
@@ -134,7 +143,7 @@ class Node(object):
         """
         Export the children of the node
         """
-        for child in self.get_children():
+        for child in self.children.values():
             child.export()
 
     def export(self):
@@ -165,8 +174,29 @@ class Node(object):
         """
         self._dump_(sqlfile)
 
-        for child in self.get_children():
+        for child in self.children.values():
             child.dump(sqlfile)
 
     def _dump_(self, sqlfile):
         return
+
+class PaginatedNode(Node):
+    def get_children(self):
+        for page in self.children.values():
+            for child in page.get_children():
+                yield child
+
+    def get(self, child_id):
+        for page in self.children.values():
+            try:
+                return page.get(child_id)
+            except KeyError:
+                pass
+        raise KeyError() # TODO : message
+
+    def first(self):
+        return next(iter(self.children.values())).first()
+
+    def last(self):
+        return next(reversed(self.children.values())).last()
+

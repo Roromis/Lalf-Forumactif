@@ -176,7 +176,7 @@ def user_handler(bb, match, params, fragment):
     """
     user_id = int(match.group(1))
     try:
-        user_id = bb.users[user_id].newid
+        user_id = bb.users.get(user_id).newid
     except KeyError:
         return None
 
