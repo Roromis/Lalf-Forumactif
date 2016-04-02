@@ -180,5 +180,5 @@ class Smilies(Node):
     def _dump_(self, sqlfile):
         # Add code for "8)"
         for smiley in DEFAULT_SMILIES.values():
-            if smiley["smiley_url"]:
+            if "smiley_width" in smiley:
                 sqlfile.insert("smilies", smiley)
