@@ -53,7 +53,7 @@ class Forum(Node):
     Node representing a forum
 
     Attrs:
-        oldid (str): The id in the old forum
+        id (str): The id in the old forum
         newid (int): The id in the new forum
         left_id (int): Left id of the forum in the nested set model (see
                        https://en.wikipedia.org/wiki/Nested_set_model)
@@ -65,19 +65,18 @@ class Forum(Node):
         icon (str): The url of the forum icon
     """
     # Attributes to save
-    STATE_KEEP = ["oldid", "newid", "parent", "title", "description", "icon", "left_id",
+    STATE_KEEP = ["newid", "parent", "title", "description", "icon", "left_id",
                   "right_id", "status", "num_topics", "num_posts", "forum_type"]
 
-    def __init__(self, oldid, newid, left_id, parent, title):
-        Node.__init__(self)
-        self.oldid = oldid
+    def __init__(self, forum_id, newid, left_id, parent, title):
+        Node.__init__(self, forum_id)
         self.newid = newid
         self.left_id = left_id
         self.right_id = 0
         self.parent = parent
         self.title = title.replace('"', '&quot;')
 
-        if self.oldid[0] == "f":
+        if self.id[0] == "f":
             self.forum_type = 1
         else:
             self.forum_type = 0
@@ -105,9 +104,9 @@ class Forum(Node):
                 yield post
 
     def _export_(self):
-        self.logger.info('Récupération du forum %s', self.oldid)
+        self.logger.info('Récupération du forum %s', self.id)
 
-        response = self.session.get("/{}-a".format(self.oldid))
+        response = self.session.get("/{}-a".format(self.id))
 
         # Get subforums descriptions, number of topics, ...
         self.forums_node.get_subforums_infos(response.text)
@@ -162,7 +161,7 @@ class Forum(Node):
             "forum_posts" : num_posts,
             "forum_topics" : num_topics,
             "forum_topics_real" : num_topics,
-            "forum_last_post_id" : last_post.post_id,
+            "forum_last_post_id" : last_post.id,
             "forum_last_poster_id" : last_post.poster.newid,
             "forum_last_post_subject" : last_post.title,
             "forum_last_post_time" : last_post.time,
@@ -178,6 +177,9 @@ class Forums(Node):
     """
     Node used to export the forums
     """
+    def __init__(self):
+        Node.__init__(self, "forums")
+
     def _export_(self):
         self.logger.info('Récupération des forums')
 
@@ -253,19 +255,19 @@ class Forums(Node):
             if not match:
                 continue
 
-            oldid = match.group(1)
+            forum_id = match.group(1)
 
             row = e.closest("tr")
 
             # Get forum status
             alt = row("td:nth-of-type(1) img").eq(0).attr("alt")
-            self.forums[oldid].status = 1 if "verrouillé" in alt else 0
+            self.forums[forum_id].status = 1 if "verrouillé" in alt else 0
 
             # Get subforum description
-            self.forums[oldid].description = row("td:nth-of-type(2) span").eq(1).html() or ""
+            self.forums[forum_id].description = row("td:nth-of-type(2) span").eq(1).html() or ""
 
             # TODO : Get subforum icon
 
             # Get subforum numbers of topics and posts
-            self.forums[oldid].num_topics = int(row("td").eq(2).text())
-            self.forums[oldid].num_posts = int(row("td").eq(3).text())
+            self.forums[forum_id].num_topics = int(row("td").eq(2).text())
+            self.forums[forum_id].num_posts = int(row("td").eq(3).text())

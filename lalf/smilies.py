@@ -34,8 +34,8 @@ class Smiley(Node):
     Node representing a smiley
 
     Attrs:
-        smiley_id (int): The index of the smiley in the original forum (used
-                         to convert html to bbcode)
+        id (int): The index of the smiley in the original forum (used
+                  to convert html to bbcode)
         code (str): The bbcode of the smiley
         url (str): The url of the image of the smiley
         emotion (str): An expression describing the smiley
@@ -47,12 +47,10 @@ class Smiley(Node):
     """
 
     # Attributes to save
-    STATE_KEEP = ["smiley_id", "code", "url", "emotion", "smiley_url", "width", "height", "order"]
+    STATE_KEEP = ["code", "url", "emotion", "smiley_url", "width", "height", "order"]
 
     def __init__(self, smiley_id, code, url, emotion):
-        Node.__init__(self)
-
-        self.smiley_id = smiley_id
+        Node.__init__(self, smiley_id)
         self.code = code
         self.url = url
         self.emotion = emotion
@@ -75,8 +73,7 @@ class Smiley(Node):
             response = self.session.get_image(self.url)
             try:
                 with Image.open(BytesIO(response.content)) as image:
-                    self.smiley_url = "icon_exported_{}.{}".format(self.smiley_id,
-                                                                   image.format.lower())
+                    self.smiley_url = "icon_exported_{}.{}".format(self.id, image.format.lower())
                     self.width = image.width
                     self.height = image.height
             except IOError:
@@ -90,7 +87,7 @@ class Smiley(Node):
                 self.order = self.smilies_count.value
 
         # Add the smiley to the smilies dictionnary
-        self.smilies[self.smiley_id] = {
+        self.smilies[self.id] = {
             "code" : self.code,
             "emotion" : self.emotion,
             "smiley_url" : self.smiley_url}
@@ -113,23 +110,18 @@ class SmiliesPage(Node):
     Attrs:
         page (int): The index of the first smiley on the page
     """
-
-    # Attributes to save
-    STATE_KEEP = ["page"]
-
-    def __init__(self, page):
-        Node.__init__(self)
-        self.page = page
+    def __init__(self, page_id):
+        Node.__init__(self, page_id)
 
     def _export_(self):
-        self.logger.debug('Récupération des émoticones (page %d)', self.page)
+        self.logger.debug('Récupération des émoticones (page %d)', self.id)
 
         # Get the page
         params = {
             "part" : "themes",
             "sub" : "avatars",
             "mode" : "smilies",
-            "start" : self.page
+            "start" : self.id
         }
         response = self.session.get_admin("/admin/index.forum", params=params)
         document = PyQuery(response.text)
@@ -162,7 +154,7 @@ class Smilies(Node):
     STATE_KEEP = ["order", "count"]
 
     def __init__(self):
-        Node.__init__(self)
+        Node.__init__(self, "smilies")
         self.count = Counter(len(DEFAULT_SMILIES))
 
     def _export_(self):

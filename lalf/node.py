@@ -33,7 +33,7 @@ class Node(object):
     """
 
     # Attributes to save
-    NODE_KEEP = ["children", "exposed_attrs", "exported"]
+    NODE_KEEP = ["id", "children", "exposed_attrs", "exported"]
     STATE_KEEP = []
 
     # Attributes exposed to the node's children (used by @Node.expose decorator)
@@ -72,10 +72,11 @@ class Node(object):
             return cls
         return decorator
 
-    def __init__(self):
+    def __init__(self, node_id):
         self.logger = logging.getLogger("{}.{}".format(self.__class__.__module__,
                                                        self.__class__.__name__))
 
+        self.id = node_id
         self.children = []
         self.exposed_attrs = {}
 

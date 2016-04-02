@@ -34,8 +34,8 @@ class Topic(Node):
     Node representing a topic
 
     Attrs:
-        topic_id (int): The id of the topic
-        topic_type (int): The type of the topic
+        id (int): The id of the topic
+        type (int): The type of the topic
             0 if it is a normal topic
             1 if it is a note
             2 if it is an announcement
@@ -45,12 +45,11 @@ class Topic(Node):
         views (int): The number of views of the topic
     """
     # Attributes to save
-    STATE_KEEP = ["topic_id", "topic_type", "title", "locked", "views"]
+    STATE_KEEP = ["type", "title", "locked", "views"]
 
     def __init__(self, topic_id, topic_type, title, locked, views):
-        Node.__init__(self)
-        self.topic_id = topic_id
-        self.topic_type = topic_type
+        Node.__init__(self, topic_id)
+        self.type = topic_type
         self.title = title
         self.locked = locked
         self.views = views
@@ -64,12 +63,12 @@ class Topic(Node):
                 yield post
 
     def _export_(self):
-        self.logger.info('Récupération du sujet %d', self.topic_id)
+        self.logger.info('Récupération du sujet %d', self.id)
 
         self.root.current_topics += 1
         self.ui.update()
 
-        response = self.session.get("/t{}-a".format(self.topic_id))
+        response = self.session.get("/t{}-a".format(self.id))
         for page in pages(response.text):
             self.add_child(TopicPage(page))
 
@@ -80,7 +79,7 @@ class Topic(Node):
         replies = sum(1 for _ in self.get_posts()) - 1
 
         sqlfile.insert("topics", {
-            "topic_id" : self.topic_id,
+            "topic_id" : self.id,
             "forum_id" : self.forum.newid,
             "topic_title" : self.title,
             "topic_poster" : first_post.poster.newid,
@@ -89,11 +88,11 @@ class Topic(Node):
             "topic_replies" : replies,
             "topic_replies_real" : replies,
             "topic_status" : self.locked,
-            "topic_type" : self.topic_type,
-            "topic_first_post_id" : first_post.post_id,
+            "topic_type" : self.type,
+            "topic_first_post_id" : first_post.id,
             "topic_first_poster_name" : first_post.poster.name,
             "topic_first_poster_colour" : first_post.poster.colour,
-            "topic_last_post_id" : last_post.post_id,
+            "topic_last_post_id" : last_post.id,
             "topic_last_poster_id" : last_post.poster.newid,
             "topic_last_poster_name" : last_post.poster.name,
             "topic_last_poster_colour" : last_post.poster.colour,
@@ -104,7 +103,7 @@ class Topic(Node):
         for user_id in set(post.poster.newid for post in self.get_posts()):
             sqlfile.insert("topics_posted", {
                 "user_id" : user_id,
-                "topic_id" : self.topic_id,
+                "topic_id" : self.id,
                 "topic_posted" : 1
             })
 
@@ -115,18 +114,14 @@ class ForumPage(Node):
     Attrs:
         page (int): The index of the first topic of the page
     """
-    # Attributes to save
-    STATE_KEEP = ["page"]
-
-    def __init__(self, page):
-        Node.__init__(self)
-        self.page = page
+    def __init__(self, page_id):
+        Node.__init__(self, page_id)
 
     def _export_(self):
-        self.logger.debug('Récupération du forum %s (page %d)', self.forum.oldid, self.page)
+        self.logger.debug('Récupération du forum %s (page %d)', self.forum.id, self.id)
 
         # Download the page
-        response = self.session.get("/{}p{}-a".format(self.forum.oldid, self.page))
+        response = self.session.get("/{}p{}-a".format(self.forum.id, self.id))
         document = PyQuery(response.text)
 
         # Get the topics

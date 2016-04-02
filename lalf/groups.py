@@ -37,18 +37,15 @@ class GroupPage(Node):
     Node representing a page of a group
     """
 
-    STATE_KEEP = ["page"]
-
-    def __init__(self, page):
-        Node.__init__(self)
-        self.page = page
+    def __init__(self, page_id):
+        Node.__init__(self, page_id)
 
     def _export_(self):
-        self.logger.debug('Récupération du groupe %d (page %d)', self.group.oldid, self.page)
+        self.logger.debug('Récupération du groupe %d (page %d)', self.group.id, self.id)
         params = {
-            "start": self.page
+            "start": self.id
         }
-        response = self.session.get(r"/g{}-a".format(self.group.oldid), params=params)
+        response = self.session.get(r"/g{}-a".format(self.group.id), params=params)
         document = PyQuery(response.text)
 
         pattern = re.compile(r"/u(\d+)")
@@ -67,11 +64,10 @@ class Group(Node):
     Node representing a group
     """
 
-    STATE_KEEP = ["oldid", "newid", "name", "description", "leader_name", "colour", "type"]
+    STATE_KEEP = ["newid", "name", "description", "leader_name", "colour", "type"]
 
-    def __init__(self, oldid, name, description, leader_name, colour, group_type):
-        Node.__init__(self)
-        self.oldid = oldid
+    def __init__(self, group_id, name, description, leader_name, colour, group_type):
+        Node.__init__(self, group_id)
         self.name = name
         self.description = description
         self.leader_name = leader_name
@@ -81,9 +77,9 @@ class Group(Node):
         self.newid = None
 
     def _export_(self):
-        self.logger.info('Récupération du groupe %d', self.oldid)
+        self.logger.info('Récupération du groupe %d', self.id)
 
-        if self.oldid == 1:
+        if self.id == 1:
             # Administrators group
             self.newid = 5
             self.leader_name = self.config["admin_name"]
@@ -91,7 +87,7 @@ class Group(Node):
             self.newid = self.groups_count.value
             self.groups_count += 1
 
-        response = self.session.get("/g{}-a".format(self.oldid))
+        response = self.session.get("/g{}-a".format(self.id))
         for page in pages(response.text):
             self.add_child(GroupPage(page))
 
@@ -117,7 +113,7 @@ class Groups(Node):
     STATE_KEEP = ["count"]
 
     def __init__(self):
-        Node.__init__(self)
+        Node.__init__(self, "groups")
         # There are 7 groups already defined in phpbb, start at 8
         self.count = Counter(8)
 
@@ -138,7 +134,7 @@ class Groups(Node):
             e = PyQuery(element)
 
             link = e("td a").eq(1)
-            oldid = int(urlpattern.fullmatch(link.attr("href")).group(1))
+            group_id = int(urlpattern.fullmatch(link.attr("href")).group(1))
             colour = stylepattern.fullmatch(link.attr("style")).group(1)
             if colour == "000":
                 colour = ""
@@ -150,4 +146,4 @@ class Groups(Node):
             if description == "Personal User":
                 break
 
-            self.add_child(Group(oldid, name, description, leader_name, colour, group_type))
+            self.add_child(Group(group_id, name, description, leader_name, colour, group_type))

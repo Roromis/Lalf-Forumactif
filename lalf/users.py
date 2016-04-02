@@ -112,7 +112,7 @@ class AnonymousUser(Node):
     STATE_KEEP = ["newid", "name", "colour"]
 
     def __init__(self):
-        Node.__init__(self)
+        Node.__init__(self, 0)
         self.newid = 1
         self.name = ""
         self.colour = ""
@@ -150,7 +150,7 @@ class User(Node):
     Node representing a user
 
     Attrs:
-        oldid (int): The id of the user in the old forum
+        id (int): The id of the user in the old forum
         name (str): His username
         mail (str): The email address of the user
         posts (int): The number of posts
@@ -165,12 +165,11 @@ class User(Node):
         img (str): The path of the image containing the email
     """
     # Attributes to save
-    STATE_KEEP = ["oldid", "newid", "name", "mail", "posts", "date",
+    STATE_KEEP = ["newid", "name", "mail", "posts", "date",
                   "lastvisit", "colour", "groups", "trust", "img"]
 
-    def __init__(self, oldid, name, posts, date, colour):
-        Node.__init__(self)
-        self.oldid = oldid
+    def __init__(self, user_id, name, posts, date, colour):
+        Node.__init__(self, user_id)
         self.name = name
         self.posts = posts
         self.date = date
@@ -240,7 +239,7 @@ class User(Node):
                 self.confirm_email(retries-1)
 
     def _export_(self):
-        self.logger.info('Récupération du membre %d', self.oldid)
+        self.logger.info('Récupération du membre %d', self.id)
 
         if self.newid is None:
             if self.name == self.config["admin_name"]:
@@ -254,7 +253,7 @@ class User(Node):
             self.root.current_users += 1
             self.ui.update()
 
-            self.users[self.oldid] = self
+            self.users[self.id] = self
 
         # Search for this user in the administration panel
         try:
@@ -440,20 +439,16 @@ class UsersPage(Node):
     """
     Node representing a page of the list of users
     """
-    # Attributes to keep
-    STATE_KEEP = ["page"]
-
-    def __init__(self, page):
-        Node.__init__(self)
-        self.page = page
+    def __init__(self, page_id):
+        Node.__init__(self, page_id)
 
     def _export_(self):
-        self.logger.debug('Récupération des membres (page %d)', self.page)
+        self.logger.debug('Récupération des membres (page %d)', self.id)
 
         params = {
             "mode" : "joined",
             "order" : "",
-            "start" : self.page,
+            "start" : self.id,
             "username" : ""
         }
         response = self.session.get("/memberlist", params=params)
@@ -472,7 +467,7 @@ class UsersPage(Node):
                 continue
 
             e = PyQuery(element)
-            oldid = int(urlpattern.fullmatch(e("td a").eq(0).attr("href")).group(1))
+            user_id = int(urlpattern.fullmatch(e("td a").eq(0).attr("href")).group(1))
 
             name = e("td a").eq(1).text()
             posts = int(e("td").eq(6).text())
@@ -485,7 +480,7 @@ class UsersPage(Node):
             else:
                 colour = ""
 
-            self.add_child(User(oldid, name, posts, date, colour))
+            self.add_child(User(user_id, name, posts, date, colour))
 
 @Node.expose(count="users_count")
 class Users(Node):
@@ -496,7 +491,7 @@ class Users(Node):
     STATE_KEEP = ["count"]
 
     def __init__(self):
-        Node.__init__(self)
+        Node.__init__(self, "users")
         # User ids start at one, the first one is the anonymous user,
         # and the second one is the administrator
         self.count = Counter(len(BOTS) + 3)

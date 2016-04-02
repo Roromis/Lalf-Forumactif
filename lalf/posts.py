@@ -29,8 +29,12 @@ from lalf.users import AnonymousUser, NoUser
 from lalf import htmltobbcode
 
 class NoPost(object):
+    """
+    Node used to represent an unexisting post in the database (for
+    example if there is no posts in a forum)
+    """    
     def __init__(self):
-        self.post_id = 0
+        self.id = 0
         self.text = ""
         self.title = ""
         self.time = 0
@@ -41,17 +45,16 @@ class Post(Node):
     Node representing a post
 
     Attrs:
-        post_id (int): The id of the post
+        id (int): The id of the post
         text (str): The content of the post in html
         title (str): The title of the post
         time (int): Time of the post (unix timestamp)
         poster (User): User who submitted the post
     """
-    STATE_KEEP = ["post_id", "text", "title", "time", "poster"]
+    STATE_KEEP = ["text", "title", "time", "poster"]
 
     def __init__(self, post_id, text, title, post_time, poster):
-        Node.__init__(self)
-        self.post_id = post_id
+        Node.__init__(self, post_id)
         self.text = text
         self.title = title
         self.time = post_time
@@ -62,14 +65,14 @@ class Post(Node):
         self.ui.update()
 
     def _dump_(self, sqlfile):
-        self.logger.debug("Exportation du message %d (sujet %d)", self.post_id, self.topic.topic_id)
+        self.logger.debug("Exportation du message %d (sujet %d)", self.id, self.topic.id)
         parser = htmltobbcode.Parser(self.root)
         parser.feed(self.text)
         post = parser.get_post()
 
         sqlfile.insert("posts", {
-            "post_id" : self.post_id,
-            "topic_id" : self.topic.topic_id,
+            "post_id" : self.id,
+            "topic_id" : self.topic.id,
             "forum_id" : self.forum.newid,
             "poster_id" : self.poster.newid,
             "post_time" : self.time,
@@ -83,18 +86,14 @@ class TopicPage(Node):
     """
     Node representing a page of a topic
     """
-    # Attributes to save
-    STATE_KEEP = ["page"]
-
-    def __init__(self, page):
-        Node.__init__(self)
-        self.page = page
+    def __init__(self, page_id):
+        Node.__init__(self, page_id)
 
     def _export_(self):
         self.logger.debug('Récupération des messages du sujet %d (page %d)',
-                          self.topic.topic_id, self.page)
+                          self.topic.id, self.id)
 
-        response = self.session.get("/t{}p{}-a".format(self.topic.topic_id, self.page))
+        response = self.session.get("/t{}p{}-a".format(self.topic.id, self.id))
         document = PyQuery(response.text)
 
         pattern = re.compile(r"/u(\d+)")
@@ -105,7 +104,7 @@ class TopicPage(Node):
             post_id = int(e("td span.name a").attr("name"))
 
             self.logger.info('Récupération du message %d (sujet %d)',
-                             post_id, self.topic.topic_id)
+                             post_id, self.topic.id)
 
             match = pattern.fullmatch(e("td span.name strong a").eq(0).attr("href") or "")
             if match:
@@ -116,7 +115,7 @@ class TopicPage(Node):
             post = e("td div.postbody div").eq(0).html()
             if not post:
                 self.logger.warning('Le message  %d (sujet %d) semble être vide',
-                                    post_id, self.topic.topic_id)
+                                    post_id, self.topic.id)
                 post = ""
 
             # Get title
