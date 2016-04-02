@@ -112,7 +112,7 @@ class AnonymousUser(Node):
     STATE_KEEP = ["newid", "name", "colour"]
 
     def __init__(self):
-        Node.__init__(self, 0)
+        Node.__init__(self, -1)
         self.newid = 1
         self.name = ""
         self.colour = ""

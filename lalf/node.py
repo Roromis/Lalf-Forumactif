@@ -20,14 +20,15 @@ Module defining the Node base class
 """
 
 import logging
+from collections import OrderedDict
 
 class Node(object):
     """
     Node of the forum.
 
     Attrs:
-       children (List[Node]): The children of the node
-       exposed_attrs (Dict(str, (Node, str))): Dictionnary containing the attributes
+       children (Dict[Any, Node]): The children of the node
+       exposed_attrs [Dict(str, (Node, str))]: Dictionnary containing the attributes
            exposed by parent nodes. This should not be used directly, see @Node.expose.
        exported (bool): True if the node has been exported
     """
@@ -77,7 +78,7 @@ class Node(object):
                                                        self.__class__.__name__))
 
         self.id = node_id
-        self.children = []
+        self.children = OrderedDict()
         self.exposed_attrs = {}
 
         self.exported = False
@@ -107,27 +108,33 @@ class Node(object):
 
         return odict
 
+    def get_children(self):
+        return self.children.values()
+
     def add_child(self, child):
         """
         Add a child to the node
         """
-        self.children.append(child)
+        if child.id in self.children:
+            self.logger.warning("Child of id %s already exists, skipping", str(child.id))
+        else:
+            self.children[child.id] = child
 
-        child.exposed_attrs.update(self.exposed_attrs)
-        for attr, name in self.__class__.EXPOSE:
-            child.exposed_attrs[name] = (self, attr)
+            child.exposed_attrs.update(self.exposed_attrs)
+            for attr, name in self.__class__.EXPOSE:
+                child.exposed_attrs[name] = (self, attr)
 
     def remove_children(self):
         """
         Remove the children
         """
-        self.children = []
+        self.children.clear()
 
     def export_children(self):
         """
         Export the children of the node
         """
-        for child in self.children:
+        for child in self.get_children():
             child.export()
 
     def export(self):
@@ -158,7 +165,7 @@ class Node(object):
         """
         self._dump_(sqlfile)
 
-        for child in self.children:
+        for child in self.get_children():
             child.dump(sqlfile)
 
     def _dump_(self, sqlfile):

@@ -58,8 +58,8 @@ class Topic(Node):
         """
         Iterator on the posts of the topic
         """
-        for page in self.children:
-            for post in page.children:
+        for page in self.get_children():
+            for post in page.get_children():
                 yield post
 
     def _export_(self):
@@ -73,10 +73,11 @@ class Topic(Node):
             self.add_child(TopicPage(page))
 
     def _dump_(self, sqlfile):
-        first_post = self.children[0].children[0]
-        last_post = self.children[-1].children[-1]
+        posts = list(self.get_posts())
+        first_post = posts[0]
+        last_post = posts[-1]
 
-        replies = sum(1 for _ in self.get_posts()) - 1
+        replies = len(posts) - 1
 
         sqlfile.insert("topics", {
             "topic_id" : self.id,

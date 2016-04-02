@@ -91,8 +91,8 @@ class Forum(Node):
         """
         Returns the topics of this forum
         """
-        for page in self.children:
-            for topic in page.children:
+        for page in self.get_children():
+            for topic in page.get_children():
                 yield topic
 
     def get_posts(self):
