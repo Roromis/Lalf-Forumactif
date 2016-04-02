@@ -29,6 +29,25 @@ from lalf.node import Node
 from lalf.util import Counter, pages
 from lalf.phpbb import DEFAULT_SMILIES
 
+class ExistingSmiley(Node):
+    """
+    Node representing a smiley that already exists in phpbb
+    """
+    # Attributes to save
+    STATE_KEEP = ["code", "emotion", "smiley_url", "infos"]
+
+    def __init__(self, smiley_id, infos):
+        Node.__init__(self, smiley_id)
+        self.infos = infos
+
+        self.code = infos["code"]
+        self.emotion = infos["emotion"]
+        self.smiley_url = infos["smiley_url"]
+
+    def _dump_(self, sqlfile):
+        if "smiley_width" in self.infos:
+            sqlfile.insert("smilies", self.infos)
+
 class Smiley(Node):
     """
     Node representing a smiley
@@ -137,9 +156,9 @@ class SmiliesPage(Node):
                 if code in DEFAULT_SMILIES:
                     self.logger.debug("L'émoticone \"%s\" existe déjà dans phpbb.", code)
                     self.smilies[smiley_id] = DEFAULT_SMILIES[code]
+                    self.add_child(ExistingSmiley(smiley_id, DEFAULT_SMILIES[code]))
                 else:
-                    child = Smiley(smiley_id, code, url, emotion)
-                    self.add_child(child)
+                    self.add_child(Smiley(smiley_id, code, url, emotion))
 
 @Node.expose(count="smilies_count")
 class Smilies(Node):
@@ -168,9 +187,3 @@ class Smilies(Node):
         response = self.session.get_admin("/admin/index.forum", params=params)
         for page in pages(response.text):
             self.add_child(SmiliesPage(page))
-
-    def _dump_(self, sqlfile):
-        # Add code for "8)"
-        for smiley in DEFAULT_SMILIES.values():
-            if smiley["smiley_url"]:
-                sqlfile.insert("smilies", smiley)
