@@ -33,7 +33,7 @@ from pyquery import PyQuery
 
 from lalf.users import Users, UsersPage, User, AnonymousUser
 
-from lalf.util import month, clean_filename, pages
+from lalf.util import month, clean_filename, pages, clean_url
 
 class GocrNotInstalled(Exception):
     """
@@ -241,7 +241,7 @@ class OcrUsersPage(UsersPage):
                 continue
 
             e = PyQuery(element)
-            oldid = int(urlpattern.fullmatch(e("td a").eq(0).attr("href")).group(1))
+            oldid = int(urlpattern.fullmatch(clean_url(e("td a").eq(0).attr("href"))).group(1))
 
             name = e("td a").eq(1).text()
             posts = int(e("td").eq(6).text())

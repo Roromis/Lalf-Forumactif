@@ -32,7 +32,7 @@ import re
 from pyquery import PyQuery
 
 from lalf.node import Node
-from lalf.util import pages, Counter
+from lalf.util import pages, Counter, clean_url
 
 TYPES = {
     "Groupe fermé": 1,
@@ -62,8 +62,7 @@ class GroupPage(Node):
         pattern = re.compile(r"/u(\d+)")
 
         for element in document.find("a"):
-            url = element.get("href", "")
-            match = pattern.fullmatch(url)
+            match = pattern.fullmatch(clean_url(element.get("href", "")))
             if match:
                 user = self.users[int(match.group(1))]
                 if self.group not in user.groups:

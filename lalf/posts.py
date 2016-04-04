@@ -24,7 +24,7 @@ import re
 from pyquery import PyQuery
 
 from lalf.node import Node
-from lalf.util import parse_date
+from lalf.util import parse_date, clean_url
 from lalf.users import AnonymousUser, NoUser
 from lalf import htmltobbcode
 
@@ -107,7 +107,7 @@ class TopicPage(Node):
             self.logger.info('Récupération du message %d (sujet %d)',
                              post_id, self.topic.topic_id)
 
-            match = pattern.fullmatch(e("td span.name strong a").eq(0).attr("href") or "")
+            match = pattern.fullmatch(clean_url(e("td span.name strong a").eq(0).attr("href") or ""))
             if match:
                 poster = self.users[int(match.group(1))]
             else:

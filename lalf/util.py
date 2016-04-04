@@ -24,6 +24,7 @@ import random
 from string import ascii_letters, digits
 import time
 import datetime
+from urllib.parse import urlparse, urlunparse
 
 MONTHS = {
     "Ja": 1,
@@ -140,3 +141,10 @@ def parse_admin_date(string):
             (int(date[2]), month(date[1]), int(date[0]), 0, 0, 0, 0, 0, 0))))
     except IndexError:
         return 0
+
+def clean_url(string):
+    """
+    Remove GET parameters and fragment from a url
+    """
+    url = urlparse(string)
+    return urlunparse((url.scheme, url.netloc, url.path, '', '', ''))

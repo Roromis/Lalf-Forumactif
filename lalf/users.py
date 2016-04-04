@@ -36,7 +36,7 @@ from binascii import crc32
 from pyquery import PyQuery
 
 from lalf.node import Node
-from lalf.util import Counter, pages, random_string, parse_admin_date
+from lalf.util import Counter, pages, random_string, parse_admin_date, clean_url
 from lalf.phpbb import BOTS
 from lalf import htmltobbcode
 
@@ -337,7 +337,7 @@ class UsersPage(Node):
 
         for element in document('tbody tr'):
             e = PyQuery(element)
-            oldid = int(re.search(r"&u=(\d+)&", e("td a").eq(0).attr("href")).group(1))
+            oldid = int(re.search(r"&u=(\d+)&", clean_url(e("td a").eq(0).attr("href"))).group(1))
 
             self.logger.info('Récupération du membre %d', oldid)
             name = e("td a").eq(0).text()
