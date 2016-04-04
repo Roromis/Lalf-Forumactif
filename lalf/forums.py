@@ -26,7 +26,7 @@ from pyquery import PyQuery
 from lalf.node import Node
 from lalf.topics import ForumPage
 from lalf.posts import NoPost
-from lalf.util import pages
+from lalf.util import pages, Counter
 from lalf import htmltobbcode
 
 def default_forum_acl(forumid):
@@ -68,11 +68,8 @@ class Forum(Node):
     STATE_KEEP = ["newid", "parent", "title", "description", "icon", "left_id",
                   "right_id", "status", "num_topics", "num_posts", "forum_type"]
 
-    def __init__(self, forum_id, newid, left_id, parent, title):
+    def __init__(self, forum_id, parent, title, num_topics, num_posts):
         Node.__init__(self, forum_id)
-        self.newid = newid
-        self.left_id = left_id
-        self.right_id = 0
         self.parent = parent
         self.title = title.replace('"', '&quot;')
 
@@ -81,11 +78,15 @@ class Forum(Node):
         else:
             self.forum_type = 0
 
+        self.num_topics = num_topics
+        self.num_posts = num_posts
+
+        self.newid = None
+        self.left_id = None
+        self.right_id = None
         self.description = ""
         self.icon = ""
         self.status = 0
-        self.num_topics = None
-        self.num_posts = None
 
     def get_topics(self):
         """
@@ -106,6 +107,9 @@ class Forum(Node):
     def _export_(self):
         self.logger.info('Récupération du forum %s', self.id)
 
+        self.forums.count += 1
+        self.newid = self.forums.count.value
+
         response = self.session.get("/{}-a".format(self.id))
 
         # Get subforums descriptions, number of topics, ...
@@ -115,17 +119,11 @@ class Forum(Node):
             self.add_child(ForumPage(page))
 
     def _dump_(self, sqlfile):
-        # Get parent id
-        if self.parent:
-            parent_id = self.parent.newid
-        else:
-            parent_id = 0
-
         # Get forum_parents field
         entry = "i:{};a:2:{{i:0;s:{}:\"{}\";i:1;i:{};}}"
         entries = []
         parent = self.parent
-        while parent:
+        while parent.newid > 0:
             title = parent.title
             entries.append(entry.format(
                 parent.newid, len(parent.title), title, parent.forum_type))
@@ -147,7 +145,7 @@ class Forum(Node):
 
         sqlfile.insert("forums", {
             "forum_id" : self.newid,
-            "parent_id" : parent_id,
+            "parent_id" : self.parent.newid,
             "left_id" : self.left_id,
             "right_id" : self.right_id,
             "forum_parents" : parents,
@@ -172,68 +170,71 @@ class Forum(Node):
         for acl in default_forum_acl(self.newid):
             sqlfile.insert("acl_groups", acl)
 
+class ForumRoot(Node):
+    STATE_KEEP = ["id", "newid", "left_id", "right_id"]
+    def __init__(self):
+        Node.__init__(self, 0)
+        self.newid = 0
+        self.left_id = 0
+        self.right_id = 1
+
 class Forums(Node):
     """
     Node used to export the forums
     """
+
+    STATE_KEEP = ["count"]
+
     def __init__(self):
         Node.__init__(self, "forums")
+        self.count = Counter(0)
+
+    def _export_children(self, element, parent=None):
+        """
+        Export the forums shown in an html element
+        """
+        idpattern = re.compile("([cf]\d+)_open")
+
+        for e in element.children("div"):
+            match = idpattern.fullmatch(e.get("id"))
+            if match:
+                forum_id = match.group(1)
+
+                child_element = PyQuery(e)
+                row = child_element.children("table").eq(0).find("tr").eq(0)
+
+                # Get title, number of topics and number of posts
+                title = row.children("td").eq(1).text().strip()
+
+                num_topics = int(row.children("td").eq(2).text())
+                num_posts = int(row.children("td").eq(3).text())
+
+                # Add forum to children
+                forum = Forum(forum_id, parent, title, num_topics, num_posts)
+                self.add_child(forum)
+
+                # Export children and set left and right ids
+                forum.left_id = parent.right_id
+                forum.right_id = forum.left_id + 1
+                self._export_children(child_element, forum)
+                parent.right_id = forum.right_id + 1
 
     def _export_(self):
         self.logger.info('Récupération des forums')
 
-        # Get the first forum
-        # TODO : what if it does not exist?
-        response = self.session.get("/a-f1/")
+        # Get the page of the administration panel listing the forums
+        params = {
+            "part" : "general",
+            "sub" : "general",
+            "mode" : "forum"
+        }
+        response = self.session.get_admin("/admin/index.forum", params=params)
         document = PyQuery(response.text)
 
-        # Get the forums hierarchy by parsing the content of the jumpbox
+        current_element = document("#root_open").eq(0)
+        self._export_children(current_element, ForumRoot())
 
-        # List containing at the index i the last forum met at depth i
-        depths = []
-
-        # The id of the next forum (ids have to be changed because
-        # categories and forums may have the same id in forumactif,
-        # but not in phpbb)
-        newid = 1
-
-        # Variable used to determine the left and right ids of the
-        # forums in the nested set model which is used internally by
-        # phpbb (see https://en.wikipedia.org/wiki/Nested_set_model)
-        nested_id = 1
-
-        for element in document.find("select option"):
-            forum_id = element.get("value", "-1")
-            if forum_id != "-1":
-                match = re.search('(((\\||\xa0)(\xa0\xa0\xa0))*)\\|--([^<]+)', element.text)
-                if match is None:
-                    continue
-
-                title = match.group(5)
-                depth = len(re.findall('(\\||\xa0)\xa0\xa0\xa0', element.text))
-
-                if depth <= 0:
-                    parent = None
-                else:
-                    parent = depths[depth-1]
-
-                for _ in range(depth, len(depths)):
-                    forum = depths.pop()
-                    forum.right_id = nested_id
-                    nested_id += 1
-
-                forum = Forum(forum_id, newid, nested_id, parent, title)
-                depths.append(forum)
-                self.add_child(forum)
-                newid += 1
-                nested_id += 1
-
-        for _ in range(0, len(depths)):
-            forum = depths.pop()
-            forum.right_id = nested_id
-            nested_id += 1
-
-        # Get subforums descriptions, number of topics, ...
+        # Get subforums descriptions
         response = self.session.get("/forum")
         self.get_subforums_infos(response.text)
 
@@ -264,9 +265,3 @@ class Forums(Node):
 
             # Get subforum description
             forum.description = row("td:nth-of-type(2) span").eq(1).html() or ""
-
-            # TODO : Get subforum icon
-
-            # Get subforum numbers of topics and posts
-            forum.num_topics = int(row("td").eq(2).text())
-            forum.num_posts = int(row("td").eq(3).text())
