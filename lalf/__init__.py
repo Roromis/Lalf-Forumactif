@@ -21,6 +21,9 @@ import sys
 
 from lalf.bb import load
 from lalf.sql import SqlFile
+from lalf.config import read as read_config
+from lalf.ui import UI
+from lalf import session
 from lalf.__version__ import __version__
 
 def main():

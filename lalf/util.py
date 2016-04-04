@@ -24,6 +24,7 @@ import random
 from string import ascii_letters, digits
 import time
 import datetime
+from urllib.parse import urlparse, urlunparse
 
 MONTHS = {
     "Ja": 1,
@@ -116,7 +117,7 @@ def parse_date(string):
     """
     Convert a date to a timestamp
     """
-    post_date, post_time = string.split(" - ")
+    post_date, post_time = re.split(" [-à] ", string)
     hours, minutes = post_time.split(":")
     post_time = datetime.time(int(hours), int(minutes))
 
@@ -151,3 +152,10 @@ def parse_userlist_date(string):
                 (int(date[2]), int(date[1]), int(date[0]), 0, 0, 0, 0, 0, 0))))
     except IndexError:
         return 0
+
+def clean_url(string):
+    """
+    Remove GET parameters and fragment from a url
+    """
+    url = urlparse(string)
+    return urlunparse((url.scheme, url.netloc, url.path, '', '', ''))

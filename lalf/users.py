@@ -33,7 +33,7 @@ from PIL import Image
 from pyquery import PyQuery
 
 from lalf.node import Node, PaginatedNode
-from lalf.util import Counter, pages, random_string, parse_admin_date, parse_userlist_date, clean_filename
+from lalf.util import Counter, pages, random_string, parse_admin_date, parse_userlist_date, clean_filename, clean_url
 from lalf.phpbb import BOTS
 from lalf import htmltobbcode
 
@@ -143,7 +143,6 @@ class AnonymousUser(Node):
             "user_id" : "1",
             "user_pending" : "0"
         })
-
 
 class User(Node):
     """
@@ -432,7 +431,6 @@ class User(Node):
                 'folder_id'	   : 0
             })
 
-
 class UsersPage(Node):
     """
     Node representing a page of the list of users
@@ -465,7 +463,7 @@ class UsersPage(Node):
                 continue
 
             e = PyQuery(element)
-            user_id = int(urlpattern.fullmatch(e("td a").eq(0).attr("href")).group(1))
+            user_id = int(urlpattern.fullmatch(clean_url(e("td a").eq(0).attr("href"))).group(1))
 
             name = e("td a").eq(1).text()
             posts = int(e("td").eq(6).text())

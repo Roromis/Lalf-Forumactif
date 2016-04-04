@@ -24,7 +24,7 @@ import re
 from pyquery import PyQuery
 
 from lalf.node import Node
-from lalf.util import pages, Counter
+from lalf.util import pages, Counter, clean_url
 
 TYPES = {
     "Groupe fermé": 1,
@@ -51,8 +51,7 @@ class GroupPage(Node):
         pattern = re.compile(r"/u(\d+)")
 
         for element in document.find("a"):
-            url = element.get("href", "")
-            match = pattern.fullmatch(url)
+            match = pattern.fullmatch(clean_url(element.get("href", "")))
             if match:
                 user = self.users.get(int(match.group(1)))
                 if self.group not in user.groups:
@@ -134,16 +133,24 @@ class Groups(Node):
             e = PyQuery(element)
 
             link = e("td a").eq(1)
-            group_id = int(urlpattern.fullmatch(link.attr("href")).group(1))
-            colour = stylepattern.fullmatch(link.attr("style")).group(1)
-            if colour == "000":
-                colour = ""
-            name = link.text()
-            description = e("td").eq(3).text()
-            leader_name = e("td").eq(4).text()
-            group_type = TYPES.get(e("td").eq(6).text(), 1)
 
-            if description == "Personal User":
-                break
+            urlmatch = urlpattern.fullmatch(link.attr("href") or "")
+            if urlmatch:
+                group_id = int(urlmatch.group(1))
+
+                stylematch = stylepattern.fullmatch(link.attr("style") or "")
+                if stylematch:
+                    colour = stylematch.group(1)
+                    if colour == "000":
+                        colour = ""
+                else:
+                    colour = ""
+                name = link.text()
+                description = e("td").eq(3).text()
+                leader_name = e("td").eq(4).text()
+                group_type = TYPES.get(e("td").eq(6).text(), 1)
+
+                if description == "Personal User":
+                    break
 
             self.add_child(Group(group_id, name, description, leader_name, colour, group_type))

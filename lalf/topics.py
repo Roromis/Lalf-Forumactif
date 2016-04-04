@@ -20,7 +20,7 @@ from pyquery import PyQuery
 
 from lalf.node import Node
 from lalf.posts import TopicPage
-from lalf.util import pages
+from lalf.util import pages, clean_url
 
 TOPIC_TYPES = {
     'Post-it:': 1,
@@ -129,7 +129,7 @@ class ForumPage(Node):
         for element in document.find('div.topictitle'):
             e = PyQuery(element)
 
-            topic_id = int(re.search(r"/t(\d+)-.*", e("a").attr("href")).group(1))
+            topic_id = int(re.search(r"/t(\d+)-.*", clean_url(e("a").attr("href"))).group(1))
             f = e.parents().eq(-2)
             locked = 1 if ("verrouillé" in f("td img").eq(0).attr("alt")) else 0
             views = int(f("td").eq(5).text())

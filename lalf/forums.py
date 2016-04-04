@@ -26,7 +26,7 @@ from pyquery import PyQuery
 from lalf.node import Node
 from lalf.topics import ForumPage, Topic, TOPIC_TYPES
 from lalf.posts import NoPost
-from lalf.util import pages, Counter
+from lalf.util import pages, Counter, clean_url
 from lalf import htmltobbcode
 
 def default_forum_acl(forumid):
@@ -307,7 +307,7 @@ class Forums(Node):
         for element in document("a.forumlink"):
             e = PyQuery(element)
 
-            match = idpattern.fullmatch(e.attr("href"))
+            match = idpattern.fullmatch(clean_url(e.attr("href")))
             if not match:
                 continue
 
