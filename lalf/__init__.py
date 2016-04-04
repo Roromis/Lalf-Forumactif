@@ -44,6 +44,9 @@ def main():
 
     try:
         bb.export()
+
+        for user in bb.users.values():
+            user.confirm_email()
     except BaseException as e:
         bb.save()
         logger.exception(
@@ -52,9 +55,6 @@ def main():
             "de bug à l'adresse suivante SI ELLE N'A PAS ENCORE ÉTÉ SIGNALÉE :\n"
             "https://github.com/Roromis/Lalf-Forumactif/issues", repr(e))
         sys.exit()
-
-    for user in bb.users.values():
-        user.confirm_email()
 
     bb.save()
 

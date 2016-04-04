@@ -235,7 +235,7 @@ class User(Node):
                 print("Veuillez saisir l'adresse email de l'utilisateur {} :".format(self.name))
                 self.mail = input("> ").strip()
             else:
-                self._export_(False)
+                self._export_()
                 self.confirm_email(retries-1)
 
     def _export_(self):
