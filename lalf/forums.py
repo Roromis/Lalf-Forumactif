@@ -109,7 +109,7 @@ class Forum(Node):
         response = self.session.get("/{}-a".format(self.id))
 
         # Get subforums descriptions, number of topics, ...
-        self.forums_node.get_subforums_infos(response.text)
+        self.forums.get_subforums_infos(response.text)
 
         for page in pages(response.text):
             self.add_child(ForumPage(page))
@@ -172,7 +172,6 @@ class Forum(Node):
         for acl in default_forum_acl(self.newid):
             sqlfile.insert("acl_groups", acl)
 
-@Node.expose(self="forums_node")
 class Forums(Node):
     """
     Node used to export the forums
@@ -224,7 +223,6 @@ class Forums(Node):
                     nested_id += 1
 
                 forum = Forum(forum_id, newid, nested_id, parent, title)
-                self.forums[forum_id] = forum
                 depths.append(forum)
                 self.add_child(forum)
                 newid += 1
@@ -256,18 +254,19 @@ class Forums(Node):
                 continue
 
             forum_id = match.group(1)
+            forum = self.get(forum_id)
 
             row = e.closest("tr")
 
             # Get forum status
             alt = row("td:nth-of-type(1) img").eq(0).attr("alt")
-            self.forums[forum_id].status = 1 if "verrouillé" in alt else 0
+            forum.status = 1 if "verrouillé" in alt else 0
 
             # Get subforum description
-            self.forums[forum_id].description = row("td:nth-of-type(2) span").eq(1).html() or ""
+            forum.description = row("td:nth-of-type(2) span").eq(1).html() or ""
 
             # TODO : Get subforum icon
 
             # Get subforum numbers of topics and posts
-            self.forums[forum_id].num_topics = int(row("td").eq(2).text())
-            self.forums[forum_id].num_posts = int(row("td").eq(3).text())
+            forum.num_topics = int(row("td").eq(2).text())
+            forum.num_posts = int(row("td").eq(3).text())

@@ -114,7 +114,7 @@ def forum_handler(bb, match, params, fragment):
     """
     forum_id = match.group(1)
     try:
-        forum_id = bb.forums[forum_id].newid
+        forum_id = bb.forums.get(forum_id).newid
     except KeyError:
         return None
 

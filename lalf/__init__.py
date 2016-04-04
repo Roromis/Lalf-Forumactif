@@ -45,7 +45,7 @@ def main():
     try:
         bb.export()
 
-        for user in bb.users.values():
+        for user in bb.users.get_children():
             user.confirm_email()
     except BaseException as e:
         bb.save()

@@ -61,7 +61,7 @@ class BB(Node):
     STATE_KEEP = ["total_posts", "total_topics", "total_users",
                   "current_posts", "current_topics", "current_users",
                   "startdate", "record_online_date", "record_online_users",
-                  "site_name", "site_desc", "users", "forums", "announcements"]
+                  "site_name", "site_desc", "forums", "announcements"]
 
     def __init__(self):
         Node.__init__(self, "root")
@@ -88,7 +88,6 @@ class BB(Node):
 
         self.dump_time = 0
 
-        self.forums = {}
         self.announcements = []
 
         self.linkrewriter = LinkRewriter(self)
@@ -109,6 +108,10 @@ class BB(Node):
     def users(self):
         return self.get("users")
 
+    @property
+    def forums(self):
+        return self.get("forums")
+
     def save(self):
         """
         Dump the tree representing the forum in a pickle file
@@ -121,7 +124,7 @@ class BB(Node):
         """
         Iterator on the topics of the forum
         """
-        for forum in self.forums.values():
+        for forum in self.forums.get_children():
             for topic in forum.get_topics():
                 yield topic
 
