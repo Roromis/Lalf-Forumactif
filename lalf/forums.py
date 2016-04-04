@@ -24,7 +24,7 @@ import re
 from pyquery import PyQuery
 
 from lalf.node import Node
-from lalf.topics import ForumPage
+from lalf.topics import ForumPage, Topic, TOPIC_TYPES
 from lalf.posts import NoPost
 from lalf.util import pages, Counter
 from lalf import htmltobbcode
@@ -66,7 +66,7 @@ class Forum(Node):
     """
     # Attributes to save
     STATE_KEEP = ["newid", "parent", "title", "description", "icon", "left_id",
-                  "right_id", "status", "num_topics", "num_posts", "forum_type"]
+                  "right_id", "status", "num_topics", "num_posts", "type"]
 
     def __init__(self, forum_id, parent, title, num_topics, num_posts):
         Node.__init__(self, forum_id)
@@ -74,9 +74,9 @@ class Forum(Node):
         self.title = title.replace('"', '&quot;')
 
         if self.id[0] == "f":
-            self.forum_type = 1
+            self.type = 1
         else:
-            self.forum_type = 0
+            self.type = 0
 
         self.num_topics = num_topics
         self.num_posts = num_posts
@@ -126,7 +126,7 @@ class Forum(Node):
         while parent.newid > 0:
             title = parent.title
             entries.append(entry.format(
-                parent.newid, len(parent.title), title, parent.forum_type))
+                parent.newid, len(parent.title), title, parent.type))
             parent = parent.parent
 
         parents = "a:{}:{{{}}}".format(len(entries), "".join(reversed(entries)))
@@ -153,7 +153,7 @@ class Forum(Node):
             "forum_desc" : description.text,
             "forum_desc_bitfield" : description.bitfield,
             "forum_desc_uid" : description.uid,
-            "forum_type" : self.forum_type,
+            "forum_type" : self.type,
             "forum_image" : self.icon,
             "forum_status" : self.status,
             "forum_posts" : num_posts,
@@ -178,16 +178,69 @@ class ForumRoot(Node):
         self.left_id = 0
         self.right_id = 1
 
+@Node.expose("forum")
+class Announcements(Node):
+    """
+    Node used to export the global announcements
+
+    Attrs:
+        forum_id (int): The index of the forum used to export the global
+            announcements (any existing forum will do).
+    """
+    STATE_KEEP = ["forum", "forum_id"]
+
+    def __init__(self, forum_id):
+        Node.__init__(self, "announcements")
+        self.forum = ForumRoot()
+        self.forum_id = forum_id
+
+    def get_topics(self):
+        """
+        Returns the topics of this forum
+        """
+        return self.get_children()
+
+    def get_posts(self):
+        """
+        Returns the posts of this forum
+        """
+        for topic in self.get_topics():
+            for post in topic.get_posts():
+                yield post
+
+    def _export_(self):
+        # TODO : code duplication with topics.py...
+        self.logger.info('Récupération des annonces globales')
+
+        # Download the page
+        response = self.session.get("/{}-a".format(self.forum_id))
+        document = PyQuery(response.text)
+
+        # Get the topics
+        for element in document.find('div.topictitle'):
+            e = PyQuery(element)
+
+            topic_id = int(re.search(r"/t(\d+)-.*", e("a").attr("href")).group(1))
+            f = e.parents().eq(-2)
+            locked = 1 if ("verrouillé" in f("td img").eq(0).attr("alt")) else 0
+            views = int(f("td").eq(5).text())
+            topic_type = TOPIC_TYPES.get(e("strong").text(), 0)
+            title = e("a").text()
+
+            if topic_type >= 2:
+                self.add_child(Topic(topic_id, topic_type, title, locked, views))
+
 class Forums(Node):
     """
     Node used to export the forums
     """
 
-    STATE_KEEP = ["count"]
+    STATE_KEEP = ["count", "announcements"]
 
     def __init__(self):
         Node.__init__(self, "forums")
         self.count = Counter(0)
+        self.announcements = None
 
     def _export_children(self, element, parent=None):
         """
@@ -199,6 +252,10 @@ class Forums(Node):
             match = idpattern.fullmatch(e.get("id"))
             if match:
                 forum_id = match.group(1)
+
+                if self.announcements is None and forum_id[0] == "f":
+                    self.announcements = Announcements(forum_id)
+                    self.add_child(self.announcements)
 
                 child_element = PyQuery(e)
                 row = child_element.children("table").eq(0).find("tr").eq(0)

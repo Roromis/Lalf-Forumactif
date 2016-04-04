@@ -37,10 +37,12 @@ from lalf.util import parse_date
 from lalf.ui import UI
 from lalf.config import read as read_config
 
+# TODO use *.count instea of current_*
+
 CONFIG_PATH = "config.cfg"
 
 @Node.expose("config", "session", "ui", "smilies", "users", "forums",
-             "announcements", self="root")
+             self="root")
 class BB(Node):
     """
     The BB node is the root of the tree representing the forum.
@@ -61,7 +63,7 @@ class BB(Node):
     STATE_KEEP = ["total_posts", "total_topics", "total_users",
                   "current_posts", "current_topics", "current_users",
                   "startdate", "record_online_date", "record_online_users",
-                  "site_name", "site_desc", "forums", "announcements"]
+                  "site_name", "site_desc", "forums"]
 
     def __init__(self):
         Node.__init__(self, "root")
@@ -88,8 +90,6 @@ class BB(Node):
 
         self.dump_time = 0
 
-        self.announcements = []
-
         self.linkrewriter = LinkRewriter(self)
 
     def __setstate__(self, state):
@@ -98,7 +98,6 @@ class BB(Node):
         self.session = Session(self.config)
         self.ui = UI(self)
         self.linkrewriter = LinkRewriter(self)
-        # TODO : recompute current counts
 
     @property
     def smilies(self):

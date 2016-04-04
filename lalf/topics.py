@@ -130,14 +130,11 @@ class ForumPage(Node):
             e = PyQuery(element)
 
             topic_id = int(re.search(r"/t(\d+)-.*", e("a").attr("href")).group(1))
-            if topic_id not in self.announcements:
-                f = e.parents().eq(-2)
-                locked = 1 if ("verrouillé" in f("td img").eq(0).attr("alt")) else 0
-                views = int(f("td").eq(5).text())
-                topic_type = TOPIC_TYPES.get(e("strong").text(), 0)
-                title = e("a").text()
+            f = e.parents().eq(-2)
+            locked = 1 if ("verrouillé" in f("td img").eq(0).attr("alt")) else 0
+            views = int(f("td").eq(5).text())
+            topic_type = TOPIC_TYPES.get(e("strong").text(), 0)
+            title = e("a").text()
 
+            if topic_type < 2:
                 self.add_child(Topic(topic_id, topic_type, title, locked, views))
-                if topic_type >= 2:
-                    # The topic is an announcement, save its id to avoid exporting it again
-                    self.announcements.append(topic_id)
