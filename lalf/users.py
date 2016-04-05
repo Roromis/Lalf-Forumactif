@@ -215,14 +215,14 @@ class User(Node):
             self.logger.info(
                 "L'adresse email de l'utilisateur %s est probablement valide "
                 "mais n'a pas pu être validée.)", self.name)
-            print((
+            self.ui.print((
                 "Veuillez saisir l'adresse email de l'utilisateur {} (laissez "
                 "vide si l'adresse {} est correcte) :").format(self.name, self.mail))
             self.mail = input("> ").strip()
         elif self.trust == 1:
             self.logger.info(
                 "L'adresse email de l'utilisateur %s est probablement invalide.)", self.name)
-            print((
+            self.ui.print((
                 "Veuillez saisir l'adresse email de l'utilisateur {} (laissez "
                 "vide si l'adresse {} est correcte) :").format(self.name, self.mail))
             self.mail = input("> ").strip()
@@ -230,7 +230,7 @@ class User(Node):
             self.logger.info(
                 "L'adresse email de l'utilisateur %s n'a pas pu être exportée.", self.name)
             if retries == 0:
-                print("Veuillez saisir l'adresse email de l'utilisateur {} :".format(self.name))
+                self.ui.print("Veuillez saisir l'adresse email de l'utilisateur {} :".format(self.name))
                 self.mail = input("> ").strip()
             else:
                 self._export_()

@@ -56,6 +56,23 @@ class UI(logging.Handler):
         self.progressbar = ""
         self.width = 0
 
+    def print(self, string):
+        string = string.split("\n", 1)
+
+        # Go back to to beginning of the line
+        sys.stdout.write("\r")
+
+        # Display the first line of the message and erase the end of the line
+        sys.stdout.write(string[0])
+        sys.stdout.write(" "*(self.width - len(string[0])))
+
+        # Display the other lines of the message
+        if len(string) > 1:
+            sys.stdout.write("\n")
+            sys.stdout.write(string[1])
+
+        sys.stdout.write("\n")
+
     def emit(self, record):
         message = self.format(record).split("\n", 1)
 
