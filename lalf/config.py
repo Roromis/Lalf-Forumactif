@@ -21,6 +21,7 @@ Module handling the configuration
 
 import configparser
 import os.path
+from urllib.parse import urlparse
 
 # Options defined in the config file
 STRINGS = ["url", "admin_name", "admin_password", "table_prefix", "gocr", "temporary_theme",
@@ -95,5 +96,8 @@ def read(filename):
             config[option] = cfg.getboolean("Configuration", option)
     except (configparser.NoSectionError, configparser.NoOptionError) as e:
         raise InvalidConfigurationFile(filename, e)
+
+    config["url"] = urlparse(config["url"]).netloc
+    config["phpbb_url"] = config["phpbb_url"].rstrip("/")
 
     return config
