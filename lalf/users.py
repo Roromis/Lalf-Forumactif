@@ -198,7 +198,7 @@ class User(Node):
         response = self.session.get_admin("/admin/index.forum", params=params)
 
         # Check if this user is one of them
-        document = PyQuery(response.text)
+        document = PyQuery(response.content)
         for element in document('tbody tr'):
             e = PyQuery(element)
 
@@ -254,7 +254,7 @@ class User(Node):
 
         # Search for this user in the administration panel
         try:
-            encodedname = self.name.encode("latin1")
+            encodedname = self.name.encode(self.encoding)
         except UnicodeEncodeError:
             encodedname = self.name
 
@@ -268,7 +268,7 @@ class User(Node):
         }
         response = self.session.get_admin("/admin/index.forum", params=params)
 
-        document = PyQuery(response.text)
+        document = PyQuery(response.content)
         for element in document('tbody tr'):
             e = PyQuery(element)
             if e("td a").eq(0).text() == self.name:
@@ -448,7 +448,7 @@ class UsersPage(Node):
             "username" : ""
         }
         response = self.session.get("/memberlist", params=params)
-        document = PyQuery(response.text)
+        document = PyQuery(response.content)
 
         table = PyQuery(document("form[action=\"/memberlist\"]").next_all("table.forumline").eq(0))
 
@@ -478,27 +478,37 @@ class UsersPage(Node):
 
             self.add_child(User(user_id, name, posts, date, colour))
 
-@Node.expose(count="users_count")
+@Node.expose("encoding", count="users_count")
 class Users(PaginatedNode):
     """
     Node used to export the users
     """
     # Attributes to save
-    STATE_KEEP = ["count"]
+    STATE_KEEP = ["count", "encoding"]
 
     def __init__(self):
         PaginatedNode.__init__(self, "users")
         # User ids start at one, the first one is the anonymous user,
         # and the second one is the administrator
         self.count = Counter(len(BOTS) + 3)
+        self.encoding = None
 
     def _export_(self):
         self.logger.info('Récupération des membres')
 
         self.add_child(AnonymousUser())
 
+        # Get the encoding of the admin panel (will be used later to encode POST data)
+        params = {
+            "part" : "users_groups",
+            "sub" : "users"
+        }
+        response = self.session.get_admin("/admin/index.forum", params=params)
+        document = PyQuery(response.content)
+        self.encoding = document.encoding
+
         response = self.session.get("/memberlist")
-        for page in pages(response.text):
+        for page in pages(response.content):
             self.add_child(UsersPage(page))
 
     def _dump_(self, sqlfile):

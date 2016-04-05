@@ -46,7 +46,7 @@ class GroupPage(Node):
             "start": self.id
         }
         response = self.session.get(r"/g{}-a".format(self.group.id), params=params)
-        document = PyQuery(response.text)
+        document = PyQuery(response.content)
 
         pattern = re.compile(r"/u(\d+)")
 
@@ -87,7 +87,7 @@ class Group(Node):
             self.groups_count += 1
 
         response = self.session.get("/g{}-a".format(self.id))
-        for page in pages(response.text):
+        for page in pages(response.content):
             self.add_child(GroupPage(page))
 
     def _dump_(self, sqlfile):
@@ -124,7 +124,7 @@ class Groups(Node):
             "sub" : "groups"
         }
         response = self.session.get_admin("/admin/index.forum", params=params)
-        document = PyQuery(response.text)
+        document = PyQuery(response.content)
 
         urlpattern = re.compile(r"/g(\d+)-.*")
         stylepattern = re.compile("color:#(.{3,6})")

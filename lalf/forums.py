@@ -113,9 +113,9 @@ class Forum(Node):
         response = self.session.get("/{}-a".format(self.id))
 
         # Get subforums descriptions, number of topics, ...
-        self.forums.get_subforums_infos(response.text)
+        self.forums.get_subforums_infos(response.content)
 
-        for page in pages(response.text):
+        for page in pages(response.content):
             self.add_child(ForumPage(page))
 
     def _dump_(self, sqlfile):
@@ -214,7 +214,7 @@ class Announcements(Node):
 
         # Download the page
         response = self.session.get("/{}-a".format(self.forum_id))
-        document = PyQuery(response.text)
+        document = PyQuery(response.content)
 
         # Get the topics
         for element in document.find('div.topictitle'):
@@ -286,14 +286,14 @@ class Forums(Node):
             "mode" : "forum"
         }
         response = self.session.get_admin("/admin/index.forum", params=params)
-        document = PyQuery(response.text)
+        document = PyQuery(response.content)
 
         current_element = document("#root_open").eq(0)
         self._export_children(current_element, ForumRoot())
 
         # Get subforums descriptions
         response = self.session.get("/forum")
-        self.get_subforums_infos(response.text)
+        self.get_subforums_infos(response.content)
 
     def get_subforums_infos(self, html):
         """

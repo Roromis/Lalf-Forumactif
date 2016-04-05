@@ -138,7 +138,7 @@ class BB(Node):
     def _export_(self):
         self.logger.info('Récupération des statistiques')
         response = self.session.get("/statistics")
-        document = PyQuery(response.text)
+        document = PyQuery(response.content)
 
         # Go through the table of statistics and save the relevant
         # ones

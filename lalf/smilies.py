@@ -137,7 +137,7 @@ class SmiliesPage(Node):
             "start" : self.id
         }
         response = self.session.get_admin("/admin/index.forum", params=params)
-        document = PyQuery(response.text)
+        document = PyQuery(response.content)
 
         for element in document('table tr'):
             e = PyQuery(element)
@@ -178,5 +178,5 @@ class Smilies(PaginatedNode):
             "mode" : "smilies"
         }
         response = self.session.get_admin("/admin/index.forum", params=params)
-        for page in pages(response.text):
+        for page in pages(response.content):
             self.add_child(SmiliesPage(page))

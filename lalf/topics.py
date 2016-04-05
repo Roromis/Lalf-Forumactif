@@ -69,7 +69,7 @@ class Topic(Node):
         self.ui.update()
 
         response = self.session.get("/t{}-a".format(self.id))
-        for page in pages(response.text):
+        for page in pages(response.content):
             self.add_child(TopicPage(page))
 
     def _dump_(self, sqlfile):
@@ -123,7 +123,7 @@ class ForumPage(Node):
 
         # Download the page
         response = self.session.get("/{}p{}-a".format(self.forum.id, self.id))
-        document = PyQuery(response.text)
+        document = PyQuery(response.content)
 
         # Get the topics
         for element in document.find('div.topictitle'):

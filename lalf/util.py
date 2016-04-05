@@ -26,6 +26,8 @@ import time
 import datetime
 from urllib.parse import urlparse, urlunparse
 
+from pyquery import PyQuery
+
 MONTHS = {
     "Ja": 1,
     "F": 2,
@@ -84,18 +86,20 @@ def clean_filename(filename):
 
     return filename
 
-def pages(text):
+def pages(html):
     """
     Iterator on the page numbers
 
     Args:
-        text (str): The content of the first page (of a forum, topic, ...)
+        html (str): The content of the first page (of a forum, topic, ...)
     """
+    document = PyQuery(html)
+
     # Search for the pagination code
     match = re.search(
         r'function do_pagination_start\(\)[^\}]*'
         r'start = \(start > \d+\) \? (\d+) : start;[^\}]*'
-        r'start = \(start - 1\) \* (\d+);[^\}]*\}', text)
+        r'start = \(start - 1\) \* (\d+);[^\}]*\}', document("script").text())
 
     if match:
         number = int(match.group(1))

@@ -137,7 +137,7 @@ class Session(object):
         response = self._get(path, **kwargs)
 
         failures = 0
-        while response.status_code >= 300 or not self.connected(response.text):
+        while response.status_code >= 300 or not self.connected(response.content):
             if failures >= 4:
                 # The connection failed four times, there must be something wrong
                 raise UnableToConnect()

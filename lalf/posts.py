@@ -94,7 +94,7 @@ class TopicPage(Node):
                           self.topic.id, self.id)
 
         response = self.session.get("/t{}p{}-a".format(self.topic.id, self.id))
-        document = PyQuery(response.text)
+        document = PyQuery(response.content)
 
         pattern = re.compile(r"/u(\d+)")
 
