@@ -16,9 +16,10 @@
 # along with Lalf.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
-from pyquery import PyQuery
 
-from lalf.node import Node
+from lxml import html
+
+from lalf.node import Node, PaginatedNode, ParsingError
 from lalf.posts import TopicPage
 from lalf.util import pages, clean_url
 
@@ -29,7 +30,7 @@ TOPIC_TYPES = {
 }
 
 @Node.expose(self="topic")
-class Topic(Node):
+class Topic(PaginatedNode):
     """
     Node representing a topic
 
@@ -48,7 +49,7 @@ class Topic(Node):
     STATE_KEEP = ["type", "title", "locked", "views"]
 
     def __init__(self, topic_id, topic_type, title, locked, views):
-        Node.__init__(self, topic_id)
+        PaginatedNode.__init__(self, topic_id)
         self.type = topic_type
         self.title = title
         self.locked = locked
@@ -58,9 +59,7 @@ class Topic(Node):
         """
         Iterator on the posts of the topic
         """
-        for page in self.get_children():
-            for post in page.get_children():
-                yield post
+        return self.get_children()
 
     def _export_(self):
         self.logger.info('Récupération du sujet %d', self.id)
@@ -123,18 +122,34 @@ class ForumPage(Node):
 
         # Download the page
         response = self.session.get("/{}p{}-a".format(self.forum.id, self.id))
-        document = PyQuery(response.content)
+        document = html.fromstring(response.content)
+
+        idpattern = re.compile(r"/t(\d+)-.*")
 
         # Get the topics
-        for element in document.find('div.topictitle'):
-            e = PyQuery(element)
+        for div in document.cssselect('div.topictitle'):
+            try:
+                row = div.xpath("ancestor::tr")[-1]
+                cols = row.cssselect("td")
+                link = div.cssselect("a")[0]
+                status = cols[0].cssselect("img")[0].get("alt")
+                views = int(cols[5].text_content())
+            except (IndexError, ValueError):
+                raise ParsingError(document)
 
-            topic_id = int(re.search(r"/t(\d+)-.*", clean_url(e("a").attr("href"))).group(1))
-            f = e.parents().eq(-2)
-            locked = 1 if ("verrouillé" in f("td img").eq(0).attr("alt")) else 0
-            views = int(f("td").eq(5).text())
-            topic_type = TOPIC_TYPES.get(e("strong").text(), 0)
-            title = e("a").text()
+            try:
+                topic_type = div.cssselect("strong")[0].text_content()
+                topic_type = TOPIC_TYPES.get(topic_type, 0)
+            except IndexError:
+                topic_type = 0
 
-            if topic_type < 2:
-                self.add_child(Topic(topic_id, topic_type, title, locked, views))
+            if topic_type >= 2:
+                continue
+
+            match = idpattern.fullmatch(clean_url(link.get("href")))
+            topic_id = int(match.group(1))
+
+            locked = 1 if ("verrouillé" in status) else 0
+            title = link.text_content()
+
+            self.add_child(Topic(topic_id, topic_type, title, locked, views))

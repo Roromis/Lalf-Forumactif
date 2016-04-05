@@ -23,9 +23,9 @@ import logging
 import pickle
 import time
 
-from pyquery import PyQuery
+from lxml import html
 
-from lalf.node import Node
+from lalf.node import Node, ParsingError
 from lalf.forums import Forums
 from lalf.groups import Groups
 from lalf.users import Users
@@ -138,16 +138,25 @@ class BB(Node):
     def _export_(self):
         self.logger.info('Récupération des statistiques')
         response = self.session.get("/statistics")
-        document = PyQuery(response.content)
+        document = html.fromstring(response.content)
 
         # Go through the table of statistics and save the relevant
         # ones
         stats = {}
-        for element in document.find("table.forumline tr"):
-            e = PyQuery(element)
 
-            stats[e("td span").eq(0).text()] = e("td span").eq(1).text()
-            stats[e("td span").eq(2).text()] = e("td span").eq(3).text()
+        try:
+            cattitle = document.cssselect('span.cattitle:contains("Statistiques globales du forum")')[0]
+            table = cattitle.xpath("ancestor::table")[-1]
+        except IndexError:
+            raise ParsingError(document)
+
+        for row in table.cssselect("tr"):
+            cols = row.cssselect("td span")
+            try:
+                stats[cols[0].text_content()] = cols[1].text_content()
+                stats[cols[2].text_content()] = cols[3].text_content()
+            except IndexError:
+                pass
 
         self.total_posts = int(stats["Messages"])
         self.total_topics = int(stats["Nombre de sujets ouvert dans le forum"])
@@ -158,8 +167,20 @@ class BB(Node):
         self.record_online_users = int(
             stats["Nombre record d'utilisateurs connectés en même temps"])
 
-        self.site_name = document("div.maintitle").eq(0).text().strip(" \n")
-        self.site_desc = document("div.maintitle").siblings("span.gen").eq(0).text().strip(" \n")
+        # Get forum title and description
+        try:
+            maintitle = document.cssselect("div.maintitle")[0]
+        except IndexError:
+            raise ParsingError(document)
+
+        self.site_name = maintitle.text_content().strip(" \n")
+
+        try:
+            descspan = maintitle.xpath("following-sibling::span")[0]
+        except IndexError:
+            raise ParsingError(document)
+
+        self.site_desc = descspan.text_content().strip(" \n")
 
         self.logger.debug('Messages : %d', self.total_posts)
         self.logger.debug('Sujets : %d', self.total_topics)

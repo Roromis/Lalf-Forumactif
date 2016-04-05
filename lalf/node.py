@@ -22,6 +22,20 @@ Module defining the Node base class
 import logging
 from collections import OrderedDict
 
+# TODO : save and encrypt document
+class ParsingError(Exception):
+    """
+    Exception raised when an error is encoutered while parsing a page
+    """
+    def __init__(self, document):
+        Exception.__init__(self)
+        self.document = document
+
+    def __str__(self):
+        return (
+            "Erreur de parsing"
+        )
+
 class Node(object):
     """
     Node of the forum.

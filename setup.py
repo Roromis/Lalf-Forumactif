@@ -45,7 +45,7 @@ setup(
     
     packages=['lalf'],
     install_requires=[
-        'pyquery',
+        'lxml',
         'requests',
         'Pillow'
     ],

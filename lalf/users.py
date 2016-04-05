@@ -30,10 +30,10 @@ import hashlib
 from binascii import crc32
 
 from PIL import Image
-from pyquery import PyQuery
+from lxml import html
 
-from lalf.node import Node, PaginatedNode
-from lalf.util import Counter, pages, random_string, parse_admin_date, parse_userlist_date, clean_filename, clean_url
+from lalf.node import Node, PaginatedNode, ParsingError
+from lalf.util import Counter, pages, random_string, parse_date, parse_userlist_date, clean_filename, clean_url
 from lalf.phpbb import BOTS
 from lalf import htmltobbcode
 
@@ -167,16 +167,16 @@ class User(Node):
     STATE_KEEP = ["newid", "name", "mail", "posts", "date",
                   "lastvisit", "colour", "groups", "trust", "img"]
 
-    def __init__(self, user_id, name, posts, date, colour):
+    def __init__(self, user_id, name, posts, date, lastvisit, colour):
         Node.__init__(self, user_id)
         self.name = name
         self.posts = posts
         self.date = date
+        self.lastvisit = lastvisit
         self.colour = colour
 
         self.newid = None
         self.groups = []
-        self.lastvisit = 0
 
         self.mail = None
         self.trust = 0
@@ -198,11 +198,10 @@ class User(Node):
         response = self.session.get_admin("/admin/index.forum", params=params)
 
         # Check if this user is one of them
-        document = PyQuery(response.content)
-        for element in document('tbody tr'):
-            e = PyQuery(element)
-
-            if e("td a").eq(0).text() == self.name:
+        document = html.fromstring(response.content)
+        for row in document.cssselect('table[summary="Liste des Utilisateurs"] tbody tr'):
+            cols = row.cssselect("td")
+            if cols and cols[0].text_content() == self.name:
                 return True
 
         return False
@@ -268,17 +267,33 @@ class User(Node):
         }
         response = self.session.get_admin("/admin/index.forum", params=params)
 
-        document = PyQuery(response.content)
-        for element in document('tbody tr'):
-            e = PyQuery(element)
-            if e("td a").eq(0).text() == self.name:
+        document = html.fromstring(response.content)
+        for row in document.cssselect('table[summary="Liste des Utilisateurs"] tbody tr'):
+            cols = row.cssselect("td")
+            if cols and cols[0].text_content() == self.name:
                 # The user was found
-                self.mail = e("td a").eq(1).text()
+                try:
+                    self.mail = cols[1].text_content()
+                except IndexError:
+                    raise ParsingError(document)
 
-                if self.mail == "" and e("td a").eq(0).children().is_('img'):
+                if self.mail:
+                    # The administration panel hasn't been blocked
+                    # yet, the email is available
+                    self.trust = 3
+                    break
+
+                try:
+                    img = cols[1].cssselect("img")[0]
+                except IndexError:
+                    img = None
+
+                if img:
                     # The administration panel has been blocked, the
                     # email is replaced by an image, download it
-                    response = self.session.get(e("td a img").eq(0).attr("src"))
+                    self.logger.warning("Récupération de l'adresse email avec GOCR")
+
+                    response = self.session.get(img.get("src"))
                     with open(self.img, "wb") as fileobj:
                         fileobj.write(response.content)
 
@@ -299,12 +314,8 @@ class User(Node):
                         # The email could not be validated, the user
                         # will have to confirm
                         self.trust = 2
-                else:
-                    # The administration panel hasn't been blocked
-                    # yet, the email is available
-                    self.trust = 3
+                    break
 
-                self.lastvisit = parse_admin_date(e("td").eq(4).text())
 
     def _dump_(self, sqlfile):
         try:
@@ -448,35 +459,47 @@ class UsersPage(Node):
             "username" : ""
         }
         response = self.session.get("/memberlist", params=params)
-        document = PyQuery(response.content)
+        document = html.fromstring(response.content)
 
-        table = PyQuery(document("form[action=\"/memberlist\"]").next_all("table.forumline").eq(0))
+        try:
+            form = document.cssselect('form[action="/memberlist"]')[0]
+            table = form.xpath('following-sibling::table[@class="forumline"]')[0]
+        except IndexError:
+            raise ParsingError(document)
 
         urlpattern = re.compile(r"/u(\d+)")
         stylepattern = re.compile(r"color:#(.{6})")
 
-        first = True
-        for element in table.find("tr"):
-            # Skip first row
-            if first:
-                first = False
+        for row in table.cssselect("tr"):
+            cols = row.cssselect("td")
+            if not cols:
                 continue
 
-            e = PyQuery(element)
-            user_id = int(urlpattern.fullmatch(clean_url(e("td a").eq(0).attr("href"))).group(1))
+            try:
+                link = cols[1].cssselect("a")[0]
+                name = cols[2].text_content()
 
-            name = e("td a").eq(1).text()
-            posts = int(e("td").eq(6).text())
+                posts = int(cols[6].text_content())
 
-            date = parse_userlist_date(e("td").eq(4).text())
+                regdate = parse_userlist_date(cols[4].text_content())
+                lastvisit = parse_date(cols[5].text_content())
+                span = cols[2].cssselect("a span")
+            except IndexError:
+                raise ParsingError(document)
 
-            match = stylepattern.fullmatch(e("td a").eq(1).children("span").attr("style") or "")
-            if match:
-                colour = match.group(1)
-            else:
-                colour = ""
+            match = urlpattern.fullmatch(clean_url(link.get("href")))
+            if not match:
+                continue
 
-            self.add_child(User(user_id, name, posts, date, colour))
+            user_id = int(match.group(1))
+
+            colour = ""
+            if span:
+                match = stylepattern.fullmatch(span[0].get("style", ""))
+                if match:
+                    colour = match.group(1)
+
+            self.add_child(User(user_id, name, posts, regdate, lastvisit, colour))
 
 @Node.expose("encoding", count="users_count")
 class Users(PaginatedNode):
@@ -504,8 +527,8 @@ class Users(PaginatedNode):
             "sub" : "users"
         }
         response = self.session.get_admin("/admin/index.forum", params=params)
-        document = PyQuery(response.content)
-        self.encoding = document.encoding
+        document = html.fromstring(response.content)
+        self.encoding = document.getroottree().docinfo.encoding
 
         response = self.session.get("/memberlist")
         for page in pages(response.content):

@@ -580,7 +580,7 @@ def _div_handler(tag, attrs):
 @Parser.handler("img")
 def _img_handler(tag, attrs):
     if "longdesc" in attrs:
-        return SmileyNode(attrs["longdesc"])
+        return SmileyNode(int(attrs["longdesc"]))
     elif "src" in attrs:
         return InlineTagNode("img", content=escape(attrs["src"]))
 

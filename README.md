@@ -37,7 +37,7 @@ Merci aux contributeurices pour leur aide :
 
 Le Lalf est programmé en [python][] en utilisant :
 
-- [PyQuery][]
+- [lxml][]
 - [Requests][]
 - [Pillow][]
 - [gocr][]
@@ -49,7 +49,7 @@ et en s'inspirant des [Crawler Converters][] de nneonneo.
 [don bitcoin]: bitcoin:3A2xAccgrPunVBR3shHu1SJS6CbJ7qMyys "Don bitcoin"
 
 [python]: https://www.python.org/ "Python"
-[pyquery]: https://bitbucket.org/olauzanne/pyquery/	"PyQuery - jquery-like library for python"
+[lxml]: http://lxml.de/ "feature-rich and easy-to-use library for processing XML and HTML"
 [requests]: http://docs.python-requests.org/en/latest/ "Requests - HTTP library for Python"
 [pillow]: http://python-pillow.org/ "Pillow - Python Imaging Library fork"
 [gocr]: http://jocr.sourceforge.net/download.html "GOCR - Optical Character Recognition"

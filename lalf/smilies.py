@@ -22,10 +22,10 @@ Module handling the exportation of the smilies
 import os
 from io import BytesIO
 
-from pyquery import PyQuery
+from lxml import html
 from PIL import Image
 
-from lalf.node import Node, PaginatedNode
+from lalf.node import Node, PaginatedNode, ParsingError
 from lalf.util import Counter, pages
 from lalf.phpbb import DEFAULT_SMILIES
 
@@ -137,15 +137,18 @@ class SmiliesPage(Node):
             "start" : self.id
         }
         response = self.session.get_admin("/admin/index.forum", params=params)
-        document = PyQuery(response.content)
+        document = html.fromstring(response.content)
 
-        for element in document('table tr'):
-            e = PyQuery(element)
-            if e("td").eq(0).text() and e("td").eq(0).attr("colspan") is None:
-                smiley_id = e("td").eq(0).text()
-                code = e("td").eq(1).text()
-                url = e("td").eq(2).find("img").eq(0).attr("src")
-                emotion = e("td").eq(3).text()
+        for row in document.cssselect('form#smiliesList table tr'):
+            cols = row.cssselect("td")
+            if len(cols) >= 4:
+                try:
+                    smiley_id = int(cols[0].text_content())
+                    code = cols[1].text_content()
+                    url = cols[2].cssselect("img")[0].get("src")
+                    emotion = cols[3].text_content()
+                except (IndexError, ValueError):
+                    raise ParsingError(document)
 
                 if code in DEFAULT_SMILIES:
                     self.logger.debug("L'émoticone \"%s\" existe déjà dans phpbb.", code)

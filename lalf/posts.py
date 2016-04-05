@@ -21,9 +21,9 @@ Module handling the exportation of the posts
 
 import re
 
-from pyquery import PyQuery
+from lxml import html, etree
 
-from lalf.node import Node
+from lalf.node import Node, ParsingError
 from lalf.util import parse_date, clean_url
 from lalf.users import AnonymousUser, NoUser
 from lalf import htmltobbcode
@@ -32,7 +32,7 @@ class NoPost(object):
     """
     Node used to represent an unexisting post in the database (for
     example if there is no posts in a forum)
-    """    
+    """
     def __init__(self):
         self.id = 0
         self.text = ""
@@ -94,36 +94,44 @@ class TopicPage(Node):
                           self.topic.id, self.id)
 
         response = self.session.get("/t{}p{}-a".format(self.topic.id, self.id))
-        document = PyQuery(response.content)
+        document = html.fromstring(response.content)
 
-        pattern = re.compile(r"/u(\d+)")
+        idpattern = re.compile(r"p(\d+)")
+        userpattern = re.compile(r"/u(\d+)")
 
-        for element in document.find('tr.post'):
-            e = PyQuery(element)
-
-            post_id = int(e("td span.name a").attr("name"))
-
+        for post in document.cssselect('tr.post'):
+            match = idpattern.fullmatch(post.get("id"))
+            post_id = int(match.group(1))
             self.logger.info('Récupération du message %d (sujet %d)',
                              post_id, self.topic.id)
 
-            match = pattern.fullmatch(clean_url(e("td span.name strong a").eq(0).attr("href") or ""))
-            if match:
-                poster = self.users.get(int(match.group(1)))
-            else:
-                poster = AnonymousUser()
+            cols = post.xpath("td")
 
-            post = e("td div.postbody div").eq(0).html()
-            if not post:
+            poster = AnonymousUser()
+            try:
+                link = cols[0].cssselect("span.name strong a")[0]
+            except IndexError:
+                pass
+            else:
+                match = userpattern.fullmatch(clean_url(link.get("href")))
+                if match:
+                    poster = self.users.get(int(match.group(1)))
+
+            try:
+                text = etree.tostring(cols[1].cssselect("div.postbody div")[0], encoding='unicode', with_tail=False)
+                details = cols[1].cssselect("span.postdetails")[0].xpath("child::node()")
+
+                # Get the title of the post
+                title = details[1][7:].rstrip()
+
+                # Get the date and time of the post
+                timestamp = parse_date(details[3])
+            except (IndexError, ValueError):
+                raise ParsingError(document)
+
+            if not text:
                 self.logger.warning('Le message  %d (sujet %d) semble être vide',
                                     post_id, self.topic.id)
-                post = ""
+                text = ""
 
-            # Get title
-            title = e("table td span.postdetails").contents()[1]
-            # Remove "Sujet :" before the title and spaces at the end
-            title = title[7:].rstrip()
-
-            # Get the date and time of the post
-            timestamp = parse_date(e("table td span.postdetails").contents()[3])
-
-            self.add_child(Post(post_id, post, title, timestamp, poster))
+            self.add_child(Post(post_id, text, title, timestamp, poster))

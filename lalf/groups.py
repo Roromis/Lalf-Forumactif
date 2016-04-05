@@ -21,9 +21,9 @@ Module handling the exportation of groups
 
 import re
 
-from pyquery import PyQuery
+from lxml import html
 
-from lalf.node import Node
+from lalf.node import Node, ParsingError
 from lalf.util import pages, Counter, clean_url
 
 TYPES = {
@@ -46,12 +46,12 @@ class GroupPage(Node):
             "start": self.id
         }
         response = self.session.get(r"/g{}-a".format(self.group.id), params=params)
-        document = PyQuery(response.content)
+        document = html.fromstring(response.content)
 
         pattern = re.compile(r"/u(\d+)")
 
-        for element in document.find("a"):
-            match = pattern.fullmatch(clean_url(element.get("href", "")))
+        for link in document.cssselect("a"):
+            match = pattern.fullmatch(clean_url(link.get("href", "")))
             if match:
                 user = self.users.get(int(match.group(1)))
                 if self.group not in user.groups:
@@ -124,33 +124,41 @@ class Groups(Node):
             "sub" : "groups"
         }
         response = self.session.get_admin("/admin/index.forum", params=params)
-        document = PyQuery(response.content)
+        document = html.fromstring(response.content)
 
         urlpattern = re.compile(r"/g(\d+)-.*")
         stylepattern = re.compile("color:#(.{3,6})")
 
-        for element in document('table > tr'):
-            e = PyQuery(element)
+        for row in document.cssselect('table tr'):
+            cols = row.cssselect("td")
 
-            link = e("td a").eq(1)
+            if not cols:
+                continue
 
-            urlmatch = urlpattern.fullmatch(link.attr("href") or "")
-            if urlmatch:
-                group_id = int(urlmatch.group(1))
+            try:
+                link = cols[2].cssselect("a")[0]
+                name = link.text_content()
+                description = cols[3].text_content()
+                leader_name = cols[4].text_content()
+                group_type = TYPES.get(cols[6].text_content(), 1)
+            except IndexError:
+                raise ParsingError(document)
 
-                stylematch = stylepattern.fullmatch(link.attr("style") or "")
-                if stylematch:
-                    colour = stylematch.group(1)
-                    if colour == "000":
-                        colour = ""
-                else:
+            urlmatch = urlpattern.fullmatch(link.get("href", ""))
+            if not urlmatch:
+                continue
+
+            group_id = int(urlmatch.group(1))
+
+            stylematch = stylepattern.fullmatch(link.get("style", ""))
+            if stylematch:
+                colour = stylematch.group(1)
+                if colour == "000":
                     colour = ""
-                name = link.text()
-                description = e("td").eq(3).text()
-                leader_name = e("td").eq(4).text()
-                group_type = TYPES.get(e("td").eq(6).text(), 1)
+            else:
+                colour = ""
 
-                if description == "Personal User":
-                    break
+            if description == "Personal User":
+                break
 
             self.add_child(Group(group_id, name, description, leader_name, colour, group_type))

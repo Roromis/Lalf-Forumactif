@@ -26,7 +26,7 @@ import time
 import datetime
 from urllib.parse import urlparse, urlunparse
 
-from pyquery import PyQuery
+from lxml import html
 
 MONTHS = {
     "Ja": 1,
@@ -86,27 +86,28 @@ def clean_filename(filename):
 
     return filename
 
-def pages(html):
+def pages(string):
     """
     Iterator on the page numbers
 
     Args:
         html (str): The content of the first page (of a forum, topic, ...)
     """
-    document = PyQuery(html)
+    document = html.fromstring(string)
 
-    # Search for the pagination code
-    match = re.search(
-        r'function do_pagination_start\(\)[^\}]*'
-        r'start = \(start > \d+\) \? (\d+) : start;[^\}]*'
-        r'start = \(start - 1\) \* (\d+);[^\}]*\}', document("script").text())
+    number = 1
+    itemsperpage = 0
+    for script in document.cssselect("script"):
+        # Search for the pagination code
+        match = re.search(
+            r'function do_pagination_start\(\)[^\}]*'
+            r'start = \(start > \d+\) \? (\d+) : start;[^\}]*'
+            r'start = \(start - 1\) \* (\d+);[^\}]*\}', script.text_content())
 
-    if match:
-        number = int(match.group(1))
-        itemsperpage = int(match.group(2))
-    else:
-        number = 1
-        itemsperpage = 0
+        if match:
+            number = int(match.group(1))
+            itemsperpage = int(match.group(2))
+            break
 
     for page in range(0, number):
         yield page*itemsperpage
@@ -121,6 +122,9 @@ def parse_date(string):
     """
     Convert a date to a timestamp
     """
+    if string == "Jamais":
+        return 0
+
     post_date, post_time = re.split(" [-à] ", string)
     hours, minutes = post_time.split(":")
     post_time = datetime.time(int(hours), int(minutes))

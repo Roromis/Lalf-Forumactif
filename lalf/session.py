@@ -24,7 +24,7 @@ import time
 from urllib.parse import urlparse, urlunparse
 
 import requests
-from pyquery import PyQuery
+from lxml import html
 
 class UnableToConnect(Exception):
     """
@@ -114,21 +114,23 @@ class Session(object):
                 self.logger.critical('Impossible de récupérer le tid.')
                 raise UnableToConnect()
 
-    def connected(self, html=None):
+    def connected(self, string=None):
         """
         Check if the user successfuly connected.
 
         Parameters :
         html -- source of the last downloaded page
         """
-        if self.sid:
-            if html:
-                document = PyQuery(html)
-                for element in document(".mainmenu"):
-                    if element.get("href", "") == "/login":
-                        return False
-            return True
-        return False
+        if not self.sid:
+            return False
+
+        if string:
+            document = html.fromstring(string)
+            for element in document.cssselect(".mainmenu"):
+                if element.get("href", "") == "/login":
+                    return False
+
+        return True
 
     def get(self, path, **kwargs):
         """

@@ -21,9 +21,9 @@ Module handling the exportation of the forums
 
 import re
 
-from pyquery import PyQuery
+from lxml import html, etree
 
-from lalf.node import Node
+from lalf.node import Node, PaginatedNode, ParsingError
 from lalf.topics import ForumPage, Topic, TOPIC_TYPES
 from lalf.posts import NoPost
 from lalf.util import pages, Counter, clean_url
@@ -48,7 +48,7 @@ def default_forum_acl(forumid):
         }
 
 @Node.expose(self="forum")
-class Forum(Node):
+class Forum(PaginatedNode):
     """
     Node representing a forum
 
@@ -69,7 +69,7 @@ class Forum(Node):
                   "right_id", "status", "num_topics", "num_posts", "type"]
 
     def __init__(self, forum_id, parent, title, num_topics, num_posts):
-        Node.__init__(self, forum_id)
+        PaginatedNode.__init__(self, forum_id)
         self.parent = parent
         self.title = title.replace('"', '&quot;')
 
@@ -92,9 +92,7 @@ class Forum(Node):
         """
         Returns the topics of this forum
         """
-        for page in self.get_children():
-            for topic in page.get_children():
-                yield topic
+        return self.get_children()
 
     def get_posts(self):
         """
@@ -214,21 +212,37 @@ class Announcements(Node):
 
         # Download the page
         response = self.session.get("/{}-a".format(self.forum_id))
-        document = PyQuery(response.content)
+        document = html.fromstring(response.content)
+
+        idpattern = re.compile(r"/t(\d+)-.*")
 
         # Get the topics
-        for element in document.find('div.topictitle'):
-            e = PyQuery(element)
+        for div in document.cssselect('div.topictitle'):
+            try:
+                row = div.xpath("ancestor::tr")[-1]
+                cols = row.cssselect("td")
+                link = div.cssselect("a")[0]
+                status = cols[0].cssselect("img")[0].get("alt")
+                views = int(cols[5].text_content())
+            except (IndexError, ValueError):
+                raise ParsingError(document)
 
-            topic_id = int(re.search(r"/t(\d+)-.*", e("a").attr("href")).group(1))
-            f = e.parents().eq(-2)
-            locked = 1 if ("verrouillé" in f("td img").eq(0).attr("alt")) else 0
-            views = int(f("td").eq(5).text())
-            topic_type = TOPIC_TYPES.get(e("strong").text(), 0)
-            title = e("a").text()
+            try:
+                topic_type = div.cssselect("strong")[0].text_content()
+                topic_type = TOPIC_TYPES.get(topic_type, 0)
+            except IndexError:
+                topic_type = 0
 
-            if topic_type >= 2:
-                self.add_child(Topic(topic_id, topic_type, title, locked, views))
+            if topic_type < 2:
+                continue
+
+            match = idpattern.fullmatch(clean_url(link.get("href")))
+            topic_id = int(match.group(1))
+
+            locked = 1 if ("verrouillé" in status) else 0
+            title = link.text_content()
+
+            self.add_child(Topic(topic_id, topic_type, title, locked, views))
 
 class Forums(Node):
     """
@@ -248,8 +262,8 @@ class Forums(Node):
         """
         idpattern = re.compile("([cf]\d+)_open")
 
-        for e in element.children("div"):
-            match = idpattern.fullmatch(e.get("id"))
+        for div in element.xpath("div"):
+            match = idpattern.fullmatch(div.get("id"))
             if match:
                 forum_id = match.group(1)
 
@@ -257,14 +271,14 @@ class Forums(Node):
                     self.announcements = Announcements(forum_id)
                     self.add_child(self.announcements)
 
-                child_element = PyQuery(e)
-                row = child_element.children("table").eq(0).find("tr").eq(0)
+                row = div.xpath("table[1]//tr[1]")[0]
+                cols = row.cssselect("td")
 
                 # Get title, number of topics and number of posts
-                title = row.children("td").eq(1).text().strip()
+                title = cols[1].text_content().strip()
 
-                num_topics = int(row.children("td").eq(2).text())
-                num_posts = int(row.children("td").eq(3).text())
+                num_topics = int(cols[2].text_content())
+                num_posts = int(cols[3].text_content())
 
                 # Add forum to children
                 forum = Forum(forum_id, parent, title, num_topics, num_posts)
@@ -273,7 +287,7 @@ class Forums(Node):
                 # Export children and set left and right ids
                 forum.left_id = parent.right_id
                 forum.right_id = forum.left_id + 1
-                self._export_children(child_element, forum)
+                self._export_children(div, forum)
                 parent.right_id = forum.right_id + 1
 
     def _export_(self):
@@ -286,39 +300,38 @@ class Forums(Node):
             "mode" : "forum"
         }
         response = self.session.get_admin("/admin/index.forum", params=params)
-        document = PyQuery(response.content)
+        document = html.fromstring(response.content)
 
-        current_element = document("#root_open").eq(0)
-        self._export_children(current_element, ForumRoot())
+        root = document.cssselect("#root_open")[0]
+        self._export_children(root, ForumRoot())
 
         # Get subforums descriptions
         response = self.session.get("/forum")
         self.get_subforums_infos(response.content)
 
-    def get_subforums_infos(self, html):
+    def get_subforums_infos(self, content):
         """
         Get informations (description, number of topics and posts, ...) about
         the forums listed on a page
         """
-        document = PyQuery(html)
+        document = html.fromstring(content)
 
         idpattern = re.compile(r"/([fc]\d+)-.*")
 
-        for element in document("a.forumlink"):
-            e = PyQuery(element)
-
-            match = idpattern.fullmatch(clean_url(e.attr("href")))
+        for link in document.cssselect("a.forumlink"):
+            match = idpattern.fullmatch(clean_url(link.get("href")))
             if not match:
                 continue
 
             forum_id = match.group(1)
             forum = self.get(forum_id)
 
-            row = e.closest("tr")
+            row = link.xpath("ancestor::tr")[-1]
+            cols = row.cssselect("td")
 
             # Get forum status
-            alt = row("td:nth-of-type(1) img").eq(0).attr("alt")
+            alt = cols[0].cssselect("img")[0].get("alt")
             forum.status = 1 if "verrouillé" in alt else 0
 
             # Get subforum description
-            forum.description = row("td:nth-of-type(2) span").eq(1).html() or ""
+            forum.description = etree.tostring(cols[1].xpath("span")[0], encoding='unicode', with_tail=False)
