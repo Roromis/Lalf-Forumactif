@@ -396,13 +396,6 @@ class User(Node):
 
         # Check if the user is the administrator
         if self.name == self.config["admin_name"]:
-            # Add user to global moderators group
-            sqlfile.insert("user_group", {
-                "group_id" : 4,
-                "user_id" : self.newid,
-                "user_pending" : 0
-            })
-
             # Send a private message confirming the import was successful
             parser = htmltobbcode.Parser(self.root)
             parser.feed(PM_POST)
