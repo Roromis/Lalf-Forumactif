@@ -27,7 +27,7 @@ from PIL import Image
 
 from lalf.node import Node, PaginatedNode, Page, ParsingError
 from lalf.util import Counter, pages
-from lalf.phpbb import DEFAULT_SMILIES
+from lalf.phpbb import SMILIES
 
 class ExistingSmiley(Node):
     """
@@ -40,10 +40,6 @@ class ExistingSmiley(Node):
         self.code = infos["code"]
         self.emotion = infos["emotion"]
         self.smiley_url = infos["smiley_url"]
-
-    def _dump_(self, sqlfile):
-        if "smiley_width" in self.infos:
-            sqlfile.insert("smilies", self.infos)
 
 class Smiley(Node):
     """
@@ -141,9 +137,9 @@ class SmiliesPage(Page):
                 except (IndexError, ValueError):
                     raise ParsingError(document)
 
-                if code in DEFAULT_SMILIES:
+                if code in SMILIES:
                     self.logger.debug("L'émoticone \"%s\" existe déjà dans phpbb.", code)
-                    self.add_child(ExistingSmiley(smiley_id, DEFAULT_SMILIES[code]))
+                    self.add_child(ExistingSmiley(smiley_id, SMILIES[code]))
                 else:
                     self.add_child(Smiley(smiley_id, code, url, emotion))
 
@@ -156,7 +152,7 @@ class Smilies(PaginatedNode):
     """
     def __init__(self):
         PaginatedNode.__init__(self, "smilies")
-        self.count = Counter(len(DEFAULT_SMILIES)-1)
+        self.count = Counter(1)
 
     def _export_(self):
         self.logger.info('Récupération des émoticones')
@@ -170,5 +166,11 @@ class Smilies(PaginatedNode):
         for page in pages(response.content):
             self.add_page(SmiliesPage(page))
 
-    def _dump_(self, _):
+    def _dump_(self, sqlfile):
         self.count.reset()
+
+        sqlfile.truncate("smilies")
+
+        for smiley in SMILIES.values():
+            smiley["smiley_order"] = self.smilies.count.newid()
+            sqlfile.insert("smilies", smiley)

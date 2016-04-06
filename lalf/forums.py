@@ -286,25 +286,6 @@ class Forums(Node):
                 self._export_children(div, forum)
                 parent.right_id = forum.right_id + 1
 
-    def _export_(self):
-        self.logger.info('Récupération des forums')
-
-        # Get the page of the administration panel listing the forums
-        params = {
-            "part" : "general",
-            "sub" : "general",
-            "mode" : "forum"
-        }
-        response = self.session.get_admin("/admin/index.forum", params=params)
-        document = html.fromstring(response.content)
-
-        root = document.cssselect("#root_open")[0]
-        self._export_children(root, ForumRoot())
-
-        # Get subforums descriptions
-        response = self.session.get("/forum")
-        self.get_subforums_infos(response.content)
-
     def get_subforums_infos(self, content):
         """
         Get informations (description, number of topics and posts, ...) about
@@ -331,3 +312,31 @@ class Forums(Node):
 
             # Get subforum description
             forum.description = etree.tostring(cols[1].xpath("span")[0], encoding='unicode', with_tail=False)
+
+    def _export_(self):
+        self.logger.info('Récupération des forums')
+
+        # Get the page of the administration panel listing the forums
+        params = {
+            "part" : "general",
+            "sub" : "general",
+            "mode" : "forum"
+        }
+        response = self.session.get_admin("/admin/index.forum", params=params)
+        document = html.fromstring(response.content)
+
+        root = document.cssselect("#root_open")[0]
+        self._export_children(root, ForumRoot())
+
+        # Get subforums descriptions
+        response = self.session.get("/forum")
+        self.get_subforums_infos(response.content)
+
+    def _dump_(self, sqlfile):
+        sqlfile.truncate("forums")
+        sqlfile.truncate("acl_groups")
+
+        sqlfile.truncate("topics")
+        sqlfile.truncate("topics_posted")
+
+        sqlfile.truncate("posts")

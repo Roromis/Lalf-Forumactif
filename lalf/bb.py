@@ -197,23 +197,6 @@ class BB(Node):
 
         sqlfile.prefix = self.config["table_prefix"]
 
-        # Clean tables
-        sqlfile.truncate("users")
-        sqlfile.truncate("user_group")
-        sqlfile.truncate("bots")
-
-        sqlfile.truncate("forums")
-        sqlfile.truncate("acl_groups")
-
-        sqlfile.truncate("topics")
-        sqlfile.truncate("topics_posted")
-
-        sqlfile.truncate("posts")
-        sqlfile.truncate("privmsgs")
-        sqlfile.truncate("privmsgs_to")
-
-        sqlfile.truncate("bbcodes")
-
         # Update configuration and statistics
         sqlfile.set_config("board_startdate", self.startdate)
         sqlfile.set_config("default_lang", self.config["default_lang"])
@@ -237,6 +220,7 @@ class BB(Node):
         sqlfile.set_config("newest_user_colour", newest_user.colour)
 
         # Add bbcodes tags
+        sqlfile.truncate("bbcodes")
         for bbcode in phpbb.BBCODES:
             sqlfile.insert("bbcodes", bbcode)
 

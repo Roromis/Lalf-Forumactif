@@ -25,6 +25,7 @@ from lxml import html
 
 from lalf.node import Node, Page, PaginatedNode, ParsingError
 from lalf.util import pages, Counter, clean_url
+from lalf.phpbb import GROUPS
 
 TYPES = {
     "Groupe fermé": 1,
@@ -161,3 +162,9 @@ class Groups(Node):
                 break
 
             self.add_child(Group(group_id, name, description, leader_name, colour, group_type))
+
+    def _dump_(self, sqlfile):
+        sqlfile.truncate("groups")
+
+        for group in GROUPS:
+            sqlfile.insert("groups", group)

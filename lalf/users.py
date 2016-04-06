@@ -531,9 +531,15 @@ class Users(PaginatedNode):
             self.add_page(UsersPage(page))
 
     def _dump_(self, sqlfile):
-        user_id = 3
+        sqlfile.truncate("users")
+        sqlfile.truncate("user_group")
+        sqlfile.truncate("bots")
+
+        sqlfile.truncate("privmsgs")
+        sqlfile.truncate("privmsgs_to")
+
         # Add bots
-        for bot in BOTS:
+        for user_id, bot in enumerate(BOTS, 3):
             sqlfile.insert("users", {
                 "user_id" : user_id,
                 "user_type" : "2",
@@ -557,5 +563,3 @@ class Users(PaginatedNode):
                 "bot_name" : bot["name"],
                 "user_id" : user_id,
                 "bot_agent" : bot["agent"]})
-
-            user_id += 1
