@@ -76,10 +76,11 @@ class Group(PaginatedNode):
     def _export_(self):
         self.logger.info('Récupération du groupe %d', self.id)
 
-        if self.id == 1:
-            # Administrators group
+        if self.name == self.config["administrators_group"]:
             self.newid = 5
             self.leader_name = self.config["admin_name"]
+        elif self.name == self.config["moderators_group"]:
+            self.newid = 4
         else:
             self.newid = self.groups.count.newid()
 
@@ -89,7 +90,7 @@ class Group(PaginatedNode):
 
     def _dump_(self, sqlfile):
         if self.newid > 7:
-            # Do not create the administrators group
+            # Do not create the administrators and moderators groups
             display = 0 if self.type == 2 else 1
             sqlfile.insert("groups", {
                 "group_id": self.newid,

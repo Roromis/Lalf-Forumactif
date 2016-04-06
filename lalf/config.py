@@ -22,10 +22,7 @@ Module handling the configuration
 import configparser
 import os.path
 
-# Options defined in the config file
-STRINGS = ["url", "admin_name", "admin_password", "table_prefix", "gocr", "temporary_theme",
-           "phpbb_url", "default_lang"]
-BOOLEANS = ["export_smilies", "rewrite_links"]
+CONFIG_PATH = "lalf.cfg"
 
 class NoConfigurationFile(Exception):
     """
@@ -88,17 +85,26 @@ def read(filename):
     config = {}
 
     try:
-        for option in STRINGS:
-            config[option] = cfg.get("Configuration", option)
-
-        for option in BOOLEANS:
-            config[option] = cfg.getboolean("Configuration", option)
+        config["url"] = cfg.get("Forumactif", "url").rstrip("/")
+        config["admin_name"] = cfg.get("Forumactif", "admin_name")
+        config["admin_password"] = cfg.get("Forumactif", "admin_password")
     except (configparser.NoSectionError, configparser.NoOptionError) as e:
         raise InvalidConfigurationFile(filename, e)
 
+    config["temporary_theme"] = cfg.get("Forumactif", "temporary_theme", fallback="")
+
     if config["url"].startswith("http://"):
         config["url"] = config["url"][7:]
-    config["url"] = config["url"].rstrip("/")
-    config["phpbb_url"] = config["phpbb_url"].rstrip("/")
+
+    config["gocr"] = cfg.get("Exportation", "gocr", fallback="gocr")
+    config["export_smilies"] = cfg.getboolean("Exportation", "export_smilies", fallback=True)
+    config["rewrite_links"] = cfg.getboolean("Exportation", "rewrite_links", fallback=False)
+
+    config["phpbb_url"] = cfg.get("PhpBB", "phpbb_url", fallback="").rstrip("/")
+    config["table_prefix"] = cfg.get("PhpBB", "table_prefix", fallback="phpbb_")
+    config["default_lang"] = cfg.get("PhpBB", "default_lang", fallback="fr")
+
+    config["administrators_group"] = cfg.get("Groups", "administrators", fallback="")
+    config["moderators_group"] = cfg.get("Groups", "global_moderators" ,fallback="")
 
     return config

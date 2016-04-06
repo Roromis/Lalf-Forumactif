@@ -36,8 +36,7 @@ from lalf.linkrewriter import LinkRewriter
 from lalf.util import parse_date, Counter, count
 from lalf.ui import UI
 from lalf.config import read as read_config
-
-CONFIG_PATH = "config.cfg"
+from lalf.config import CONFIG_PATH
 
 @Node.expose("config", "session", "ui", "smilies", "users", "groups", "forums",
              "post_count", self="root")
@@ -55,12 +54,6 @@ class BB(Node):
     def __init__(self):
         Node.__init__(self, "root")
 
-        self.config = read_config(CONFIG_PATH)
-        self.session = Session(self.config)
-        self.ui = UI(self)
-        self.linkrewriter = LinkRewriter(self)
-
-        # Statistics
         self.total_posts = 0
         self.total_topics = 0
         self.total_users = 0
@@ -75,6 +68,11 @@ class BB(Node):
         self.site_desc = ""
 
         self.dump_time = 0
+
+        self.config = read_config(CONFIG_PATH)
+        self.session = Session(self.config)
+        self.ui = UI(self)
+        self.linkrewriter = LinkRewriter(self)
 
     def __getstate__(self):
         state = Node.__getstate__(self)

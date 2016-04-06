@@ -35,6 +35,7 @@ from lxml import html
 from lalf.node import Node, PaginatedNode, Page, ParsingError
 from lalf.util import Counter, pages, random_string, parse_date, parse_userlist_date, clean_filename, clean_url
 from lalf.phpbb import BOTS
+from lalf.config import CONFIG_PATH
 from lalf import htmltobbcode
 
 PM_SUBJECT = "Félicitations !"
@@ -64,8 +65,8 @@ class GocrNotInstalled(Exception):
     def __str__(self):
         return (
             "L'exécutable de gocr ({exe}) n'existe pas. Vérifiez que gocr est bien installé et "
-            "que le chemin est correctement configuré dans le fichier config.cfg."
-        ).format(exe=self.ocrpath)
+            "que le chemin est correctement configuré dans le fichier {cfg."
+        ).format(exe=self.ocrpath, cfg=CONFIG_PATH)
 
 def toolong(path):
     """

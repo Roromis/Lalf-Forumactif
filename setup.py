@@ -55,7 +55,7 @@ setup(
         ],
     },
     data_files=[('share/doc/lalf', [
-        'config.cfg',
+        'lalf.cfg',
         'LICENSE',
         'README.md'
     ])]
