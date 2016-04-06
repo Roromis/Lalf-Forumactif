@@ -23,7 +23,7 @@ import re
 
 from lxml import html, etree
 
-from lalf.node import Node, ParsingError
+from lalf.node import Node, Page, ParsingError
 from lalf.util import parse_date, clean_url
 from lalf.users import AnonymousUser, NoUser
 from lalf import htmltobbcode
@@ -60,10 +60,6 @@ class Post(Node):
         self.time = post_time
         self.poster = poster
 
-    def _export_(self):
-        self.root.current_posts += 1
-        self.ui.update()
-
     def _dump_(self, sqlfile):
         self.logger.debug("Exportation du message %d (sujet %d)", self.id, self.topic.id)
         parser = htmltobbcode.Parser(self.root)
@@ -82,12 +78,12 @@ class Post(Node):
             "bbcode_bitfield" : post.bitfield,
             "bbcode_uid" : post.uid})
 
-class TopicPage(Node):
+class TopicPage(Page):
     """
     Node representing a page of a topic
     """
     def __init__(self, page_id):
-        Node.__init__(self, page_id)
+        Page.__init__(self, page_id)
 
     def _export_(self):
         self.logger.debug('Récupération des messages du sujet %d (page %d)',
@@ -135,3 +131,4 @@ class TopicPage(Node):
                 text = ""
 
             self.add_child(Post(post_id, text, title, timestamp, poster))
+            self.post_count += 1

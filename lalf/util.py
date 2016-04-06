@@ -58,8 +58,17 @@ class Counter(object):
         >>> n.value, c.value
         6, 6
     """
-    def __init__(self, value=0):
+    def __init__(self, offset=0):
+        self.offset = offset
+        self.value = 0
+
+    def reset(self, value=0):
         self.value = value
+
+    def newid(self):
+        newid = self.value + self.offset
+        self.value += 1
+        return newid
 
     def __iadd__(self, other):
         self.value += other
@@ -167,3 +176,9 @@ def clean_url(string):
     """
     url = urlparse(string)
     return urlunparse((url.scheme, url.netloc, url.path, '', '', ''))
+
+def count(iterator):
+    try:
+        return len(iterator)
+    except TypeError:
+        return sum(1 for _ in iterator)

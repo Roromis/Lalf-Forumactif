@@ -33,16 +33,14 @@ from lalf.smilies import Smilies
 from lalf import phpbb
 from lalf.session import Session
 from lalf.linkrewriter import LinkRewriter
-from lalf.util import parse_date
+from lalf.util import parse_date, Counter, count
 from lalf.ui import UI
 from lalf.config import read as read_config
 
-# TODO use *.count instea of current_*
-
 CONFIG_PATH = "config.cfg"
 
-@Node.expose("config", "session", "ui", "smilies", "users", "forums",
-             self="root")
+@Node.expose("config", "session", "ui", "smilies", "users", "groups", "forums",
+             "post_count", self="root")
 class BB(Node):
     """
     The BB node is the root of the tree representing the forum.
@@ -52,16 +50,11 @@ class BB(Node):
         total_topics (int) : The total number of topics to be exported
         total_users (int) : The total number of users to be exported
 
-        current_posts (int) : The number of posts that have been exported
-        current_topics (int) : The number of topics that have been exported
-        current_users (int) : The number of users that have been exported
-
         dump_time (int): The time at the beginning of the dump
     """
 
     # Attributes to save
-    STATE_KEEP = ["total_posts", "total_topics", "total_users",
-                  "current_posts", "current_topics", "current_users",
+    STATE_KEEP = ["total_posts", "total_topics", "total_users", "post_count",
                   "startdate", "record_online_date", "record_online_users",
                   "site_name", "site_desc", "forums"]
 
@@ -77,9 +70,7 @@ class BB(Node):
         self.total_topics = 0
         self.total_users = 0
 
-        self.current_posts = 0
-        self.current_topics = 0
-        self.current_users = 0
+        self.post_count = Counter()
 
         self.startdate = 0
         self.record_online_date = 0
@@ -99,6 +90,8 @@ class BB(Node):
         self.ui = UI(self)
         self.linkrewriter = LinkRewriter(self)
 
+        self.post_count.reset(count(self.get_posts()))
+
     @property
     def smilies(self):
         return self.get("smilies")
@@ -106,6 +99,10 @@ class BB(Node):
     @property
     def users(self):
         return self.get("users")
+
+    @property
+    def groups(self):
+        return self.get("groups")
 
     @property
     def forums(self):

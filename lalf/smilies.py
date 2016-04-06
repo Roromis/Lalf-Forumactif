@@ -25,7 +25,7 @@ from io import BytesIO
 from lxml import html
 from PIL import Image
 
-from lalf.node import Node, PaginatedNode, ParsingError
+from lalf.node import Node, PaginatedNode, Page, ParsingError
 from lalf.util import Counter, pages
 from lalf.phpbb import DEFAULT_SMILIES
 
@@ -77,7 +77,6 @@ class Smiley(Node):
         self.smiley_url = None
         self.width = None
         self.height = None
-        self.order = None
 
     def _export_(self):
         if self.config["export_smilies"]:
@@ -102,21 +101,20 @@ class Smiley(Node):
                 with open(os.path.join(dirname, self.smiley_url), "wb") as fileobj:
                     fileobj.write(response.content)
 
-                self.smilies_count += 1
-                self.order = self.smilies_count.value
-
     def _dump_(self, sqlfile):
+        order = self.smilies.count.newid()
+
         sqlfile.insert("smilies", {
             "code" : self.code,
             "emotion" : self.emotion,
             "smiley_url" : self.smiley_url,
             "smiley_width" : self.width,
             "smiley_height" : self.height,
-            "smiley_order" : self.order,
+            "smiley_order" : order,
             "display_on_posting" : "0"
         })
 
-class SmiliesPage(Node):
+class SmiliesPage(Page):
     """
     Node representing a page of the list of smilies
 
@@ -124,7 +122,7 @@ class SmiliesPage(Node):
         page (int): The index of the first smiley on the page
     """
     def __init__(self, page_id):
-        Node.__init__(self, page_id)
+        Page.__init__(self, page_id)
 
     def _export_(self):
         self.logger.debug('Récupération des émoticones (page %d)', self.id)
@@ -156,7 +154,6 @@ class SmiliesPage(Node):
                 else:
                     self.add_child(Smiley(smiley_id, code, url, emotion))
 
-@Node.expose(count="smilies_count")
 class Smilies(PaginatedNode):
     """
     Node used to export the smilies
@@ -170,7 +167,7 @@ class Smilies(PaginatedNode):
 
     def __init__(self):
         PaginatedNode.__init__(self, "smilies")
-        self.count = Counter(len(DEFAULT_SMILIES))
+        self.count = Counter(len(DEFAULT_SMILIES)-1)
 
     def _export_(self):
         self.logger.info('Récupération des émoticones')
@@ -182,4 +179,7 @@ class Smilies(PaginatedNode):
         }
         response = self.session.get_admin("/admin/index.forum", params=params)
         for page in pages(response.content):
-            self.add_child(SmiliesPage(page))
+            self.add_page(SmiliesPage(page))
+
+    def _dump_(self, _):
+        self.count.reset()

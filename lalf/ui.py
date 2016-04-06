@@ -115,10 +115,10 @@ class UI(logging.Handler):
             changed = True
 
         # Compute progress
-        if self.bb:
-            current = self.bb.current_users + self.bb.current_topics + self.bb.current_posts
-            total = self.bb.total_users + self.bb.total_topics + self.bb.total_posts
-        else:
+        try:
+            current = self.bb.users.count.value + self.bb.post_count.value
+            total = self.bb.total_users + self.bb.total_posts - 1 # the administrator is not counted
+        except (KeyError, AttributeError):
             current = 0
             total = 0
 

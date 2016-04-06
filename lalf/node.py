@@ -194,23 +194,49 @@ class Node(object):
     def _dump_(self, sqlfile):
         return
 
+class Page(Node):
+    NODE_KEEP = Node.NODE_KEEP + ["parent"]
+
+    def __init__(self, node_id):
+        Node.__init__(self, node_id)
+        self.parent = None
+
+    def add_child(self, child):
+        self.parent.add_child(child)
+
 class PaginatedNode(Node):
-    def get_children(self):
-        for page in self.children.values():
-            for child in page.get_children():
-                yield child
+    NODE_KEEP = Node.NODE_KEEP + ["pages"]
 
-    def get(self, child_id):
-        for page in self.children.values():
-            try:
-                return page.get(child_id)
-            except KeyError:
-                pass
-        raise KeyError() # TODO : message
+    def __init__(self, node_id):
+        Node.__init__(self, node_id)
+        self.pages = OrderedDict()
 
-    def first(self):
-        return next(iter(self.children.values())).first()
+    def add_page(self, page):
+        """
+        Add a page to the node
+        """
+        if page.id in self.pages:
+            self.logger.warning("Page %s already exists, skipping", str(page.id))
+        else:
+            self.pages[page.id] = page
 
-    def last(self):
-        return next(reversed(self.children.values())).last()
+            page.parent = self
+            page.exposed_attrs.update(self.exposed_attrs)
+            for attr, name in self.__class__.EXPOSE:
+                page.exposed_attrs[name] = (self, attr)
 
+    def remove_children(self):
+        """
+        Remove the children
+        """
+        self.pages.clear()
+        Node.remove_children(self)
+
+    def export_children(self):
+        """
+        Export the children of the node
+        """
+        for page in self.pages.values():
+            page.export()
+
+        Node.export_children(self)

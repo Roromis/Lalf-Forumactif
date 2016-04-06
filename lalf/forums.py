@@ -105,8 +105,7 @@ class Forum(PaginatedNode):
     def _export_(self):
         self.logger.info('Récupération du forum %s', self.id)
 
-        self.forums.count += 1
-        self.newid = self.forums.count.value
+        self.newid = self.forums.count.newid()
 
         response = self.session.get("/{}-a".format(self.id))
 
@@ -114,7 +113,7 @@ class Forum(PaginatedNode):
         self.forums.get_subforums_infos(response.content)
 
         for page in pages(response.content):
-            self.add_child(ForumPage(page))
+            self.add_page(ForumPage(page))
 
     def _dump_(self, sqlfile):
         # Get forum_parents field
@@ -233,7 +232,7 @@ class Announcements(Node):
             except IndexError:
                 topic_type = 0
 
-            if topic_type < 2:
+            if topic_type != 3:
                 continue
 
             match = idpattern.fullmatch(clean_url(link.get("href")))
@@ -253,8 +252,15 @@ class Forums(Node):
 
     def __init__(self):
         Node.__init__(self, "forums")
-        self.count = Counter(0)
+        self.count = Counter(1)
         self.announcements = None
+
+    def __setstate__(self, state):
+        Node.__setstate__(self, state)
+
+    def remove_children(self):
+        Node.remove_children(self)
+        self.count.reset()
 
     def _export_children(self, element, parent=None):
         """

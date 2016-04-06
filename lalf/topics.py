@@ -19,7 +19,7 @@ import re
 
 from lxml import html
 
-from lalf.node import Node, PaginatedNode, ParsingError
+from lalf.node import Node, Page, PaginatedNode, ParsingError
 from lalf.posts import TopicPage
 from lalf.util import pages, clean_url
 
@@ -64,12 +64,9 @@ class Topic(PaginatedNode):
     def _export_(self):
         self.logger.info('Récupération du sujet %d', self.id)
 
-        self.root.current_topics += 1
-        self.ui.update()
-
         response = self.session.get("/t{}-a".format(self.id))
         for page in pages(response.content):
-            self.add_child(TopicPage(page))
+            self.add_page(TopicPage(page))
 
     def _dump_(self, sqlfile):
         posts = list(self.get_posts())
@@ -107,7 +104,7 @@ class Topic(PaginatedNode):
                 "topic_posted" : 1
             })
 
-class ForumPage(Node):
+class ForumPage(Page):
     """
     Node representing a page of a forum
 
@@ -115,7 +112,7 @@ class ForumPage(Node):
         page (int): The index of the first topic of the page
     """
     def __init__(self, page_id):
-        Node.__init__(self, page_id)
+        Page.__init__(self, page_id)
 
     def _export_(self):
         self.logger.debug('Récupération du forum %s (page %d)', self.forum.id, self.id)
@@ -143,7 +140,7 @@ class ForumPage(Node):
             except IndexError:
                 topic_type = 0
 
-            if topic_type >= 2:
+            if topic_type == 3:
                 continue
 
             match = idpattern.fullmatch(clean_url(link.get("href")))

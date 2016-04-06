@@ -23,7 +23,7 @@ import re
 
 from lxml import html
 
-from lalf.node import Node, ParsingError
+from lalf.node import Node, Page, PaginatedNode, ParsingError
 from lalf.util import pages, Counter, clean_url
 
 TYPES = {
@@ -32,13 +32,13 @@ TYPES = {
     "Groupe ouvert": 4
 }
 
-class GroupPage(Node):
+class GroupPage(Page):
     """
     Node representing a page of a group
     """
 
     def __init__(self, page_id):
-        Node.__init__(self, page_id)
+        Page.__init__(self, page_id)
 
     def _export_(self):
         self.logger.debug('Récupération du groupe %d (page %d)', self.group.id, self.id)
@@ -58,7 +58,7 @@ class GroupPage(Node):
                     user.groups.append(self.group)
 
 @Node.expose(self="group")
-class Group(Node):
+class Group(PaginatedNode):
     """
     Node representing a group
     """
@@ -66,7 +66,7 @@ class Group(Node):
     STATE_KEEP = ["newid", "name", "description", "leader_name", "colour", "type"]
 
     def __init__(self, group_id, name, description, leader_name, colour, group_type):
-        Node.__init__(self, group_id)
+        PaginatedNode.__init__(self, group_id)
         self.name = name
         self.description = description
         self.leader_name = leader_name
@@ -83,12 +83,11 @@ class Group(Node):
             self.newid = 5
             self.leader_name = self.config["admin_name"]
         else:
-            self.newid = self.groups_count.value
-            self.groups_count += 1
+            self.newid = self.groups.count.newid()
 
         response = self.session.get("/g{}-a".format(self.id))
         for page in pages(response.content):
-            self.add_child(GroupPage(page))
+            self.add_page(GroupPage(page))
 
     def _dump_(self, sqlfile):
         if self.newid > 7:
@@ -103,7 +102,6 @@ class Group(Node):
                 "group_colour": self.colour
             })
 
-@Node.expose(count="groups_count")
 class Groups(Node):
     """
     Node used to export the groups
@@ -115,6 +113,13 @@ class Groups(Node):
         Node.__init__(self, "groups")
         # There are 7 groups already defined in phpbb, start at 8
         self.count = Counter(8)
+
+    def __setstate__(self, state):
+        Node.__setstate__(self, state)
+
+    def remove_children(self):
+        Node.remove_children(self)
+        self.count.reset()
 
     def _export_(self):
         self.logger.info("Récupération des groupes")

@@ -32,7 +32,7 @@ from binascii import crc32
 from PIL import Image
 from lxml import html
 
-from lalf.node import Node, PaginatedNode, ParsingError
+from lalf.node import Node, PaginatedNode, Page, ParsingError
 from lalf.util import Counter, pages, random_string, parse_date, parse_userlist_date, clean_filename, clean_url
 from lalf.phpbb import BOTS
 from lalf import htmltobbcode
@@ -116,6 +116,9 @@ class AnonymousUser(Node):
         self.newid = 1
         self.name = ""
         self.colour = ""
+
+    def confirm_email(self):
+        return
 
     def _dump_(self, sqlfile):
         post_times = [post.time for post in self.root.get_posts() if post.poster.newid == 1]
@@ -245,11 +248,7 @@ class User(Node):
             elif self.name == "Anonymous":
                 self.newid = 1
             else:
-                self.newid = self.users_count.value
-                self.users_count += 1
-
-            self.root.current_users += 1
-            self.ui.update()
+                self.newid = self.users.count.newid()
 
         # Search for this user in the administration panel
         try:
@@ -442,12 +441,12 @@ class User(Node):
                 'folder_id'	   : 0
             })
 
-class UsersPage(Node):
+class UsersPage(Page):
     """
     Node representing a page of the list of users
     """
     def __init__(self, page_id):
-        Node.__init__(self, page_id)
+        Page.__init__(self, page_id)
 
     def _export_(self):
         self.logger.debug('Récupération des membres (page %d)', self.id)
@@ -501,7 +500,7 @@ class UsersPage(Node):
 
             self.add_child(User(user_id, name, posts, regdate, lastvisit, colour))
 
-@Node.expose("encoding", count="users_count")
+@Node.expose("encoding")
 class Users(PaginatedNode):
     """
     Node used to export the users
@@ -515,6 +514,13 @@ class Users(PaginatedNode):
         # and the second one is the administrator
         self.count = Counter(len(BOTS) + 3)
         self.encoding = None
+
+    def __setstate__(self, state):
+        Node.__setstate__(self, state)
+
+    def remove_children(self):
+        Node.remove_children(self)
+        self.count.reset()
 
     def _export_(self):
         self.logger.info('Récupération des membres')
@@ -532,7 +538,7 @@ class Users(PaginatedNode):
 
         response = self.session.get("/memberlist")
         for page in pages(response.content):
-            self.add_child(UsersPage(page))
+            self.add_page(UsersPage(page))
 
     def _dump_(self, sqlfile):
         user_id = 3
