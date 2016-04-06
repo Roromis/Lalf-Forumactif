@@ -181,3 +181,18 @@ def user_handler(bb, match, params, fragment):
         return None
 
     return "/memberlist.php?mode=viewprofile&u={}".format(user_id)
+
+@LinkRewriter.handler(r"/g(\d+)-.*")
+def group_handler(bb, match, params, fragment):
+    """
+    Rewrite urls of the following forms:
+
+    /g<id>-...
+    """
+    group_id = int(match.group(1))
+    try:
+        group_id = bb.groups.get(group_id).newid
+    except KeyError:
+        return None
+
+    return "/memberlist.php?mode=group&g={}".format(group_id)
