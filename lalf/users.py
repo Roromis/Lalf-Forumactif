@@ -108,9 +108,6 @@ class AnonymousUser(Node):
     """
     Node representing the anonymous user
     """
-
-    STATE_KEEP = ["newid", "name", "colour"]
-
     def __init__(self):
         Node.__init__(self, -1)
         self.newid = 1
@@ -166,10 +163,6 @@ class User(Node):
             - 0 if the email could not be exported
         img (str): The path of the image containing the email
     """
-    # Attributes to save
-    STATE_KEEP = ["newid", "name", "mail", "posts", "date",
-                  "lastvisit", "colour", "groups", "trust", "img"]
-
     def __init__(self, user_id, name, posts, date, lastvisit, colour):
         Node.__init__(self, user_id)
         self.name = name
@@ -505,9 +498,6 @@ class Users(PaginatedNode):
     """
     Node used to export the users
     """
-    # Attributes to save
-    STATE_KEEP = ["count", "encoding"]
-
     def __init__(self):
         PaginatedNode.__init__(self, "users")
         # User ids start at one, the first one is the anonymous user,

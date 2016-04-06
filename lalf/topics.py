@@ -45,9 +45,6 @@ class Topic(PaginatedNode):
         locked (int): 1 if the topic is locked, else 0
         views (int): The number of views of the topic
     """
-    # Attributes to save
-    STATE_KEEP = ["type", "title", "locked", "views"]
-
     def __init__(self, topic_id, topic_type, title, locked, views):
         PaginatedNode.__init__(self, topic_id)
         self.type = topic_type

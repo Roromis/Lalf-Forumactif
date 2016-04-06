@@ -62,9 +62,6 @@ class Group(PaginatedNode):
     """
     Node representing a group
     """
-
-    STATE_KEEP = ["newid", "name", "description", "leader_name", "colour", "type"]
-
     def __init__(self, group_id, name, description, leader_name, colour, group_type):
         PaginatedNode.__init__(self, group_id)
         self.name = name
@@ -106,9 +103,6 @@ class Groups(Node):
     """
     Node used to export the groups
     """
-
-    STATE_KEEP = ["count"]
-
     def __init__(self):
         Node.__init__(self, "groups")
         # There are 7 groups already defined in phpbb, start at 8

@@ -52,18 +52,13 @@ class BB(Node):
 
         dump_time (int): The time at the beginning of the dump
     """
-
-    # Attributes to save
-    STATE_KEEP = ["total_posts", "total_topics", "total_users", "post_count",
-                  "startdate", "record_online_date", "record_online_users",
-                  "site_name", "site_desc", "forums"]
-
     def __init__(self):
         Node.__init__(self, "root")
 
         self.config = read_config(CONFIG_PATH)
         self.session = Session(self.config)
         self.ui = UI(self)
+        self.linkrewriter = LinkRewriter(self)
 
         # Statistics
         self.total_posts = 0
@@ -81,7 +76,13 @@ class BB(Node):
 
         self.dump_time = 0
 
-        self.linkrewriter = LinkRewriter(self)
+    def __getstate__(self):
+        state = Node.__getstate__(self)
+        del state["config"]
+        del state["session"]
+        del state["ui"]
+        del state["linkrewriter"]
+        return state
 
     def __setstate__(self, state):
         Node.__setstate__(self, state)

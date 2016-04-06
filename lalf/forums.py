@@ -64,10 +64,6 @@ class Forum(PaginatedNode):
         description (str): The description of the forum
         icon (str): The url of the forum icon
     """
-    # Attributes to save
-    STATE_KEEP = ["newid", "parent", "title", "description", "icon", "left_id",
-                  "right_id", "status", "num_topics", "num_posts", "type"]
-
     def __init__(self, forum_id, parent, title, num_topics, num_posts):
         PaginatedNode.__init__(self, forum_id)
         self.parent = parent
@@ -168,7 +164,6 @@ class Forum(PaginatedNode):
             sqlfile.insert("acl_groups", acl)
 
 class ForumRoot(Node):
-    STATE_KEEP = ["id", "newid", "left_id", "right_id"]
     def __init__(self):
         Node.__init__(self, 0)
         self.newid = 0
@@ -184,8 +179,6 @@ class Announcements(Node):
         forum_id (int): The index of the forum used to export the global
             announcements (any existing forum will do).
     """
-    STATE_KEEP = ["forum", "forum_id"]
-
     def __init__(self, forum_id):
         Node.__init__(self, "announcements")
         self.forum = ForumRoot()
@@ -247,9 +240,6 @@ class Forums(Node):
     """
     Node used to export the forums
     """
-
-    STATE_KEEP = ["count", "announcements"]
-
     def __init__(self):
         Node.__init__(self, "forums")
         self.count = Counter(1)

@@ -33,9 +33,6 @@ class ExistingSmiley(Node):
     """
     Node representing a smiley that already exists in phpbb
     """
-    # Attributes to save
-    STATE_KEEP = ["code", "emotion", "smiley_url", "infos"]
-
     def __init__(self, smiley_id, infos):
         Node.__init__(self, smiley_id)
         self.infos = infos
@@ -64,10 +61,6 @@ class Smiley(Node):
         height (int): The height of the image
         order (int): The position of the smiley in the interface
     """
-
-    # Attributes to save
-    STATE_KEEP = ["code", "url", "emotion", "smiley_url", "width", "height", "order"]
-
     def __init__(self, smiley_id, code, url, emotion):
         Node.__init__(self, smiley_id)
         self.code = code
@@ -161,10 +154,6 @@ class Smilies(PaginatedNode):
     Attrs:
         count (Counter): The number of smilies
     """
-
-    # Attributes to save
-    STATE_KEEP = ["order", "count"]
-
     def __init__(self):
         PaginatedNode.__init__(self, "smilies")
         self.count = Counter(len(DEFAULT_SMILIES)-1)

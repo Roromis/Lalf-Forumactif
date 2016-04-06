@@ -51,8 +51,6 @@ class Post(Node):
         time (int): Time of the post (unix timestamp)
         poster (User): User who submitted the post
     """
-    STATE_KEEP = ["text", "title", "time", "poster"]
-
     def __init__(self, post_id, text, title, post_time, poster):
         Node.__init__(self, post_id)
         self.text = text

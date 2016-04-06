@@ -47,10 +47,6 @@ class Node(object):
        exported (bool): True if the node has been exported
     """
 
-    # Attributes to save
-    NODE_KEEP = ["id", "children", "exposed_attrs", "exported"]
-    STATE_KEEP = []
-
     # Attributes exposed to the node's children (used by @Node.expose decorator)
     EXPOSE = []
 
@@ -114,13 +110,10 @@ class Node(object):
                                                        self.__class__.__name__))
 
     def __getstate__(self):
-        odict = self.__dict__.copy()
+        state = self.__dict__.copy()
+        del state["logger"]
 
-        for k in self.__dict__:
-            if not (k in self.NODE_KEEP or k in self.STATE_KEEP):
-                del odict[k]
-
-        return odict
+        return state
 
     def get_children(self):
         return self.children.values()
@@ -195,8 +188,6 @@ class Node(object):
         return
 
 class Page(Node):
-    NODE_KEEP = Node.NODE_KEEP + ["parent"]
-
     def __init__(self, node_id):
         Node.__init__(self, node_id)
         self.parent = None
@@ -205,8 +196,6 @@ class Page(Node):
         self.parent.add_child(child)
 
 class PaginatedNode(Node):
-    NODE_KEEP = Node.NODE_KEEP + ["pages"]
-
     def __init__(self, node_id):
         Node.__init__(self, node_id)
         self.pages = OrderedDict()
