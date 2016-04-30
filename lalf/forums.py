@@ -204,7 +204,7 @@ class Forums(Node):
         for element in document.find("select option"):
             forum_id = element.get("value", "-1")
             if forum_id != "-1":
-                match = re.search('(((\\||\xa0)(\xa0\xa0\xa0))*)\\|--([^<]+)', element.text)
+                match = re.search('(((\\||\xa0)(\xa0\xa0\xa0))*)\\|--([^<]*)', element.text)
                 if match is None:
                     continue
 
