@@ -196,6 +196,68 @@ BBCODES = [
 	 "first_pass_replace" : '\'[spoiler:$uid]\'.str_replace(array(\"\\r\\n\", \'\\\"\', \'\\\'\', \'(\', \')\'), array(\"\\n\", \'\"\', \'&#39;\', \'&#40;\', \'&#41;\'), trim(\'${1}\')).\'[/spoiler:$uid]\'',
 	 "second_pass_match" : '!\\[spoiler:$uid\\](.*?)\\[/spoiler:$uid\\]!s',
 	 "second_pass_replace" : '<dl class=\"codebox\"><dt>Spoiler: <a href=\"#\" onclick=\"var content = this.parentNode.parentNode.getElementsByTagName(\'dd\')[0]; if (content.style.display != \'\') { content.style.display = \'\'; this.innerText = \'Cacher\'; this.value = \'Hide\'; } else { content.style.display = \'none\'; this.innerText = \'Afficher\'; }; return false;\">Afficher</a></dt><dd style=\"display: none;\">${1}</dd></dl>'},
+
+
+	#
+	# initial credit : Titou74 11/9/2016
+	# https://github.com/Roromis/Lalf-Forumactif/issues/56#issuecomment-246206547
+	# h2, h3, h4, youtube, dailymotion
+	#
+	{"bbcode_id" : 29,
+	 "bbcode_tag" : 'h2',
+	 "bbcode_helpline" : 'H2',
+	 "display_on_posting" : 0,
+	 "bbcode_match" : '[h2]{TEXT}[/h2]',
+	 "bbcode_tpl" : '<h2 class="post-content">{TEXT}</h2>',
+	 "first_pass_match" : '!\\[h2\\](.*?)\\[/h2\\]!ies',
+	 "first_pass_replace" : '\'[h2:$uid]\'.str_replace(array(\"\\r\\n\", \'\\\"\', \'\\\'\', \'(\', \')\'), array(\"\\n\", \'\"\', \'&#39;\', \'&#40;\', \'&#41;\'), trim(\'${1}\')).\'[/h2:$uid]\'',
+	 "second_pass_match" : '!\\[h2:$uid\\](.*?)\\[/h2:$uid\\]!s',
+	 "second_pass_replace" : '<h2 class=\"post-content\">${1}</h2>'},
+
+	{"bbcode_id" : 30,
+	 "bbcode_tag" : 'h3',
+	 "bbcode_helpline" : 'H3',
+	 "display_on_posting" : 0,
+	 "bbcode_match" : '[h3]{TEXT}[/h3]',
+	 "bbcode_tpl" : '<h3 class="post-content">{TEXT}</h3>',
+	 "first_pass_match" : '!\\[h3\\](.*?)\\[/h3\\]!ies',
+	 "first_pass_replace" : '\'[h3:$uid]\'.str_replace(array(\"\\r\\n\", \'\\\"\', \'\\\'\', \'(\', \')\'), array(\"\\n\", \'\"\', \'&#39;\', \'&#40;\', \'&#41;\'), trim(\'${1}\')).\'[/h3:$uid]\'',
+	 "second_pass_match" : '!\\[h3:$uid\\](.*?)\\[/h3:$uid\\]!s',
+	 "second_pass_replace" : '<h3 class=\"post-content\">${1}</h3>'},
+	 
+	{"bbcode_id" : 31,
+	 "bbcode_tag" : 'h4',
+	 "bbcode_helpline" : 'H4',
+	 "display_on_posting" : 0,
+	 "bbcode_match" : '[h4]{TEXT}[/h4]',
+	 
+	 "bbcode_tpl" : '<h4 class="post-content">{TEXT}</h4>',
+	 "first_pass_match" : '!\\[h4\\](.*?)\\[/h4\\]!ies',
+	 "first_pass_replace" : '\'[h4:$uid]\'.str_replace(array(\"\\r\\n\", \'\\\"\', \'\\\'\', \'(\', \')\'), array(\"\\n\", \'\"\', \'&#39;\', \'&#40;\', \'&#41;\'), trim(\'${1}\')).\'[/h4:$uid]\'',
+	 "second_pass_match" : '!\\[h4:$uid\\](.*?)\\[/h4:$uid\\]!s',
+	 "second_pass_replace" : '<h4 class=\"post-content\">${1}</h4>'},
+	 
+	{"bbcode_id" : 32,
+	 "bbcode_tag" : 'youtube',
+	 "bbcode_helpline" : 'Youtube',
+	 "display_on_posting" : 0,
+	 "bbcode_match" : '[youtube]{TEXT}[/youtube]',
+	 "bbcode_tpl" : '<iframe src="https://www.youtube.com/embed/{TEXT}\" allowfullscreen frameborder="0" height="315" width="560"></iframe>',
+	 "first_pass_match" : '!\\[youtube\\](.*?)\\[/youtube\\]!ies',
+	 "first_pass_replace" : '\'[youtube:$uid]${1}[/youtube:$uid]\'',
+	 "second_pass_match" : '!\\[youtube:$uid\\](.*?)\\[/youtube:$uid\\]!s',
+     "second_pass_replace" : '<iframe src=\"https://www.youtube.com/embed/${1}\" allowfullscreen=\"\" frameborder=\"0\" height=\"315\" width=\"560\"></iframe>'},	 
+
+	{"bbcode_id" : 33,
+	 "bbcode_tag" : 'dailymotion',
+	 "bbcode_helpline" : 'Dailymotion',
+	 "display_on_posting" : 0,
+	 "bbcode_match" : '[dailymotion]{TEXT}[/dailymotion]',
+	 "bbcode_tpl" : '<iframe src="http://www.dailymotion.com/video/embed/{TEXT}\" allowfullscreen="" frameborder="0" height="270" width="480"></iframe>',
+	 "first_pass_match" : '!\\[dailymotion\\](.*?)\\[/dailymotion\\]!ies',
+     "first_pass_replace" : '\'[dailymotion:$uid]\'.str_replace(array(\"\\r\\n\", \'\\\"\', \'\\\'\', \'(\', \')\'), array(\"\\n\", \'\"\', \'&#39;\', \'&#40;\', \'&#41;\'), trim(\'${1}\')).\'[/dailymotion:$uid]\'',	 
+	 "second_pass_match" : '!\\[dailymotion:$uid\\](.*?)\\[/dailymotion:$uid\\]!s',
+     "second_pass_replace" : '<iframe src=\"http://www.dailymotion.com/embed/video/embed/${1}\" allowfullscreen=\"\" frameborder=\"0\" height=\"270\" width=\"480\"></iframe>'},	 
 ]
 
 BOTS = [

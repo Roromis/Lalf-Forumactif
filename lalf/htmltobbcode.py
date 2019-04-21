@@ -486,7 +486,10 @@ class UrlNode(InlineTagNode):
                 fileobj.write('<!-- m --><a class="postlink" href="{}">{}</a><!-- m -->'
                               .format(url, ellipsized_url))
 
-@Parser.handler("i", "u", "strike", "sub", "sup", "hr", "tr")
+#
+# initial credit to Titou74
+# https://github.com/Roromis/Lalf-Forumactif/issues/56
+@Parser.handler("i", "u", "strike", "sub", "sup", "hr", "tr", "h2", "h3", "h4")
 def _inline_handler(tag, attrs):
     return InlineTagNode(tag)
 
@@ -499,6 +502,22 @@ def _td_handler(tag, attrs):
         return InlineTagNode("td")
     else:
         return InlineTagNode("td=", "{},{}".format(colspan, rowspan))
+
+
+#
+# intial credit to Titou74
+#       https://github.com/Roromis/Lalf-Forumactif/issues/56
+# for Iframe
+@Parser.handler("iframe")
+def _iframe_handler(tag, attrs):
+    logger = logging.getLogger('lalf.htmltobbcode')
+    if attrs["src"][:30] == "https://www.youtube.com/embed/":
+        logger.warning(attrs["src"][30:len(attrs["src"])])
+        return IframeTagNode("youtube", content=attrs["src"][30:len(attrs["src"])])
+    if attrs["src"][:39] == "http://www.dailymotion.com/embed/video/":
+        logger.warning(attrs["src"][39:len(attrs["src"])])
+        return IframeTagNode("dailymotion", content=attrs["src"][39:len(attrs["src"])])
+    return InlineTagNode(tag)
 
 @Parser.handler("strong")
 def _strong_handler(tag, attrs):
@@ -596,3 +615,4 @@ def _marquee_handler(tag, attrs):
         return InlineTagNode("updown")
     else:
         return InlineTagNode("scroll")
+       
