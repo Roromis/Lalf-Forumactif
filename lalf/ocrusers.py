@@ -23,6 +23,7 @@ sometimes displays them as images instead of text. This module uses
 optical character recognition to export them anyway.
 """
 
+import sys
 import os
 import re
 import time
@@ -173,14 +174,19 @@ class OcrUser(User):
                     # yet, the email is available
                     self.trust = 3
 
-                lastvisit = e("td").eq(4).text()
-                if lastvisit != "":
-                    lastvisit = lastvisit.split(" ")
-                    self.lastvisit = int(time.mktime(time.struct_time(
-                        (int(lastvisit[2]), month(lastvisit[1]), int(lastvisit[0]), 0, 0, 0, 0, 0,
-                         0))))
-                else:
-                    self.lastvisit = 0
+                try:
+                    lastvisit = e("td").eq(4).text()
+                    if lastvisit != "":
+                        lastvisit = lastvisit.split(" ")
+                        self.lastvisit = int(time.mktime(time.struct_time(
+                            (int(lastvisit[2]), month(lastvisit[1]), int(lastvisit[0]), 0, 0, 0, 0, 0,
+                             0))))
+                    else:
+                        self.lastvisit = 0
+                except IndexError:
+                    selft.logger.error("Configuration du profil de l'administrateur choisi à revoir cf https://roromis.github.io/Lalf-Forumactif/annexes/profil")
+                    sys.exit("Erreur de configuration du forum")
+                    
 
     def confirm_email(self, retries=2):
         """
