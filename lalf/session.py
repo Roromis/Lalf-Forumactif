@@ -75,7 +75,7 @@ class Session(object):
         """
         Connect to the forum and initialize session, sid and tid.
         """
-        self.logger.debug('Connection au forum')
+        self.logger.debug('Connexion au forum')
 
         # Reset session
         self.session.close()
@@ -101,7 +101,7 @@ class Session(object):
                 self.sid = value
 
         if self.sid is None:
-            self.logger.critical('Échec de la connection.')
+            self.logger.critical('Échec de la connexion.')
             raise UnableToConnect()
 
         if self.tid is None:
