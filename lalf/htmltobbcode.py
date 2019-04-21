@@ -348,6 +348,38 @@ class InlineTagNode(Node):
             else:
                 fileobj.write("[/{}{}]".format(self.tag.rstrip("="), uid))
 
+#
+# intial credit to Titou74
+#       https://github.com/Roromis/Lalf-Forumactif/issues/56
+# for Iframe
+#
+class IframeTagNode(Node):
+    """
+    A node representing an inline element
+    """
+    def __init__(self, tag, attrs="", closing_tag=None, content=""):
+        Node.__init__(self, tag)
+        self.closing_tag = closing_tag
+        self.attrs = attrs
+		
+        if content:
+            self.add_text(content)
+
+    def get_bbcode(self, fileobj, bb, uid=""):
+        if self.tag not in TAGS:
+            logger = logging.getLogger('lalf.htmltobbcode')
+            logger.warning("La balise bbcode [%s] n'est pas supportée.", self.tag)
+
+            Node.get_bbcode(self, fileobj, bb, uid)
+        else:
+            fileobj.write("[{}{}{}]".format(self.tag, self.attrs, uid))
+            Node.get_bbcode(self, fileobj, bb, uid)
+            if self.closing_tag:
+                fileobj.write("[/{}{}]".format(self.closing_tag, uid))
+            else:
+                fileobj.write("[/{}{}]".format(self.tag.rstrip("="), uid))
+
+
 class BlockTagNode(InlineTagNode):
     """
     A node representing an block element
