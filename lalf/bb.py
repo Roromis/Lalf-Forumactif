@@ -186,6 +186,7 @@ class BB(Node):
         
         #Add user columns
         #shouldn't they be located to another table ?
+        sqlfile.update_config("users", "user_sex", "varchar(1) default NULL")
         sqlfile.update_config("users", "user_date_of_birth", "int(11) default NULL")
         
         sqlfile.update_config("users", "user_twitter", "varchar(255)")

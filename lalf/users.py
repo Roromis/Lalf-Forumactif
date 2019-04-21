@@ -279,22 +279,22 @@ class User(Node):
             "user_posts" : num_posts,
             "user_lang" : self.config["default_lang"],
             "user_style" : "1",
-            #"user_rank" (TODO)
+            #"user_rank" (built later)
             "user_colour" : self.colour,
             #"user_avatar" (TODO)
             "user_avatar" : self.avatar,
-            #"user_sig" (TODO)
             "user_sig" : self.signature,
             "user_attachsig" : self.attachsig,
             #"user_from" (TODO)
-            
+    
+            "user_sex": self.sexe,
+            "user_date_of_birth": self.age,
             # les nouveaux médias ne sont pas dans les profils d'origine de phpbb2
             "user_facebook" : self.facebook,
             "user_twitter" : self.twitter,
             "user_skype" : self.skype,
             
-            #"user_website" (TODO) (...)
-            "user_website": self.site_web,            
+            "user_website": self.site_web,
             
             #Specific to my own forum/site
             "user_modele_bat" : self.modele_bat, 
