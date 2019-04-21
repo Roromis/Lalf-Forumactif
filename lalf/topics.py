@@ -56,7 +56,7 @@ class Topic(Node):
         self.views = views
 
     def _export_(self):
-        self.logger.info('Récupération du sujet %d', self.topic_id)
+        self.logger.info('Récupération du sujet %d -> %s', self.topic_id, self.title.ljust(15)[:15].strip())
 
         self.root.current_topics += 1
         self.ui.update()

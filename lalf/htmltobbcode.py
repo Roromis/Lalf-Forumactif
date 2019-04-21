@@ -92,12 +92,15 @@ def process_link(bb, url):
             url = newurl
         else:
 			# Extracting externals image link using /viewimage/ such as viewimage.forum?u=
-            match = re.search(r"viewimage.forum\?u=(.*)",url)
+            match = re.search(r"viewimage.forum\?u=(.*)", url)
             if match:
                 url = urllib.parse.unquote(match.group(1))
-                logger.warning("Le lien suivant réécrit : %s", url)
+                #logger.warning("Le lien suivant réécrit : %s", url)
             else:
-                logger.warning("Le lien suivant n'a pas pu être réécrit : %s", url)
+				# ignore admin to delete/ip/post/editpost post links
+                match = re.search(r"mode=", url)
+                if not match:
+                    logger.warning("Le lien suivant n'a pas pu être réécrit : %s", url)
 
     return url
 

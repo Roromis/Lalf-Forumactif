@@ -91,3 +91,14 @@ class SqlFile(object):
                 prefix=self.prefix,
                 value=escape(str(value)),
                 name=escape(name)))
+
+    def update_config(self, table, name, definition):
+        """
+        Update a value in the phpbb_config table
+        """
+        self.fileobj.write(
+            "ALTER TABLE {prefix}{table} ADD {name} {definition} ;\n".format(
+                prefix=self.prefix,            
+                table=table,
+                name=escape(name),
+                definition=escape(definition)))
