@@ -19,6 +19,7 @@
 Module handling the conversion of html to bbcode (as stored in the phpbb database)
 """
 
+import urllib
 import logging
 import re
 from html.parser import HTMLParser
@@ -90,7 +91,13 @@ def process_link(bb, url):
         if newurl:
             url = newurl
         else:
-            logger.warning("Le lien suivant n'a pas pu être réécrit : %s", url)
+			# Extracting externals image link using /viewimage/ such as viewimage.forum?u=
+            match = re.search(r"viewimage.forum\?u=(.*)",url)
+            if match:
+                url = urllib.parse.unquote(match.group(1))
+                logger.warning("Le lien suivant réécrit : %s", url)
+            else:
+                logger.warning("Le lien suivant n'a pas pu être réécrit : %s", url)
 
     return url
 
@@ -543,12 +550,16 @@ def _td_handler(tag, attrs):
 @Parser.handler("iframe")
 def _iframe_handler(tag, attrs):
     logger = logging.getLogger('lalf.htmltobbcode')
-    if attrs["src"][:30] == "https://www.youtube.com/embed/":
-        logger.warning(attrs["src"][30:len(attrs["src"])])
-        return IframeTagNode("youtube", content=attrs["src"][30:len(attrs["src"])])
-    if attrs["src"][:39] == "http://www.dailymotion.com/embed/video/":
-        logger.warning(attrs["src"][39:len(attrs["src"])])
-        return IframeTagNode("dailymotion", content=attrs["src"][39:len(attrs["src"])])
+    try:
+        if attrs["src"][:30] == "https://www.youtube.com/embed/":
+            logger.warning("Youtube %s", attrs["src"][30:len(attrs["src"])])
+            return IframeTagNode("youtube", content=attrs["src"][30:len(attrs["src"])])
+        if attrs["src"][:39] == "http://www.dailymotion.com/embed/video/":
+            logger.warning("DailyMotion %s", attrs["src"][39:len(attrs["src"])])
+            return IframeTagNode("dailymotion", content=attrs["src"][39:len(attrs["src"])])
+    except KeyError:
+        logger.warning("Unknown Iframe %s", ''.join(attrs))
+		
     return InlineTagNode(tag)
 
 @Parser.handler("strong")
