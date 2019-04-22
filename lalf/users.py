@@ -27,6 +27,7 @@ The ocrusers module now handles the exportation, using this users
 module to create the entries in the sql file.
 """
 
+import os
 import sys
 import time
 
@@ -37,6 +38,8 @@ import base64
 from binascii import crc32
 
 from pyquery import PyQuery
+from PIL import Image
+from io import BytesIO
 
 from lalf.node import Node
 from lalf.util import Counter, pages, random_string, parse_admin_date, clean_url
@@ -213,14 +216,17 @@ class User(Node):
         else:
             sexe = "F"
         self.sexe = sexe
+
+        try:    
+             age_jour = int(doc("select[id='profile_field_4_-12_2']").val().strip() or 0)
+             age_mois = int(doc("select[id='profile_field_4_-12_1']").val().strip() or 0)
+             age_annee = int(doc("input[id='profile_field_4_-12_0']").val().strip() or 0)
     
-        age_jour = int(doc("select[id='profile_field_4_-12_2']").val().strip() or 0)
-        age_mois = int(doc("select[id='profile_field_4_-12_1']").val().strip() or 0)
-        age_annee = int(doc("input[id='profile_field_4_-12_0']").val().strip() or 0)
-    
-        self.age = int(time.mktime(time.struct_time(
-                            (age_annee, age_mois, age_jour, 0, 0, 0, 0, 0,
-                             0))))    
+             self.age = int(time.mktime(time.struct_time(
+                                 (age_annee, age_mois, age_jour, 0, 0, 0, 0, 0,
+                                  0))))
+        except:
+             self.age = 0
     
         self.localisation = doc("input[id='profile_field_13_-11']").val()
 
@@ -232,7 +238,38 @@ class User(Node):
         self.twitter = doc("input[id='profile_field_3_-22']").val() or ''
     
         #avatar
-        self.avatar = doc("img[alt='" + pseudo + "']").attr("src") or ''
+        try:
+            self.avatar = doc("img[alt='" + pseudo + "']").attr("src") or ''
+
+            if len(self.avatar)>0 :
+                 #if self.config["export_avatars"]:
+                 self.logger.info("Téléchargement de l'avatar de \"%s\"", pseudo)
+                 
+                 # Create the smilies directory if necessary
+                 dirname = os.path.join("images", "avatars", "upload")
+                 #dirname = os.path.join("images", "avatars")
+                 if not os.path.isdir(dirname):
+                     os.makedirs(dirname)
+
+                 # Download the image and get its dimensions and format
+                 response = self.session.get_image(self.avatar)
+                 try:
+                     with Image.open(BytesIO(response.content)) as image:
+                         self.avatar = "avatar_exported_{}_{}.{}".format(self.newid, pseudo,
+                                                                        image.format.lower())
+                         #self.width = image.width
+                         #self.height = image.height
+                 except IOError:
+                     self.logger.warning("Le format de l'avatar %s est inconnu", self.code)
+                 else:
+                     # Save the image
+                     with open(os.path.join(dirname, self.avatar), "wb") as fileobj:
+                         fileobj.write(response.content)
+            else:
+                 self.logger.info("Pas d'avatar pour "+pseudo)
+
+        except:
+            self.avatar = ''
     
         # champs paramétrables
         # specifiques à un forum
