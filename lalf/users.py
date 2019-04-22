@@ -184,8 +184,7 @@ class User(Node):
         return
 
     def get_additionnal_data(self):
-        self.logger.debug('Récupération additionnelle du membre (id %d)', int(self.oldid))
-        print("get_additionnal_data %d", int(self.oldid))
+        self.logger.debug('Récupération additionnelle du membre (id '+str(self.oldid)+")")
         
         # Get the page of list of users from the administration panel
         params = {
