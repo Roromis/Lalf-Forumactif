@@ -63,8 +63,14 @@ class GroupPage(Node):
 
         for element in document.find("a"):
             match = pattern.fullmatch(clean_url(element.get("href", "")))
-            if match:
-                user = self.users[int(match.group(1))]
+            if match:			
+                try:
+                    user = self.users[int(match.group(1))]
+                except KeyError: 
+                    self.logger.debug('Erreur de numéro de groupe %d', match.group(1))
+                    print('Erreur de numéro de groupe')
+                    print(match.group)
+					
                 if self.group not in user.groups:
                     user.groups.append(self.group)
 

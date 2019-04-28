@@ -27,6 +27,10 @@ The ocrusers module now handles the exportation, using this users
 module to create the entries in the sql file.
 """
 
+import os
+import sys
+import time
+
 import re
 import hashlib
 import urllib.parse
@@ -34,6 +38,8 @@ import base64
 from binascii import crc32
 
 from pyquery import PyQuery
+from PIL import Image
+from io import BytesIO
 
 from lalf.node import Node
 from lalf.util import Counter, pages, random_string, parse_admin_date, clean_url
@@ -180,6 +186,101 @@ class User(Node):
         """
         return
 
+    def get_additionnal_data(self):
+        self.logger.debug('Récupération additionnelle du membre (id '+str(self.oldid)+")")
+        
+        # Get the page of list of users from the administration panel
+        params = {
+            "part" : "users_groups",
+            "sub" : "users",
+            "mode" : "edit",
+            "u": self.oldid
+        }
+        response = self.session.get_admin("/admin/index.forum", params=params)
+        doc = PyQuery(response.text)
+
+        pseudo = doc("input[name='username_edit']").val()
+
+        el_list = [element.text() for element in doc.items('td')]
+        #Profil : signature = el_list[14]
+    
+        self.signature = doc("textarea[name='signature']").text() or ''
+        if len(self.signature)>0:
+            self.attachsig = 1
+        else:
+            self.attachsig = 0			
+    
+        sexe_sel = doc("input:checked[name='profile_field_16_-7'][value='1']").val()
+        if sexe_sel is not None:
+            sexe = "M"
+        else:
+            sexe = "F"
+        self.sexe = sexe
+
+        try:    
+             age_jour = int(doc("select[id='profile_field_4_-12_2']").val().strip() or 0)
+             age_mois = int(doc("select[id='profile_field_4_-12_1']").val().strip() or 0)
+             age_annee = int(doc("input[id='profile_field_4_-12_0']").val().strip() or 0)
+    
+             self.age = int(time.mktime(time.struct_time(
+                                 (age_annee, age_mois, age_jour, 0, 0, 0, 0, 0,
+                                  0))))
+        except:
+             self.age = 0
+    
+        self.localisation = doc("input[id='profile_field_13_-11']").val()
+
+        #champs de contact
+    
+        self.site_web = doc("input[id='profile_field_3_-10']").val() or ''
+        self.skype = doc("input[id='profile_field_3_-19']").val() or ''
+        self.facebook = doc("input[id='profile_field_3_-21']").val() or ''
+        self.twitter = doc("input[id='profile_field_3_-22']").val() or ''
+    
+        #avatar
+        try:
+            self.avatar = doc("img[alt='" + pseudo + "']").attr("src") or ''
+
+            if len(self.avatar)>0 :
+                 #if self.config["export_avatars"]:
+                 self.logger.info("Téléchargement de l'avatar de \"%s\"", pseudo)
+                 
+                 # Create the smilies directory if necessary
+                 dirname = os.path.join("images", "avatars", "upload")
+                 #dirname = os.path.join("images", "avatars")
+                 if not os.path.isdir(dirname):
+                     os.makedirs(dirname)
+
+                 # Download the image and get its dimensions and format
+                 response = self.session.get_image(self.avatar)
+                 try:
+                     with Image.open(BytesIO(response.content)) as image:
+                         self.avatar = "avatar_exported_{}_{}.{}".format(self.newid, pseudo,
+                                                                        image.format.lower())
+                         #self.width = image.width
+                         #self.height = image.height
+                 except IOError:
+                     self.logger.warning("Le format de l'avatar %s est inconnu", self.code)
+                 else:
+                     # Save the image
+                     with open(os.path.join(dirname, self.avatar), "wb") as fileobj:
+                         fileobj.write(response.content)
+            else:
+                 self.logger.info("Pas d'avatar pour "+pseudo)
+
+        except:
+            self.avatar = ''
+    
+        # champs paramétrables
+        # specifiques à un forum
+    
+        self.modele_bat = doc("input[name='profile_field_13_1']").val() or ''
+        self.nom_bat = doc("input[name='profile_field_13_2']").val() or ''
+        self.port_bat = doc("input[name='profile_field_13_3']").val() or ''
+        self.mmsi_bat = doc("input[name='profile_field_13_4']").val() or ''
+
+        return
+
     def _dump_(self, sqlfile):
         try:
             group_id = self.groups[0].newid
@@ -197,6 +298,8 @@ class User(Node):
         else:
             lastpost_time = 0
 
+        self.get_additionnal_data()
+
         user = {
             "user_id" : self.newid,
             "group_id" : group_id,
@@ -212,16 +315,34 @@ class User(Node):
             "user_posts" : num_posts,
             "user_lang" : self.config["default_lang"],
             "user_style" : "1",
-            #"user_rank" (TODO)
-            "user_colour" : self.colour
+            #"user_rank" (built later)
+            "user_colour" : self.colour,
             #"user_avatar" (TODO)
-            #"user_sig" (TODO)
+            "user_avatar" : self.avatar,
+            "user_sig" : self.signature,
+            "user_attachsig" : self.attachsig,
             #"user_from" (TODO)
-            #"user_website" (TODO) (...)
+    
+            "user_sex": self.sexe,
+            "user_date_of_birth": self.age,
+            # les nouveaux médias ne sont pas dans les profils d'origine de phpbb2
+            "user_facebook" : self.facebook,
+            "user_twitter" : self.twitter,
+            "user_skype" : self.skype,
+            
+            "user_website": self.site_web,
+            
+            #Specific to my own forum/site
+            "user_modele_bat" : self.modele_bat, 
+            "user_nom_bat" : self.nom_bat, 
+            "user_port_bat" : self.port_bat,
+            "user_mmsi_bat" : self.mmsi_bat
         }
 
         # Check if the user is the administrator
         if self.name == self.config["admin_name"]:
+            self.logger.debug('Ajout des droits administrateur et du mot de passe configuré pour "%s"', self.name)
+
             user.update({
                 "user_type": 3,
                 "user_password" : md5(self.config["admin_password"]),
@@ -339,10 +460,10 @@ class UsersPage(Node):
             e = PyQuery(element)
             oldid = int(re.search(r"&u=(\d+)&", clean_url(e("td a").eq(0).attr("href"))).group(1))
 
-            self.logger.info('Récupération du membre %d', oldid)
             name = e("td a").eq(0).text()
             mail = e("td a").eq(1).text()
             posts = int(e("td").eq(2).text())
+            self.logger.info('Récupération du membre %d -> %s', oldid, name)
 
             date = parse_admin_date(e("td").eq(3).text())
             lastvisit = parse_admin_date(e("td").eq(4).text())

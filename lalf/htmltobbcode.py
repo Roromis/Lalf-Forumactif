@@ -19,6 +19,7 @@
 Module handling the conversion of html to bbcode (as stored in the phpbb database)
 """
 
+import urllib
 import logging
 import re
 from html.parser import HTMLParser
@@ -90,7 +91,16 @@ def process_link(bb, url):
         if newurl:
             url = newurl
         else:
-            logger.warning("Le lien suivant n'a pas pu être réécrit : %s", url)
+			# Extracting externals image link using /viewimage/ such as viewimage.forum?u=
+            match = re.search(r"viewimage.forum\?u=(.*)", url)
+            if match:
+                url = urllib.parse.unquote(match.group(1))
+                #logger.warning("Le lien suivant réécrit : %s", url)
+            else:
+				# ignore admin to delete/ip/post/editpost post links
+                match = re.search(r"mode=", url)
+                if not match:
+                    logger.warning("Le lien suivant n'a pas pu être réécrit : %s", url)
 
     return url
 
@@ -348,6 +358,38 @@ class InlineTagNode(Node):
             else:
                 fileobj.write("[/{}{}]".format(self.tag.rstrip("="), uid))
 
+#
+# intial credit to Titou74
+#       https://github.com/Roromis/Lalf-Forumactif/issues/56
+# for Iframe
+#
+class IframeTagNode(Node):
+    """
+    A node representing an inline element
+    """
+    def __init__(self, tag, attrs="", closing_tag=None, content=""):
+        Node.__init__(self, tag)
+        self.closing_tag = closing_tag
+        self.attrs = attrs
+		
+        if content:
+            self.add_text(content)
+
+    def get_bbcode(self, fileobj, bb, uid=""):
+        if self.tag not in TAGS:
+            logger = logging.getLogger('lalf.htmltobbcode')
+            logger.warning("La balise bbcode [%s] n'est pas supportée.", self.tag)
+
+            Node.get_bbcode(self, fileobj, bb, uid)
+        else:
+            fileobj.write("[{}{}{}]".format(self.tag, self.attrs, uid))
+            Node.get_bbcode(self, fileobj, bb, uid)
+            if self.closing_tag:
+                fileobj.write("[/{}{}]".format(self.closing_tag, uid))
+            else:
+                fileobj.write("[/{}{}]".format(self.tag.rstrip("="), uid))
+
+
 class BlockTagNode(InlineTagNode):
     """
     A node representing an block element
@@ -486,7 +528,10 @@ class UrlNode(InlineTagNode):
                 fileobj.write('<!-- m --><a class="postlink" href="{}">{}</a><!-- m -->'
                               .format(url, ellipsized_url))
 
-@Parser.handler("i", "u", "strike", "sub", "sup", "hr", "tr")
+#
+# initial credit to Titou74
+# https://github.com/Roromis/Lalf-Forumactif/issues/56
+@Parser.handler("i", "u", "strike", "sub", "sup", "hr", "tr", "h2", "h3", "h4")
 def _inline_handler(tag, attrs):
     return InlineTagNode(tag)
 
@@ -499,6 +544,26 @@ def _td_handler(tag, attrs):
         return InlineTagNode("td")
     else:
         return InlineTagNode("td=", "{},{}".format(colspan, rowspan))
+
+
+#
+# intial credit to Titou74
+#       https://github.com/Roromis/Lalf-Forumactif/issues/56
+# for Iframe
+@Parser.handler("iframe")
+def _iframe_handler(tag, attrs):
+    logger = logging.getLogger('lalf.htmltobbcode')
+    try:
+        if attrs["src"][:30] == "https://www.youtube.com/embed/":
+            logger.warning("Youtube %s", attrs["src"][30:len(attrs["src"])])
+            return IframeTagNode("youtube", content=attrs["src"][30:len(attrs["src"])])
+        if attrs["src"][:39] == "http://www.dailymotion.com/embed/video/":
+            logger.warning("DailyMotion %s", attrs["src"][39:len(attrs["src"])])
+            return IframeTagNode("dailymotion", content=attrs["src"][39:len(attrs["src"])])
+    except KeyError:
+        logger.warning("Unknown Iframe %s", ''.join(attrs))
+		
+    return InlineTagNode(tag)
 
 @Parser.handler("strong")
 def _strong_handler(tag, attrs):
@@ -596,3 +661,4 @@ def _marquee_handler(tag, attrs):
         return InlineTagNode("updown")
     else:
         return InlineTagNode("scroll")
+       
