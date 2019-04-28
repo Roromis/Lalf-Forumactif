@@ -341,6 +341,8 @@ class User(Node):
 
         # Check if the user is the administrator
         if self.name == self.config["admin_name"]:
+            self.logger.debug('Ajout des droits administrateur et du mot de passe configuré pour "%s"', self.name)
+
             user.update({
                 "user_type": 3,
                 "user_password" : md5(self.config["admin_password"]),
