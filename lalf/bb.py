@@ -110,7 +110,7 @@ class BB(Node):
             stats[e("td span").eq(2).text()] = e("td span").eq(3).text()
 
         self.total_posts = int(stats["Messages"])
-        self.total_topics = int(stats["Nombre de sujets ouvert dans le forum"])
+        self.total_topics = int(stats["Nombre de sujets ouverts dans le forum"])
         self.total_users = int(stats["Nombre d'utilisateurs"])
 
         self.startdate = parse_date(stats["Ouverture du forum"])
